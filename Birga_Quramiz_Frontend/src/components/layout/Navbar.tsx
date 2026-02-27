@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Bell, ChevronDown, ShoppingCart, User2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, ChevronDown, Heart, LayoutGrid, ShoppingCart, User2, Home, Cpu, LayoutDashboard, HardHat, Truck, ClipboardList, Package, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useFavorites } from "@/hooks/useFavorites";
 import { useAuthStore } from "@/store/authStore";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +21,9 @@ import {
 import type { Role } from "@/types";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 
-const navLinks = [
-  { href: "/catalog", key: "marketplace" },
-  { href: "/builders", key: "builders" },
-  { href: "/equipment", key: "equipment" },
-  { href: "/ai-chat", key: "aiConsultant" },
-] as const;
+// Brand colors: Primary Blue #1B4D91 | Accent Red #E31E24
+
+// navLinks are computed inside the component based on user role
 
 type MenuItem = { href: string; label: string };
 
@@ -36,167 +34,236 @@ function getNotificationsHref(role: Role): string {
 }
 
 function getRoleMenuItems(role: Role, tCommon: ReturnType<typeof useTranslations>): MenuItem[] {
-  if (role === "ADMIN") {
-    return [
-      { href: "/profile", label: tCommon("profile") },
-      { href: "/admin", label: tCommon("adminDashboard") },
-    ];
-  }
-
-  if (role === "SELLER") {
-    return [
-      { href: "/profile", label: tCommon("profile") },
-      { href: "/seller/dashboard", label: tCommon("sellerDashboard") },
-      { href: "/seller/products", label: tCommon("myProducts") },
-      { href: "/seller/orders", label: tCommon("orders") },
-    ];
-  }
-
+  if (role === "ADMIN") return [
+    { href: "/profile", label: tCommon("profile") },
+    { href: "/admin", label: tCommon("adminDashboard") },
+  ];
+  if (role === "SELLER") return [
+    { href: "/profile", label: tCommon("profile") },
+    { href: "/seller/dashboard", label: tCommon("sellerDashboard") },
+    { href: "/seller/products", label: tCommon("myProducts") },
+    { href: "/seller/orders", label: tCommon("orders") },
+  ];
   return [
     { href: "/profile", label: tCommon("profile") },
     { href: "/orders", label: tCommon("myOrders") },
-    { href: "/profile", label: tCommon("settings") },
   ];
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { uniqueCount } = useCart();
+  const { items: favItems } = useFavorites();
   const logout = useAuthStore((s) => s.logout);
 
   const tCommon = useTranslations("Common");
   const tNav = useTranslations("Navbar");
 
   const canAccessCart = !isAuthenticated || user?.role === "USER";
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
-
+  const handleLogout = () => { logout(); router.push("/"); };
   const roleMenuItems = user ? getRoleMenuItems(user.role, tCommon) : [];
-  const logoSrc = user?.role === "SELLER" ? "/sellers-panel-logo.png" : "/logo.png";
+
+  const isSeller = user?.role === "SELLER";
+  const isAdmin = user?.role === "ADMIN";
+  const logoHref = isAdmin ? "/admin" : (isSeller ? "/seller/dashboard" : "/");
+  const logoSrc = isSeller || isAdmin ? "/sellers-panel-logo.png" : "/logo.png"; // We can reuse the seller logo for admins or keep the main one
+
+  // Dynamic nav links — swap Home for Seller Dashboard or Admin Dashboard
+  let navLinks: Array<{ href: string, key: any, icon: any }> = [];
+
+  if (isAdmin) {
+    navLinks = [
+      { href: "/admin", key: "adminDashboard" as const, icon: LayoutDashboard },
+      { href: "/admin/products", key: "adminProducts" as const, icon: Package },
+      { href: "/admin/users", key: "users" as const, icon: Users },
+      { href: "/admin/orders", key: "orders" as const, icon: ClipboardList },
+    ];
+  } else if (isSeller) {
+    navLinks = [
+      { href: "/seller/dashboard", key: "sellerDashboard" as const, icon: LayoutDashboard },
+      { href: "/seller/products", key: "myProducts" as const, icon: Package },
+      { href: "/seller/orders", key: "orders" as const, icon: ClipboardList },
+      { href: "/ai-chat", key: "aiConsultant" as const, icon: Cpu },
+    ];
+  } else {
+    navLinks = [
+      { href: "/", key: "home" as const, icon: Home },
+      { href: "/catalog", key: "marketplace" as const, icon: LayoutGrid },
+      { href: "/builders", key: "builders" as const, icon: HardHat },
+      { href: "/equipment", key: "equipment" as const, icon: Truck },
+      { href: "/ai-chat", key: "aiConsultant" as const, icon: Cpu },
+    ];
+  }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-white/95 backdrop-blur">
-      <div className="border-b border-border/60 bg-[#0f3154] text-white">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2 text-xs md:px-6">
-          <p>{tNav("topDelivery")}</p>
-          <div className="flex items-center gap-3">
-            <a href="tel:+998900000000" className="hover:text-orange-200">+998 90 000 00 00</a>
+    <header className="sticky top-0 z-50 hidden w-full md:block">
+      {/* ── Top utility bar ── */}
+      <div className="bg-[#1B4D91] text-white">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-2 text-xs">
+          <p className="font-medium opacity-80">{tNav("topDelivery")}</p>
+          <div className="flex items-center gap-4">
+            <a
+              href="tel:+998900000000"
+              className="font-bold tracking-wide opacity-90 hover:opacity-100 transition-opacity"
+            >
+              +998 90 000 00 00
+            </a>
             <LanguageSwitcher />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="inline-flex items-center">
-            <Image
-              src={logoSrc}
-              alt="Birga Quramiz"
-              width={240}
-              height={56}
-              className="h-10 w-auto md:h-11"
-              priority
-            />
-          </Link>
+      {/* ── Main navbar ── */}
+      <div className="border-b border-slate-100 bg-white/97 backdrop-blur-md shadow-sm">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-6 py-3">
 
-          <nav className="hidden items-center gap-1 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-[#0f3154]"
-              >
-                {tNav(link.key)}
-              </Link>
-            ))}
+          {/* Logo — links to seller dashboard for sellers, home otherwise */}
+          <div className="shrink-0 flex items-center gap-3">
+            <Link href={logoHref} className="flex items-center">
+              <Image
+                src={logoSrc}
+                alt="Birga Quramiz"
+                width={220}
+                height={56}
+                className="h-11 w-auto"
+                priority
+              />
+            </Link>
+            {isAdmin && (
+              <div className="hidden lg:flex items-center rounded-lg bg-red-500/10 px-2.5 py-1 mt-1 border border-red-500/20">
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-600">Admin Portal</span>
+              </div>
+            )}
+          </div>
+
+          {/* Nav links */}
+          <nav className="flex items-center gap-1">
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/" ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition-all duration-200",
+                    isActive
+                      ? "bg-[#1B4D91]/8 text-[#1B4D91]"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-[#1B4D91]"
+                  )}
+                >
+                  {Icon && <Icon className="size-3.5" />}
+                  {tNav(link.key)}
+                  {isActive && (
+                    <span className="absolute bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[#1B4D91]" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {canAccessCart && (
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            {/* Favorites */}
             <Link
-              href="/cart"
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-[#0f3154]"
-              aria-label={tCommon("cart")}
+              href="/favorites"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-[#E31E24] transition-colors"
+              aria-label="Избранное"
             >
-              <ShoppingCart className="size-5" />
-              {uniqueCount > 0 && (
-                <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ec7a10] px-1 text-[10px] font-semibold leading-4 text-white">
-                  {uniqueCount}
+              <Heart className="size-5" />
+              {favItems.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E31E24] px-1 text-[9px] font-black text-white ring-2 ring-white">
+                  {favItems.length}
                 </span>
               )}
             </Link>
-          )}
 
-          {isAuthenticated && user ? (
-            <>
+            {/* Cart */}
+            {canAccessCart && (
               <Link
-                href={getNotificationsHref(user.role)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-[#0f3154]"
-                aria-label={tCommon("notifications")}
+                href="/cart"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-[#1B4D91] transition-colors"
+                aria-label={tCommon("cart")}
               >
-                <Bell className="size-5" />
+                <ShoppingCart className="size-5" />
+                {uniqueCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E31E24] px-1 text-[9px] font-black text-white ring-2 ring-white">
+                    {uniqueCount}
+                  </span>
+                )}
               </Link>
+            )}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-                      <User2 className="size-4" />
-                    </span>
-                    <span className="hidden max-w-28 truncate sm:inline">{user.name}</span>
-                    <ChevronDown className="size-4 text-slate-500" />
-                  </button>
-                </DropdownMenuTrigger>
+            {/* Authenticated user */}
+            {isAuthenticated && user ? (
+              <>
+                <Link
+                  href={getNotificationsHref(user.role)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-[#1B4D91] transition-colors"
+                  aria-label={tCommon("notifications")}
+                >
+                  <Bell className="size-5" />
+                </Link>
 
-                <DropdownMenuContent align="end" className="w-64 rounded-xl border border-slate-200/80 bg-white p-1.5 shadow-xl">
-                  <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold text-slate-900">{user.name}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="inline-flex h-10 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1B4D91]/10 text-[#1B4D91]">
+                        <User2 className="size-3.5" />
+                      </span>
+                      <span className="max-w-[100px] truncate">{user.name}</span>
+                      <ChevronDown className="size-4 text-slate-400" />
+                    </button>
+                  </DropdownMenuTrigger>
 
-                  {roleMenuItems.map((item) => (
-                    <DropdownMenuItem asChild key={`${user.role}-${item.href}-${item.label}`} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700">
-                      <Link href={item.href}>{item.label}</Link>
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-200/60">
+                    <DropdownMenuLabel className="px-2 py-1.5 text-[12px] font-black text-[#1B4D91] uppercase tracking-wider">
+                      {user.name}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                    {roleMenuItems.map((item) => (
+                      <DropdownMenuItem
+                        key={`${user.role}-${item.href}-${item.label}`}
+                        asChild
+                        className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-700 cursor-pointer"
+                      >
+                        <Link href={item.href}>{item.label}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={handleLogout}
+                      className="rounded-xl px-3 py-2 text-[13px] font-semibold cursor-pointer"
+                    >
+                      {tCommon("logout")}
                     </DropdownMenuItem>
-                  ))}
-
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={handleLogout} className="rounded-lg px-3 py-2 text-sm font-medium">
-                    {tCommon("logout")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button asChild size="sm" className="bg-[#0f3154] hover:bg-[#184a7d]">
-                <Link href="/login">{tCommon("signIn")}</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/signup">{tCommon("signUp")}</Link>
-              </Button>
-            </div>
-          )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="inline-flex h-10 items-center rounded-xl border border-[#1B4D91]/30 px-5 text-[13px] font-bold text-[#1B4D91] hover:bg-[#1B4D91]/5 transition-colors"
+                >
+                  {tCommon("signIn")}
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex h-10 items-center rounded-xl bg-[#1B4D91] px-5 text-[13px] font-bold text-white hover:bg-[#163d73] transition-colors shadow-sm"
+                >
+                  {tCommon("signUp")}
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 pb-3 lg:hidden md:px-6">
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="inline-flex shrink-0 items-center rounded-lg border border-border/70 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-[#0f3154]"
-          >
-            {tNav(link.key)}
-          </Link>
-        ))}
       </div>
     </header>
   );
 }
-
-
-

@@ -42,19 +42,18 @@ export default function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-8 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-2.5 text-xs font-medium text-white transition hover:bg-white/20"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[13px] font-bold text-primary shadow-sm active:bg-slate-50 transition-all tap-highlight-none"
           aria-label="Language"
         >
           <Image
             src={current.flag}
             alt={t(locale)}
-            width={16}
-            height={16}
-            className="size-4 rounded-full object-cover"
+            width={20}
+            height={20}
+            className="size-5 rounded-full object-cover border border-slate-100"
           />
-          <span className="hidden sm:inline">{t(locale)}</span>
-          <span className="sm:hidden">{current.short}</span>
-          <ChevronDown className="size-3.5 opacity-80" />
+          <span className="font-bold">{current.short}</span>
+          <ChevronDown className="size-4 text-primary/60" />
         </button>
       </DropdownMenuTrigger>
 

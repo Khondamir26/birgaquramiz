@@ -4,8 +4,11 @@ import { useMemo, useState } from "react";
 import { useFetch } from "@/hooks/useFetch";
 import { getPendingProducts, approveProduct, rejectProduct } from "@/lib/api/products";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
+import { Search, CheckCircle, XCircle, Package, Clock } from "lucide-react";
 
 export default function AdminProductsPage() {
+  const t = useTranslations("AdminProducts");
   const { data, loading, error, refetch } = useFetch(() => getPendingProducts());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -46,58 +49,120 @@ export default function AdminProductsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="surface-card h-20 animate-pulse" />
-        ))}
+      <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
+        <div className="mx-auto w-full md:max-w-7xl">
+          <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+            <div className="h-24 animate-pulse rounded-3xl bg-white" />
+            <div className="h-16 animate-pulse rounded-2xl bg-white" />
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 animate-pulse rounded-3xl bg-white" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
-    return <p className="text-destructive">Failed to load products: {error}</p>;
+    return (
+      <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
+        <div className="mx-auto w-full md:max-w-7xl">
+          <div className="mx-auto px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+            <div className="rounded-3xl border border-[#E31E24]/20 bg-[#E31E24]/5 p-6 text-[13px] font-semibold text-[#E31E24]">
+              {error}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="section-title text-primary">Product Moderation</h1>
-        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-primary">{products.length} pending</span>
-      </div>
+    <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
+      <div className="mx-auto w-full md:max-w-7xl">
+        <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
-      <div className="surface-card p-4">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search pending products"
-          className="h-10 w-full rounded-lg border border-border/80 bg-white px-3 text-sm"
-        />
-      </div>
-
-      {filteredProducts.length === 0 ? (
-        <div className="surface-card p-10 text-center text-muted-foreground">No products pending moderation.</div>
-      ) : (
-        <div className="space-y-3">
-          {filteredProducts.map((product) => (
-            <article key={product.id} className="surface-card flex flex-wrap items-start justify-between gap-4 p-4">
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-primary">{product.name}</p>
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
-                <p className="mt-2 text-sm font-medium text-primary">{product.price.toLocaleString()} UZS • Stock {product.stock}</p>
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91]/10 text-[#1B4D91]">
+                <Package className="size-5" />
               </div>
+              <h1 className="text-xl md:text-2xl font-black text-[#1B4D91]">{t("title") || "Product Moderation"}</h1>
+            </div>
 
-              <div className="flex gap-2">
-                <Button size="sm" disabled={actionLoading === product.id} onClick={() => handleApprove(product.id)}>
-                  {actionLoading === product.id ? "Please wait..." : "Approve"}
-                </Button>
-                <Button size="sm" variant="destructive" disabled={actionLoading === product.id} onClick={() => handleReject(product.id)}>
-                  {actionLoading === product.id ? "Please wait..." : "Reject"}
-                </Button>
+            <div className="flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1.5 text-orange-700">
+              <Clock className="size-3.5 mt-0.5" />
+              <span className="text-[11px] md:text-xs font-bold whitespace-nowrap">
+                {t("pendingCount", { count: products.length }) || `${products.length} pending`}
+              </span>
+            </div>
+          </div>
+
+          {/* ── Search ── */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("searchPlaceholder") || "Search pending products..."}
+              className="h-12 w-full rounded-2xl border-none bg-white pl-11 pr-4 text-sm font-medium text-slate-700 shadow-sm outline-none ring-1 ring-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-[#1B4D91] transition-all"
+            />
+          </div>
+
+          {/* ── Products List ── */}
+          {filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white/50 py-16 text-center">
+              <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                <CheckCircle className="size-6" />
               </div>
-            </article>
-          ))}
+              <p className="text-sm font-bold text-slate-600">{t("noProducts") || "No products pending moderation."}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProducts.map((product) => (
+                <article key={product.id} className="group flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-white border border-slate-100 p-5 shadow-sm transition-all hover:shadow-md">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-black text-[#1B4D91] truncate leading-tight">{product.name}</p>
+                    <p className="mt-1.5 line-clamp-2 text-[13px] text-slate-500 leading-relaxed max-w-2xl">{product.description}</p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <span className="rounded-lg bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700">
+                        {t("price")}: {product.price.toLocaleString()} UZS
+                      </span>
+                      <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                        {t("stock")}: {product.stock}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full md:w-auto items-center gap-2 pt-2 md:pt-0 border-t border-slate-100 md:border-0">
+                    <Button
+                      disabled={actionLoading === product.id}
+                      onClick={() => handleApprove(product.id)}
+                      className="flex-1 md:flex-none h-10 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[13px] gap-1.5 transition-all shadow-sm"
+                    >
+                      <CheckCircle className="size-4" />
+                      {actionLoading === product.id ? t("pleaseWait") : t("approveBtn")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={actionLoading === product.id}
+                      onClick={() => handleReject(product.id)}
+                      className="flex-1 md:flex-none h-10 rounded-xl hover:bg-red-700 font-bold text-[13px] gap-1.5 transition-all shadow-sm"
+                    >
+                      <XCircle className="size-4" />
+                      {actionLoading === product.id ? t("pleaseWait") : t("rejectBtn")}
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

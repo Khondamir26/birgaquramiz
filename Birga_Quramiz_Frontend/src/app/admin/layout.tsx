@@ -5,12 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 
-const nav = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/products", label: "Product Moderation" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/orders", label: "Orders" },
-];
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isInitialized } = useAuth();
@@ -48,14 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="page-shell max-w-6xl space-y-5">
-      <div className="surface-card flex flex-wrap gap-2 p-3">
-        {nav.map((item) => (
-          <Link key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-primary">
-            {item.label}
-          </Link>
-        ))}
-      </div>
+    <div className="mx-auto w-full">
       {children}
     </div>
   );

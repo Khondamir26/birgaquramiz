@@ -4,10 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
+import { ArrowRight, ShoppingBag, MapPin, Package, CreditCard, Banknote, CheckCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { createGuestOrder, createOrder } from "@/lib/api/orders";
 import { useTranslations } from "next-intl";
 import type { DeliveryType, PaymentMethod } from "@/types";
+
+// ── Brand colours ─────────────────────────────────────────────────────────────
+// Primary Blue #1B4D91 | Accent Red #E31E24
+// ─────────────────────────────────────────────────────────────────────────────
 
 type CheckoutField = "customerName" | "customerPhone" | "deliveryAddress";
 
@@ -159,16 +171,44 @@ export default function CheckoutPage() {
 
   if (successOrderId) {
     return (
-      <div className="page-shell max-w-4xl">
-        <div className="surface-card p-8 text-center">
-          <h1 className="text-3xl font-black text-primary">{t("success.title")}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">{t("success.orderId", { id: successOrderId.slice(0, 8) })}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("success.delivery")}: {form.deliveryType === "DELIVERY" ? t("delivery") : t("pickup")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("success.payment")}: {t(`payment.${form.paymentMethod}`)}</p>
-          <div className="mt-5 flex justify-center gap-3">
-            <Link href="/catalog" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">{t("success.backMarketplace")}</Link>
+      <div className="page-shell max-w-3xl pb-32">
+        <div className="surface-card rounded-[32px] p-8 md:p-12 text-center shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col items-center">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle2 className="size-10 text-green-500" />
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-black text-[#1B4D91] mb-8">{t("success.title")}</h1>
+
+          <div className="w-full max-w-sm bg-slate-50/70 rounded-2xl p-6 text-left space-y-4 mb-10 border border-slate-100">
+            <div className="flex justify-between items-center border-b border-slate-200/60 pb-4">
+              <span className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("success.orderId", { id: "" }).replace(":", "")}</span>
+              <span className="text-[15px] font-extrabold text-[#1B4D91]">{successOrderId.slice(0, 8).toUpperCase()}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-slate-200/60 pb-4">
+              <span className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("success.delivery")}</span>
+              <span className="text-[15px] font-bold text-slate-700">{form.deliveryType === "DELIVERY" ? t("delivery") : t("pickup")}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("success.payment")}</span>
+              <span className="text-[15px] font-bold text-slate-700">{t(`payment.${form.paymentMethod}`)}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row w-full max-w-sm gap-4">
+            <Link
+              href="/catalog"
+              className="flex-1 h-14 flex items-center justify-center rounded-full bg-[#E31E24] text-[15px] font-bold text-white hover:bg-[#C91A20] transition-colors shadow-lg shadow-[#E31E24]/20"
+            >
+              {t("success.backMarketplace")}
+            </Link>
+
             {isAuthenticated && user?.role === "USER" && (
-              <Link href="/orders" className="rounded-lg border border-border/80 bg-white px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-primary">{t("success.myOrders")}</Link>
+              <Link
+                href="/orders"
+                className="flex-1 h-14 flex items-center justify-center rounded-full border-2 border-slate-200 bg-white text-[15px] font-bold text-slate-600 hover:border-[#1B4D91]/30 hover:text-[#1B4D91] transition-colors"
+              >
+                {t("success.myOrders")}
+              </Link>
             )}
           </div>
         </div>
@@ -177,146 +217,189 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="page-shell max-w-5xl space-y-6">
-      <section className="surface-card p-6">
-        <h1 className="section-title text-primary">{t("title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("subtitle")}</p>
+    <div className="page-shell max-w-7xl space-y-6 md:space-y-8 pb-32">
+      <section className="surface-card rounded-[32px] p-6 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100">
+        <h1 className="text-2xl md:text-3xl font-black text-[#1B4D91]">{t("title")}</h1>
+        <p className="mt-2 text-[14px] md:text-[15px] text-slate-500 font-medium">{t("subtitle")}</p>
       </section>
 
       {items.length === 0 ? (
-        <section className="surface-card p-8 text-center">
-          <p className="text-muted-foreground">{t("emptyCart")}</p>
-          <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">{t("goMarketplace")}</Link>
+        <section className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="flex size-32 items-center justify-center rounded-full bg-[#1B4D91]/5 mb-6">
+            <ShoppingBag className="size-16 text-[#1B4D91]/15" />
+          </div>
+          <p className="text-[16px] font-medium text-slate-500">{t("emptyCart")}</p>
+          <Link href="/catalog" className="mt-6 inline-flex h-14 items-center justify-center rounded-full bg-[#1B4D91] px-8 text-[15px] font-black text-white hover:bg-[#143d75] transition-colors">{t("goMarketplace")}</Link>
         </section>
       ) : (
-        <section className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
-          <form onSubmit={placeOrder} className="surface-card space-y-5 p-5">
-            <h2 className="text-lg font-bold text-primary">{t("deliveryDetails")}</h2>
+        <section className="grid gap-6 md:gap-12 lg:grid-cols-[1.2fr,0.85fr] items-start">
+          <form onSubmit={placeOrder} className="surface-card rounded-[32px] p-6 md:p-10 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 space-y-8">
+            <h2 className="text-xl md:text-2xl font-black text-[#1B4D91] border-b border-slate-100 pb-4">{t("deliveryDetails")}</h2>
 
-            <div className="space-y-1">
-              <input
-                value={form.customerName}
-                onChange={(e) => updateField("customerName", e.target.value)}
-                className={`h-10 w-full rounded-lg border bg-white px-3 text-sm ${fieldErrors.customerName ? "border-destructive" : "border-border/80"}`}
-                placeholder={t("fields.fullName")}
-                aria-invalid={Boolean(fieldErrors.customerName)}
-                required
-              />
-              {fieldErrors.customerName && <p className="text-xs text-destructive">{fieldErrors.customerName}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <input
-                value={form.customerPhone}
-                onChange={(e) => updateField("customerPhone", formatPhoneInput(e.target.value))}
-                className={`h-10 w-full rounded-lg border bg-white px-3 text-sm ${fieldErrors.customerPhone ? "border-destructive" : "border-border/80"}`}
-                placeholder={t("fields.phone")}
-                inputMode="tel"
-                aria-invalid={Boolean(fieldErrors.customerPhone)}
-                required
-              />
-              {fieldErrors.customerPhone && <p className="text-xs text-destructive">{fieldErrors.customerPhone}</p>}
-            </div>
-
-            <div>
-              <p className="mb-2 text-sm font-semibold text-primary">{t("fields.deliveryType")}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <label className="rounded-lg border border-border/70 bg-white px-3 py-2 text-sm">
-                  <input
-                    type="radio"
-                    className="mr-2"
-                    checked={form.deliveryType === "DELIVERY"}
-                    onChange={() => setForm((p) => ({ ...p, deliveryType: "DELIVERY" }))}
-                  />
-                  {t("delivery")}
-                </label>
-                <label className="rounded-lg border border-border/70 bg-white px-3 py-2 text-sm">
-                  <input
-                    type="radio"
-                    className="mr-2"
-                    checked={form.deliveryType === "PICKUP"}
-                    onChange={() => {
-                      setForm((p) => ({ ...p, deliveryType: "PICKUP", deliveryAddress: "" }));
-                      setFieldErrors((prev) => ({ ...prev, deliveryAddress: undefined }));
-                    }}
-                  />
-                  {t("pickup")}
-                </label>
-              </div>
-            </div>
-
-            {form.deliveryType === "DELIVERY" && (
-              <div className="space-y-1">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("fields.fullName")}</label>
                 <input
-                  value={form.deliveryAddress}
-                  onChange={(e) => updateField("deliveryAddress", e.target.value)}
-                  className={`h-10 w-full rounded-lg border bg-white px-3 text-sm ${fieldErrors.deliveryAddress ? "border-destructive" : "border-border/80"}`}
-                  placeholder={t("fields.address")}
-                  aria-invalid={Boolean(fieldErrors.deliveryAddress)}
+                  value={form.customerName}
+                  onChange={(e) => updateField("customerName", e.target.value)}
+                  className={`h-14 w-full rounded-2xl border-2 bg-slate-50/50 px-4 text-[15px] font-medium placeholder:text-slate-400 focus:bg-white transition-colors outline-none focus:border-[#1B4D91]/30 ${fieldErrors.customerName ? "border-destructive focus:border-destructive" : "border-slate-100"}`}
+                  placeholder={t("fields.fullName")}
+                  aria-invalid={Boolean(fieldErrors.customerName)}
                   required
                 />
-                {fieldErrors.deliveryAddress && <p className="text-xs text-destructive">{fieldErrors.deliveryAddress}</p>}
+                {fieldErrors.customerName && <p className="text-xs font-bold text-destructive">{fieldErrors.customerName}</p>}
               </div>
-            )}
 
-            <div>
-              <p className="mb-2 text-sm font-semibold text-primary">{t("fields.paymentMethod")}</p>
-              <select
-                value={form.paymentMethod}
-                onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value as PaymentMethod }))}
-                className="h-10 w-full rounded-lg border border-border/80 bg-white px-3 text-sm"
-              >
-                <option value="CASH">{t("payment.CASH")}</option>
-                <option value="CARD">{t("payment.CARD")}</option>
-                <option value="TRANSFER">{t("payment.TRANSFER")}</option>
-              </select>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("fields.phone")}</label>
+                <input
+                  value={form.customerPhone}
+                  onChange={(e) => updateField("customerPhone", formatPhoneInput(e.target.value))}
+                  className={`h-14 w-full rounded-2xl border-2 bg-slate-50/50 px-4 text-[15px] font-medium placeholder:text-slate-400 focus:bg-white transition-colors outline-none focus:border-[#1B4D91]/30 ${fieldErrors.customerPhone ? "border-destructive focus:border-destructive" : "border-slate-100"}`}
+                  placeholder={t("fields.phone")}
+                  inputMode="tel"
+                  aria-invalid={Boolean(fieldErrors.customerPhone)}
+                  required
+                />
+                {fieldErrors.customerPhone && <p className="text-xs font-bold text-destructive">{fieldErrors.customerPhone}</p>}
+              </div>
+
+              <div className="pt-2">
+                <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">{t("fields.deliveryType")}</label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className={`relative flex cursor-pointer flex-col gap-2 rounded-2xl border-2 p-4 transition-all ${form.deliveryType === "DELIVERY" ? "border-[#1B4D91] bg-[#1B4D91]/5 shadow-sm" : "border-slate-100 bg-white hover:border-slate-200"}`}>
+                    <input
+                      type="radio"
+                      className="peer sr-only"
+                      checked={form.deliveryType === "DELIVERY"}
+                      onChange={() => setForm((p) => ({ ...p, deliveryType: "DELIVERY" }))}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div className={`flex size-10 items-center justify-center rounded-xl ${form.deliveryType === "DELIVERY" ? "bg-[#1B4D91] text-white" : "bg-slate-100 text-slate-500"}`}>
+                        <Package className="size-5" />
+                      </div>
+                      <span className={`text-[15px] font-bold ${form.deliveryType === "DELIVERY" ? "text-[#1B4D91]" : "text-slate-700"}`}>{t("delivery")}</span>
+                    </div>
+                  </label>
+
+                  <label className={`relative flex cursor-pointer flex-col gap-2 rounded-2xl border-2 p-4 transition-all ${form.deliveryType === "PICKUP" ? "border-[#1B4D91] bg-[#1B4D91]/5 shadow-sm" : "border-slate-100 bg-white hover:border-slate-200"}`}>
+                    <input
+                      type="radio"
+                      className="peer sr-only"
+                      checked={form.deliveryType === "PICKUP"}
+                      onChange={() => {
+                        setForm((p) => ({ ...p, deliveryType: "PICKUP", deliveryAddress: "" }));
+                        setFieldErrors((prev) => ({ ...prev, deliveryAddress: undefined }));
+                      }}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div className={`flex size-10 items-center justify-center rounded-xl ${form.deliveryType === "PICKUP" ? "bg-[#1B4D91] text-white" : "bg-slate-100 text-slate-500"}`}>
+                        <MapPin className="size-5" />
+                      </div>
+                      <span className={`text-[15px] font-bold ${form.deliveryType === "PICKUP" ? "text-[#1B4D91]" : "text-slate-700"}`}>{t("pickup")}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {form.deliveryType === "DELIVERY" && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("fields.address")}</label>
+                  <input
+                    value={form.deliveryAddress}
+                    onChange={(e) => updateField("deliveryAddress", e.target.value)}
+                    className={`h-14 w-full rounded-2xl border-2 bg-slate-50/50 px-4 text-[15px] font-medium placeholder:text-slate-400 focus:bg-white transition-colors outline-none focus:border-[#1B4D91]/30 ${fieldErrors.deliveryAddress ? "border-destructive focus:border-destructive" : "border-slate-100"}`}
+                    placeholder={t("fields.address")}
+                    aria-invalid={Boolean(fieldErrors.deliveryAddress)}
+                    required
+                  />
+                  {fieldErrors.deliveryAddress && <p className="text-xs font-bold text-destructive">{fieldErrors.deliveryAddress}</p>}
+                </div>
+              )}
+
+              <div className="pt-2">
+                <label className="block text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">{t("fields.paymentMethod")}</label>
+                <Select
+                  value={form.paymentMethod}
+                  onValueChange={(val: string) => setForm((p) => ({ ...p, paymentMethod: val as PaymentMethod }))}
+                >
+                  <SelectTrigger className="w-full h-14 rounded-2xl border-2 border-slate-100 bg-white px-4 text-[15px] font-bold text-[#1B4D91] focus:ring-0 focus:border-[#1B4D91]/30 shadow-none">
+                    <div className="flex items-center gap-3">
+                      {form.paymentMethod === 'CARD' ? <CreditCard className="size-5 text-slate-400" /> : <Banknote className="size-5 text-slate-400" />}
+                      <SelectValue placeholder="Select payment method" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1">
+                    <SelectItem value="CASH" className="text-[15px] font-bold text-[#1B4D91] py-3 rounded-lg cursor-pointer">{t("payment.CASH")}</SelectItem>
+                    <SelectItem value="CARD" className="text-[15px] font-bold text-[#1B4D91] py-3 rounded-lg cursor-pointer">{t("payment.CARD")}</SelectItem>
+                    <SelectItem value="TRANSFER" className="text-[15px] font-bold text-[#1B4D91] py-3 rounded-lg cursor-pointer">{t("payment.TRANSFER")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("fields.comment")} (Optional)</label>
+                <textarea
+                  rows={4}
+                  value={form.comment}
+                  onChange={(e) => setForm((p) => ({ ...p, comment: e.target.value }))}
+                  className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-slate-50/50 p-4 text-[15px] font-medium placeholder:text-slate-400 focus:bg-white transition-colors outline-none focus:border-[#1B4D91]/30"
+                  placeholder={t("fields.comment")}
+                />
+              </div>
             </div>
 
-            <textarea
-              rows={3}
-              value={form.comment}
-              onChange={(e) => setForm((p) => ({ ...p, comment: e.target.value }))}
-              className="w-full resize-none rounded-lg border border-border/80 bg-white px-3 py-2 text-sm"
-              placeholder={t("fields.comment")}
-            />
+            {error && <div className="rounded-xl bg-destructive/10 p-4 border border-destructive/20 text-sm font-bold text-destructive text-center">{error}</div>}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
-            <button type="submit" disabled={loading || items.length === 0} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-70">
-              {loading ? t("placing") : t("confirm")}
+            <button
+              type="submit"
+              disabled={loading || items.length === 0}
+              className="w-full rounded-full bg-[#1B4D91] h-14 text-[16px] font-black text-white hover:bg-[#143d75] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#1B4D91]/20 mt-8"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  {t("placing")}
+                </div>
+              ) : t("confirm")}
             </button>
           </form>
 
-          <aside className="surface-card p-5">
-            <h2 className="text-lg font-bold text-primary">{t("summary.title")}</h2>
-            <div className="mt-4 space-y-3">
+          {/* ── Desktop order summary (Aesthetic matched to Cart) ── */}
+          <aside className="sticky top-24 rounded-[32px] bg-white border border-slate-100 shadow-[0_4px_30px_rgb(0,0,0,0.03)] p-8 md:p-10 flex flex-col w-full h-max">
+            <h2 className="text-[22px] font-black text-[#1B4D91] border-b border-slate-100 pb-4 mb-6">{t("summary.title")}</h2>
+
+            <div className="space-y-4 mb-8">
               {items.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
-                  <div>
-                    <p className="font-medium text-primary">{item.name}</p>
-                    <p className="text-muted-foreground">{item.quantity} x {item.price.toLocaleString()} UZS</p>
+                <div key={item.id} className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0 pr-4">
+                    <p className="font-bold text-[#1B4D91] line-clamp-2 text-[14px] leading-snug mb-1">{item.name}</p>
+                    <p className="text-[13px] font-medium text-slate-500">{item.quantity} x {item.price.toLocaleString("ru-RU")} UZS</p>
                   </div>
-                  <p className="font-semibold text-primary">{(item.price * item.quantity).toLocaleString()} UZS</p>
+                  <p className="font-black text-[#1B4D91] text-[15px] whitespace-nowrap pt-0.5">{(item.price * item.quantity).toLocaleString("ru-RU")}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-5 border-t border-border/70 pt-4">
-              <p className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="space-y-4 text-[14px] font-semibold text-slate-500 w-full mb-6 pt-6 border-t border-slate-100">
+              <div className="flex justify-between w-full">
                 <span>{t("summary.items")}</span>
-                <span>{items.length}</span>
-              </p>
-              <p className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                <span className="text-[#1B4D91] font-bold">{items.length}</span>
+              </div>
+              <div className="flex justify-between w-full">
                 <span>{t("summary.delivery")}</span>
-                <span>{form.deliveryType === "DELIVERY" ? t("delivery") : t("pickup")}</span>
-              </p>
-              <p className="mt-2 flex items-center justify-between text-lg font-black text-primary">
-                <span>{t("summary.total")}</span>
-                <span>{total.toLocaleString()} UZS</span>
+                <span className="text-[#1B4D91] font-bold uppercase text-[12px]">{form.deliveryType === "DELIVERY" ? t("delivery") : t("pickup")}</span>
+              </div>
+            </div>
+
+            <div className="w-full pt-6 border-t border-slate-100 mt-auto">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Итоговая сумма</p>
+              <p className="text-[36px] font-black text-[#E31E24] leading-none mb-2">
+                {total.toLocaleString("ru-RU")} <span className="text-[18px] text-[#1B4D91] ml-2">UZS</span>
               </p>
             </div>
 
-            <Link href="/cart" className="mt-4 inline-flex text-sm font-medium text-muted-foreground hover:text-primary">
+            <Link href="/cart" className="mt-8 flex w-full h-14 items-center justify-center rounded-full border border-slate-200 text-[14px] font-bold text-[#1B4D91] hover:bg-slate-50 transition-colors">
               {t("backToCart")}
             </Link>
           </aside>
