@@ -7,5 +7,11 @@ export function resolveImageUrl(imageUrl?: string | null): string {
   }
 
   const normalizedPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`
-  return `${getApiBaseUrl()}${normalizedPath}`
+  const baseUrl = getApiBaseUrl()
+
+  if (normalizedPath.startsWith(baseUrl)) {
+    return normalizedPath
+  }
+
+  return `${baseUrl}${normalizedPath}`
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SupabaseModule } from './supabase/supabase.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -9,8 +10,8 @@ import { SellerModule } from './seller/seller.module';
 import { OrdersModule } from './orders/orders.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AdminModule, ProductsModule, SellerModule, OrdersModule],
+  imports: [PrismaModule, AuthModule, AdminModule, ProductsModule, SellerModule, OrdersModule, SupabaseModule],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

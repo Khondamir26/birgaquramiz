@@ -71,7 +71,7 @@ async function bootstrap() {
     }),
   )
 
-  await app.listen(process.env.PORT ?? 5000)
+  await app.listen(process.env.PORT || 10000, '0.0.0.0')
 }
 bootstrap()
 

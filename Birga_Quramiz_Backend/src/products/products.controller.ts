@@ -14,8 +14,8 @@
   BadRequestException,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { extname, join } from 'path'
+import { memoryStorage } from 'multer'
+import { SupabaseService } from '../supabase/supabase.service'
 import { ProductsService } from './products.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
@@ -23,18 +23,7 @@ import { Roles } from '../auth/roles.decorator'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 
-const toImagePath = (file?: { filename?: string } | null) => {
-  if (!file?.filename) return undefined
-  return `/uploads/products/${file.filename}`
-}
-
-const multerStorage = diskStorage({
-  destination: join(process.cwd(), 'uploads', 'products'),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-    cb(null, `${uniqueSuffix}${extname(file.originalname)}`)
-  },
-})
+const multerStorage = memoryStorage()
 
 const imageFileFilter = (_req: unknown, file: { mimetype: string }, cb: (error: Error | null, acceptFile: boolean) => void) => {
   if (!file.mimetype.startsWith('image/')) {
@@ -46,7 +35,10 @@ const imageFileFilter = (_req: unknown, file: { mimetype: string }, cb: (error: 
 
 @Controller('products')
 export class ProductsController {
-  constructor(private productsService: ProductsService) {}
+  constructor(
+    private productsService: ProductsService,
+    private supabaseService: SupabaseService,
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -58,13 +50,14 @@ export class ProductsController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  create(@Body() body: CreateProductDto, @Req() req: any, @UploadedFile() file?: { filename?: string }) {
-    const imagePath = toImagePath(file)
-    if (!imagePath) {
+  async create(@Body() body: CreateProductDto, @Req() req: any, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) {
       throw new BadRequestException('Product image is required')
     }
 
-    return this.productsService.create({ ...body, imageUrl: imagePath }, req.user)
+    const imageUrl = await this.supabaseService.uploadProductImage(file)
+
+    return this.productsService.create({ ...body, imageUrl }, req.user)
   }
 
   @Get()
@@ -93,14 +86,19 @@ export class ProductsController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  updateMyProduct(
+  async updateMyProduct(
     @Param('id') id: string,
     @Body() body: UpdateProductDto,
     @Req() req: any,
-    @UploadedFile() file?: { filename?: string },
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    const imagePath = toImagePath(file)
-    const payload = imagePath ? { ...body, imageUrl: imagePath } : body
+    let imageUrl: string | undefined
+
+    if (file) {
+      imageUrl = await this.supabaseService.uploadProductImage(file)
+    }
+
+    const payload = imageUrl ? { ...body, imageUrl } : body
     return this.productsService.updateMyProduct(id, payload, req.user)
   }
 
