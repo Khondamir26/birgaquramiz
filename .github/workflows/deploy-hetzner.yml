@@ -58,6 +58,9 @@ jobs:
             
             # Clone or pull latest code
             if [ ! -d ".git" ]; then
+              echo "Cleaning directory before cloning..."
+              rm -rf ./*
+              rm -rf .env
               git clone https://github.com/Khondamir26/birgaquramiz.git .
             else
               git rebase --abort || true
