@@ -2,17 +2,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
-
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 COPY prisma ./prisma/
 
-RUN pnpm install
+RUN npm install
 
 COPY . .
 
 RUN npx prisma generate
-RUN pnpm run build
+RUN npm run build
 
 FROM node:20-alpine
 
@@ -26,4 +24,4 @@ EXPOSE 10000
 
 ENV PORT=10000
 
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start:prod"]
