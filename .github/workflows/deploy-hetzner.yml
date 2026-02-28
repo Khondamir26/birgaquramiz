@@ -38,6 +38,14 @@ jobs:
               sudo systemctl start docker
             fi
             
+            # Ensure firewall ports are open
+            if command -v ufw &> /dev/null; then
+              sudo ufw allow 80/tcp
+              sudo ufw allow 443/tcp
+              sudo ufw allow 3000/tcp
+              sudo ufw allow 10000/tcp
+            fi
+            
             # Create project directory
             mkdir -p ~/birgaquramiz
             cd ~/birgaquramiz
