@@ -11,6 +11,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: ${{ secrets.GCP_REGION }}
+  RUN_REGION: europe-west1
   SERVICE_NAME: frontend-service
   IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend
 
@@ -40,16 +41,16 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           cd Birga_Quramiz_Frontend
-          docker build --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} -t ${{ env.IMAGE }} .
+          docker build --build-arg NEXT_PUBLIC_API_URL=https://backend-service-585100616395.europe-west1.run.app -t ${{ env.IMAGE }} .
           docker push ${{ env.IMAGE }}
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE_NAME }}
-          region: ${{ env.REGION }}
+          region: ${{ env.RUN_REGION }}
           image: ${{ env.IMAGE }}
           flags: |
             --allow-unauthenticated
             --port=3000
-            --set-env-vars=NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            --set-env-vars=NEXT_PUBLIC_API_URL=https://backend-service-585100616395.europe-west1.run.app
