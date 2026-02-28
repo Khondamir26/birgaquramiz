@@ -43,7 +43,7 @@ jobs:
               sudo ufw allow 80/tcp
               sudo ufw allow 443/tcp
               sudo ufw allow 3000/tcp
-              sudo ufw allow 10000/tcp
+              sudo ufw allow 5000/tcp
             fi
             
             # Kill apache2 if it was pre-installed on Ubuntu and is blocking port 80
