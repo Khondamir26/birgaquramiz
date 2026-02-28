@@ -1,0 +1,28 @@
+{
+    email support@birga-quramiz.uz
+}
+
+# Redirect Secondary Domain to Primary Domain
+birgaquramiz.uz, www.birgaquramiz.uz {
+    redir https://birga-quramiz.uz{uri} permanent
+}
+
+# Redirect www to non-www
+www.birga-quramiz.uz {
+    redir https://birga-quramiz.uz{uri} permanent
+}
+
+# Primary Web App
+birga-quramiz.uz {
+    reverse_proxy frontend:3000
+}
+
+# Direct IP access fallback (Useful for testing before DNS propagates)
+128.140.48.85 {
+    reverse_proxy frontend:3000
+}
+
+# Backend API
+api.birga-quramiz.uz {
+    reverse_proxy backend:10000
+}
