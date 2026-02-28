@@ -37,10 +37,10 @@ services:
     container_name: birga-backend
     restart: unless-stopped
     ports:
-      - "10000:10000"
+      - "5000:5000"
     environment:
       - NODE_ENV=production
-      - PORT=10000
+      - PORT=5000
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=${JWT_SECRET}

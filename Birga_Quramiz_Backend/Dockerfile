@@ -29,8 +29,8 @@ RUN npm install --omit=dev
 # Generate the exact Prisma Client required by this specific alpine container architecture
 RUN npx prisma generate
 
-EXPOSE 10000
+EXPOSE 5000
 
-ENV PORT=10000
+ENV PORT=5000
 
 CMD ["npm", "run", "start:prod"]
