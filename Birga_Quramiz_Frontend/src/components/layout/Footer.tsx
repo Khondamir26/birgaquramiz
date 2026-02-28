@@ -68,6 +68,7 @@ export default function Footer() {
             ].map(({ href, label }) => (
               <li key={href}>
                 <Link
+                  prefetch={false}
                   href={href}
                   className="text-[14px] font-medium text-white/75 hover:text-white transition-colors flex items-center gap-2 group"
                 >
@@ -92,6 +93,7 @@ export default function Footer() {
             ].map(({ href, label }) => (
               <li key={href}>
                 <Link
+                  prefetch={false}
                   href={href}
                   className="text-[14px] font-medium text-white/75 hover:text-white transition-colors flex items-center gap-2 group"
                 >
@@ -133,6 +135,7 @@ export default function Footer() {
             </li>
             <li>
               <Link
+                prefetch={false}
                 href="/faq"
                 className="flex items-center gap-3 text-[14px] font-medium text-white/75 hover:text-white transition-colors ml-1 mt-2 group"
               >
