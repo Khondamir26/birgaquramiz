@@ -52,4 +52,4 @@ jobs:
           flags: |
             --allow-unauthenticated
             --port=10000
-            --set-env-vars=DATABASE_URL=${{ secrets.DATABASE_URL }},DIRECT_URL=${{ secrets.DIRECT_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+            --set-env-vars=DATABASE_URL=${{ secrets.DATABASE_URL }},DIRECT_URL=${{ secrets.DIRECT_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_KEY=${{ secrets.SUPABASE_KEY }},CORS_ORIGINS=https://frontend-service-585100616395.europe-west3.run.app
