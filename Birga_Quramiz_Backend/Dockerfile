@@ -26,4 +26,4 @@ EXPOSE 10000
 
 ENV PORT=10000
 
-CMD ["node", "dist/src/main"]
+CMD ["node", "dist/main.js"]
