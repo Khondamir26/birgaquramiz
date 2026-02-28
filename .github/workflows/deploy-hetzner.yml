@@ -46,6 +46,12 @@ jobs:
               sudo ufw allow 10000/tcp
             fi
             
+            # Kill apache2 if it was pre-installed on Ubuntu and is blocking port 80
+            if command -v apache2 &> /dev/null; then
+              sudo systemctl stop apache2 || true
+              sudo systemctl disable apache2 || true
+            fi
+            
             # Create project directory
             mkdir -p ~/birgaquramiz
             cd ~/birgaquramiz
@@ -75,3 +81,15 @@ jobs:
             
             # Prune dangling unused images to save disk space
             docker image prune -af
+            
+            # Print logs for debugging
+            echo "======================================"
+            echo "           CONTAINER STATUS           "
+            echo "======================================"
+            docker compose ps
+            echo "================ CADDY LOGS ================"
+            docker compose logs --tail=30 caddy
+            echo "=============== BACKEND LOGS ==============="
+            docker compose logs --tail=30 backend
+            echo "=============== FRONTEND LOGS =============="
+            docker compose logs --tail=30 frontend

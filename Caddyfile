@@ -18,7 +18,7 @@ birga-quramiz.uz {
 }
 
 # Direct IP access fallback (Useful for testing before DNS propagates)
-128.140.48.85 {
+http://128.140.48.85 {
     reverse_proxy frontend:3000
 }
 
