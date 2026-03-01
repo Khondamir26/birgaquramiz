@@ -29,7 +29,18 @@ async function bootstrap() {
   const expressApp = app.getHttpAdapter().getInstance() as express.Express
   expressApp.disable('x-powered-by')
 
-  app.use(helmet())
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  )
+
+  app.enableCors({
+    origin: getAllowedOrigins(),
+    credentials: true,
+  })
+
+  app.use('/uploads', express.static(uploadsDir))
 
   app.use((req, res, next) => {
     const now = Date.now()
@@ -49,14 +60,7 @@ async function bootstrap() {
     bucket.count += 1
     next()
   })
-
-  app.use('/uploads', express.static(uploadsDir))
-
-  app.enableCors({
-    origin: getAllowedOrigins(),
-    credentials: true,
-  })
-
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
