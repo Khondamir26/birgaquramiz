@@ -34,8 +34,7 @@ services:
       dockerfile: Dockerfile
     container_name: birga-backend
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    network_mode: host
     environment:
       - NODE_ENV=production
       - PORT=5000
