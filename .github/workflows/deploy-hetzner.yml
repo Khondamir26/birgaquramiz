@@ -21,7 +21,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          NEXT_PUBLIC_API_URL: https://api.birga-quramiz.uz
+          NEXT_PUBLIC_API_URL: http://128.140.48.85:5000
           CORS_ORIGINS: https://birga-quramiz.uz,https://www.birga-quramiz.uz,https://birgaquramiz.uz,https://www.birgaquramiz.uz
         with:
           host: ${{ secrets.HETZNER_IP }}
