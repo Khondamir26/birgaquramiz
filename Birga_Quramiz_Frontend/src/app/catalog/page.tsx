@@ -20,7 +20,6 @@ export default function CatalogPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     setError("");
 
     getProducts(page, 12, search)
@@ -42,12 +41,14 @@ export default function CatalogPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setPage(1);
     setSearch(query.trim());
     inputRef.current?.blur();
   };
 
   const handleClear = () => {
+    setLoading(true);
     setQuery("");
     setSearch("");
     setPage(1);

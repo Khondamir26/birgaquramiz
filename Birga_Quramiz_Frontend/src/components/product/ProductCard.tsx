@@ -19,7 +19,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 export default function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem, increment, decrement, getQuantity } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("ProductCard");
   const quantity = getQuantity(product.id);
   const canAddToCart = !user || user.role === "USER";
@@ -61,7 +61,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <article
-      className="flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm tap-highlight-none"
+      className="flex min-w-0 cursor-pointer flex-col overflow-hidden surface-card tap-highlight-none"
       onClick={handleCardClick}
       role="button"
       aria-label={t("openDetails")}

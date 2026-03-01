@@ -98,13 +98,13 @@ export default function SellerProductsPage() {
           return b.price - a.price;
         // Basic fallback for dates if present, else reverse order for "NEWEST"
         case "OLDEST":
-          return (a as any).createdAt && (b as any).createdAt
-            ? new Date((a as any).createdAt).getTime() - new Date((b as any).createdAt).getTime()
+          return "createdAt" in a && "createdAt" in b
+            ? new Date((a as { createdAt: string }).createdAt).getTime() - new Date((b as { createdAt: string }).createdAt).getTime()
             : a.id.localeCompare(b.id);
         case "NEWEST":
         default:
-          return (a as any).createdAt && (b as any).createdAt
-            ? new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime()
+          return "createdAt" in a && "createdAt" in b
+            ? new Date((b as { createdAt: string }).createdAt).getTime() - new Date((a as { createdAt: string }).createdAt).getTime()
             : b.id.localeCompare(a.id);
       }
     });

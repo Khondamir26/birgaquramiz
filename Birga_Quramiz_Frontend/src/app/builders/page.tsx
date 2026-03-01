@@ -30,7 +30,7 @@ export default function BuildersPage() {
             {builders.map((builder) => (
               <article
                 key={builder.id}
-                className="rounded-3xl bg-white border border-slate-100 p-5 shadow-sm flex flex-col gap-4"
+                className="surface-card p-5 flex flex-col gap-4"
               >
                 <div className="flex items-center gap-4">
                   <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#1B4D91]/8 text-[#1B4D91]">

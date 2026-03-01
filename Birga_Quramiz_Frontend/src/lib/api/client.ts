@@ -2,7 +2,7 @@
 
 export function getApiBaseUrl() {
   return BASE_URL
-  
+
 }
 
 export async function apiFetch<T = unknown>(
@@ -31,7 +31,7 @@ export async function apiFetch<T = unknown>(
     try {
       const err = await res.json()
       message = err.message || message
-    } catch {}
+    } catch { }
     throw new Error(message)
   }
 

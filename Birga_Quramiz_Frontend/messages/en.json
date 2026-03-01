@@ -79,7 +79,9 @@
         "newArrivals": "New Arrivals",
         "topProducts": "Top Products",
         "mightNeed": "You might need it",
-        "allProducts": "All Products"
+        "allProducts": "All Products",
+        "bannerTitle": "Welcome to Birga Quramiz!",
+        "bannerSubtitle": "Your trusted construction materials marketplace. Direct supplies from verified sellers with transparent pricing and fast delivery."
     },
     "Catalog": {
         "title": "Marketplace",

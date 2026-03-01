@@ -3,7 +3,7 @@
 import { useFavorites } from "@/hooks/useFavorites";
 import { useTranslations } from "next-intl";
 import ProductCard from "@/components/product/ProductCard";
-import { Heart, LayoutGrid } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function FavoritesPage() {

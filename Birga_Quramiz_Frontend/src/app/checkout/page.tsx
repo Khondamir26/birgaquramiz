@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
-import { ArrowRight, ShoppingBag, MapPin, Package, CreditCard, Banknote, CheckCircle2 } from "lucide-react";
+import { ShoppingBag, MapPin, Package, CreditCard, Banknote, CheckCircle2 } from "lucide-react";
 import {
   Select,
   SelectContent,

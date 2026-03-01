@@ -92,7 +92,7 @@ export default function AiChatPage() {
                 <div ref={bottomRef} />
               </div>
               <div className="border-t border-slate-100 px-4 py-4 flex items-center gap-3">
-                <button className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:text-[#1B4D91] hover:border-[#1B4D91]/30 transition-colors">
+                <button className="flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-[#1B4D91] hover:border-[#1B4D91]/30 transition-colors">
                   <Mic className="size-[18px]" />
                 </button>
                 <input
@@ -104,7 +104,7 @@ export default function AiChatPage() {
                 />
                 <button
                   onClick={() => handleSend(input)}
-                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91] text-white hover:bg-[#163d73] active:scale-90 transition-all"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#1B4D91] text-white hover:bg-[#163d73] active:scale-90 transition-all"
                 >
                   <SendHorizontal className="size-[18px]" />
                 </button>

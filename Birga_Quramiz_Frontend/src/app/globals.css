@@ -137,7 +137,11 @@
 
 @layer utilities {
   .surface-card {
-    @apply rounded-2xl border border-border/70 bg-card shadow-sm;
+    @apply rounded-2xl border border-border/70 bg-card shadow-sm transition-all duration-300;
+  }
+
+  .surface-card:hover {
+    @apply shadow-md -translate-y-1;
   }
 
   .page-shell {
@@ -180,5 +184,11 @@
   select {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  /* Enhancing button feeling on mobile */
+  button {
+    @apply transition-transform active:scale-95;
+    min-height: 44px; /* Apple Human Interface Guidelines minimum touch target size */
   }
 }

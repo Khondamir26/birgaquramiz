@@ -71,7 +71,7 @@ export default function Navbar() {
   const logoSrc = isSeller || isAdmin ? "/sellers-panel-logo.png" : "/logo.png"; // We can reuse the seller logo for admins or keep the main one
 
   // Dynamic nav links — swap Home for Seller Dashboard or Admin Dashboard
-  let navLinks: Array<{ href: string, key: any, icon: any }> = [];
+  let navLinks: Array<{ href: string, key: any, icon: React.ElementType }> = [];
 
   if (isAdmin) {
     navLinks = [

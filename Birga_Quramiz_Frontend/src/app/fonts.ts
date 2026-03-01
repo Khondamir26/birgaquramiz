@@ -20,4 +20,6 @@ export const satoshi = localFont({
         },
     ],
     variable: "--font-satoshi",
+    display: "swap",
+    preload: true,
 });

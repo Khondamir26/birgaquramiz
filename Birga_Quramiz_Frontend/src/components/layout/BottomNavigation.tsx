@@ -25,7 +25,7 @@ export default function BottomNavigation() {
     // ── Admin tabs: Dashboard | Users | Products | Orders | Profile
     // ── Seller tabs: Dashboard | Products | Orders | AI | Profile
     // ── User tabs:   Home | Catalog | Cart | Favorites | Profile
-    let navItems: Array<{ href: string, icon: any, label: string, showCartBadge?: boolean, showFavBadge?: boolean }> = [];
+    let navItems: Array<{ href: string, icon: React.ElementType, label: string, showCartBadge?: boolean, showFavBadge?: boolean }> = [];
 
     if (isAdmin) {
         navItems = [

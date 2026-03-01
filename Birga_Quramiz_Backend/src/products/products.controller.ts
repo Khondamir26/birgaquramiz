@@ -14,8 +14,9 @@
   BadRequestException,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
-import { SupabaseService } from '../supabase/supabase.service'
+import { diskStorage } from 'multer'
+import { extname, join } from 'path'
+import { UploadService } from '../upload/upload.service'
 import { ProductsService } from './products.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
@@ -23,7 +24,16 @@ import { Roles } from '../auth/roles.decorator'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 
-const multerStorage = memoryStorage()
+// Use diskStorage so uploaded files land on disk immediately, without loading
+// the entire file into Node.js memory. The SupabaseService (now local) reads
+// req.file.path instead of req.file.buffer.
+const multerStorage = diskStorage({
+  destination: join(process.cwd(), 'uploads', 'products'),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+    cb(null, `${uniqueSuffix}${extname(file.originalname)}`)
+  },
+})
 
 const imageFileFilter = (_req: unknown, file: { mimetype: string }, cb: (error: Error | null, acceptFile: boolean) => void) => {
   if (!file.mimetype.startsWith('image/')) {
@@ -37,7 +47,7 @@ const imageFileFilter = (_req: unknown, file: { mimetype: string }, cb: (error: 
 export class ProductsController {
   constructor(
     private productsService: ProductsService,
-    private supabaseService: SupabaseService,
+    private uploadService: UploadService,
   ) { }
 
   @Post()
@@ -55,7 +65,7 @@ export class ProductsController {
       throw new BadRequestException('Product image is required')
     }
 
-    const imageUrl = await this.supabaseService.uploadProductImage(file)
+    const imageUrl = this.uploadService.uploadProductImage(file)
 
     return this.productsService.create({ ...body, imageUrl }, req.user)
   }
@@ -95,7 +105,7 @@ export class ProductsController {
     let imageUrl: string | undefined
 
     if (file) {
-      imageUrl = await this.supabaseService.uploadProductImage(file)
+      imageUrl = this.uploadService.uploadProductImage(file)
     }
 
     const payload = imageUrl ? { ...body, imageUrl } : body

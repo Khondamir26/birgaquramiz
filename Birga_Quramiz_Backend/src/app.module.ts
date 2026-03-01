@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SupabaseModule } from './supabase/supabase.module';
+import { UploadModule } from './upload/upload.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -10,7 +10,7 @@ import { SellerModule } from './seller/seller.module';
 import { OrdersModule } from './orders/orders.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AdminModule, ProductsModule, SellerModule, OrdersModule, SupabaseModule],
+  imports: [PrismaModule, AuthModule, AdminModule, ProductsModule, SellerModule, OrdersModule, UploadModule],
   controllers: [AppController],
   providers: [AppService],
 })
