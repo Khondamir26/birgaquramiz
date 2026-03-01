@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import express from 'express'
+import helmet from 'helmet'
 
 const RATE_WINDOW_MS = 60_000
 const RATE_MAX_REQUESTS = 120
@@ -28,13 +29,7 @@ async function bootstrap() {
   const expressApp = app.getHttpAdapter().getInstance() as express.Express
   expressApp.disable('x-powered-by')
 
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.setHeader('X-Frame-Options', 'DENY')
-    res.setHeader('Referrer-Policy', 'no-referrer')
-    res.setHeader('X-XSS-Protection', '0')
-    next()
-  })
+  app.use(helmet())
 
   app.use((req, res, next) => {
     const now = Date.now()

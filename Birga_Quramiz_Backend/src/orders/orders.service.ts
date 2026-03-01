@@ -9,7 +9,7 @@ interface OrderItemInput {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(user: any, payload: CreateOrderDto) {
     if (user.role !== 'USER') {
@@ -47,11 +47,15 @@ export class OrdersService {
         sellerId = seller?.id ?? null
       }
 
+      const productIds = items.map((item) => item.productId)
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds } },
+        include: { seller: true },
+      })
+      const productDict = new Map(products.map((p) => [p.id, p]))
+
       for (const item of items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          include: { seller: true },
-        })
+        const product = productDict.get(item.productId)
 
         if (!product) {
           throw new BadRequestException('Product not found')

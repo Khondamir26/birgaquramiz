@@ -27,6 +27,13 @@ export class AuthService {
         phone,
         password: hashedPassword,
       },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+      },
     })
 
     return {
