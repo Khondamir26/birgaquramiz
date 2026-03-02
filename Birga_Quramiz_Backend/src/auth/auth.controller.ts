@@ -12,7 +12,7 @@ import type { Request } from 'express'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   register(
@@ -21,6 +21,16 @@ export class AuthController {
     @Body('password') password: string,
   ) {
     return this.authService.register(name, phone, password)
+  }
+
+  @Post('register-seller')
+  registerSeller(
+    @Body('name') name: string,
+    @Body('phone') phone: string,
+    @Body('password') password: string,
+    @Body('company') company: string,
+  ) {
+    return this.authService.registerSeller(name, phone, password, company)
   }
 
   @Post('login')

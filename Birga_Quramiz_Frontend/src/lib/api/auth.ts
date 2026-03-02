@@ -8,6 +8,13 @@ export function register(data: { name: string; phone: string; password: string }
   })
 }
 
+export function registerSeller(data: { name: string; phone: string; password: string; company: string }) {
+  return apiFetch<{ message: string; user: User; seller: any }>('/auth/register-seller', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 export function login(data: { phone: string; password: string }) {
   return apiFetch<{ token: string }>('/auth/login', {
     method: 'POST',

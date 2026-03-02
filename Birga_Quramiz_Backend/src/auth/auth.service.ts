@@ -8,7 +8,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-  ) {}
+  ) { }
 
   async register(name: string, phone: string, password: string) {
     const existing = await this.prisma.user.findUnique({
@@ -40,6 +40,47 @@ export class AuthService {
       message: 'User created',
       user,
     }
+  }
+  async registerSeller(name: string, phone: string, password: string, company: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { phone },
+    })
+
+    if (existing) {
+      throw new BadRequestException('User already exists')
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          phone,
+          password: hashedPassword,
+          role: 'SELLER'
+        },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          role: true,
+        },
+      })
+
+      const seller = await tx.seller.create({
+        data: {
+          userId: user.id,
+          company,
+        },
+      })
+
+      return {
+        message: 'Seller registered',
+        user,
+        seller,
+      }
+    })
   }
 
   async login(phone: string, password: string) {

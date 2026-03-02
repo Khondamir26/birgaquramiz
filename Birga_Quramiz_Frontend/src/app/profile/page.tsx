@@ -36,7 +36,7 @@ export default function ProfilePage() {
     },
     {
       label: t("becomeSeller") || "Стать партнёром",
-      icon: Users, href: "/become-seller",
+      icon: Users, href: "/seller-register",
       show: user?.role === "USER",
       accent: "#1B4D91",
     },

@@ -37,25 +37,30 @@
         "adminProducts": "Mahsulotlar"
     },
     "Footer": {
-        "description": "Qurilish materiallari marketpleysi: shaffof narxlar, yetkazib berish va sotuvchi ekotizimi.",
+        "description": "Shaffof narxlar, yetkazib berish imkoniyatlari va sotuvchilar ekotizimiga ega qurilish materiallari marketplace platformasi.",
         "support": "Yordam",
-        "marketplace": "Marketpleys",
+        "marketplace": "Marketplace",
         "services": "Xizmatlar",
         "business": "Biznes",
         "catalog": "Katalog",
         "checkout": "Rasmiylashtirish",
-        "cart": "Savat",
+        "cart": "Savatcha",
         "adminLogin": "Admin kirish",
         "rights": "Barcha huquqlar himoyalangan.",
         "madeFor": "Qurilish jarayonini tezlashtirish uchun yaratilgan",
         "catalogLink": "Mahsulotlar katalogi",
         "buildersLink": "Quruvchilar",
-        "equipmentLink": "Texnika",
-        "aiChatLink": "AI maslahatchi",
-        "becomeSellerLink": "Sotuvchi bo'lish",
-        "sellerPanelLink": "Sotuvchi paneli",
-        "adminLink": "Ma'muriyat",
-        "faqLink": "FAQ",
+        "equipmentLink": "Uskunalar",
+        "aiChatLink": "AI Maslahatchi",
+        "about": "Biz haqimizda",
+        "becomeSellerLink": "Sotuvchi bo‘lish",
+        "faqLink": "Savol-javoblar",
+        "payment": "To‘lov",
+        "delivery": "Yetkazib berish",
+        "guarantee": "Kafolatlar",
+        "returns": "Qaytarish",
+        "credit": "Bo‘lib to‘lash",
+        "contacts": "Aloqa",
         "privacyLink": "Maxfiylik siyosati",
         "termsLink": "Foydalanish shartlari"
     },
@@ -166,12 +171,25 @@
         "signIn": "Kirish",
         "signingIn": "Kirilmoqda...",
         "registering": "Royxatdan otilmoqda...",
+        "registerAsSeller": "Ro‘yxatdan o‘tish",
         "adminSignIn": "Admin kirish",
+        "sellerSignupTitle": "Sotuvchi bo‘lish",
         "name": "Ism",
+        "companyName": "Kompaniya nomi",
+        "companyNamePlaceholder": "Birga-Quramiz",
         "namePlaceholder": "Ali Valiyev",
         "phone": "Telefon raqam",
         "password": "Parol",
         "subtitle": "Qurilish materiallari marketpleysi platformasi",
+        "securePayments": "Xavfsiz to'lovlar",
+        "aiConsultant": "AI-maslahatchi",
+        "wideCatalog": "Keng katalog",
+        "personalProfile": "Shaxsiy profil",
+        "orderTracking": "Buyurtmalarni real vaqt rejimida kuzatish",
+        "earlyAccess": "Maxsus takliflarga erta kirish",
+        "factoryPrices": "To‘g‘ridan-to‘g‘ri zavod narxlariga kirish",
+        "comprehensiveAnalytics": "Keng qamrovli savdo va tahlil vositalari",
+        "quickSales": "Savdoni tezlashtirish",
         "loginFailed": "Kirish xatosi",
         "registrationFailed": "Royxatdan otish xatosi"
     },
@@ -455,5 +473,108 @@
         "submitting": "Yuborilmoqda...",
         "saving": "Saqlanmoqda...",
         "saveChanges": "O'zgarishlarni saqlash"
+    },
+    "Help": {
+        "title": "Yordam Markazi va Qo‘llab-quvvatlash",
+        "subtitle": "Birga Quramiz platformasida xarid qilish, xavfsiz to‘lovlar va logistika bo‘yicha to‘liq qo‘llanma.",
+        "tabs": {
+            "payment": "To‘lovlar",
+            "delivery": "Yetkazib berish va logistika",
+            "guarantee": "Ishonch va kafolat",
+            "returns": "Qaytarish siyosati",
+            "credit": "Bo‘lib to‘lash",
+            "faq": "Savol-javoblar",
+            "about": "Platforma haqida"
+        },
+        "payment": {
+            "title": "Xavfsiz to‘lov usullari",
+            "description": "Tranzaksiyalaringiz xavfsiz va qulay bo‘lishi uchun ishonchli to‘lov tizimlarini taqdim etamiz.",
+            "onlineTitle": "Raqamli to‘lovlar",
+            "onlineDescription": "Buyurtmangizni UzCard, Humo yoki xalqaro to‘lov tizimlari orqali xavfsiz amalga oshiring.",
+            "deliveryTitle": "Yetkazib berishda to‘lov",
+            "deliveryDescription": "Tovarni ko‘zdan kechirgandan so‘ng kuryerga naqd pul yoki terminal orqali to‘lov qiling."
+        },
+        "delivery": {
+            "title": "Logistika va yetkazib berish",
+            "description": "Toshkent va O‘zbekistonning barcha hududlarini qamrab oluvchi professional yetkazib berish tarmog‘i.",
+            "tashkentTitle": "Poytaxt bo‘ylab yetkazish",
+            "tashkentDescription": "Toshkent shahri bo‘yicha buyurtmalar 24 soat ichida yetkaziladi.",
+            "regionsTitle": "Butun respublika bo‘ylab",
+            "regionsDescription": "Og‘ir qurilish materiallari viloyatlarga 48-72 soat ichida xavfsiz yetkaziladi.",
+            "pickupTitle": "Ombordan olib ketish",
+            "pickupDescription": "Hamkor omborlarimizdan mustaqil ravishda olib ketish imkoniyati."
+        },
+        "guarantee": {
+            "title": "Iste’molchilar himoyasi",
+            "description": "Har bir tranzaksiya yuqori sifat standartlariga mos bo‘lishini ta’minlaymiz.",
+            "verifiedTitle": "Tasdiqlangan sotuvchilar",
+            "verifiedDescription": "Faqat qonuniy ishlab chiqaruvchilar va distributorlar platformaga qabul qilinadi.",
+            "qualityTitle": "Yuklashdan oldingi tekshiruv",
+            "qualityDescription": "Ko‘p bosqichli sifat nazorati mahsulotning talabga mos kelishini ta’minlaydi."
+        },
+        "returns": {
+            "title": "Qaytarish va pulni qaytarish",
+            "description": "Har bir xarid uchun ochiq va tushunarli qaytarish siyosati.",
+            "conditionsTitle": "Shartlar",
+            "conditionsDescription": "Ishlatilmagan va original qadoqdagi mahsulotlar 14 kun ichida qaytarilishi mumkin.",
+            "processTitle": "Qaytarish tartibi",
+            "processDescription": "So‘rovni shaxsiy kabinet orqali yuboring yoki qo‘llab-quvvatlash xizmatiga murojaat qiling."
+        },
+        "credit": {
+            "title": "Moliyaviy yechimlar",
+            "description": "Moslashuvchan moliyalashtirish orqali qurilish byudjetingizni samarali boshqaring.",
+            "installmentTitle": "Oylik bo‘lib to‘lash",
+            "installmentDescription": "Hamkor banklar orqali 6 oygacha 0% foizli bo‘lib to‘lash.",
+            "scoringTitle": "Tezkor tasdiqlash",
+            "scoringDescription": "15 daqiqa ichida kredit limiti tasdiqlanadi."
+        },
+        "faq": {
+            "title": "Ko‘p so‘raladigan savollar",
+            "description": "Platformamiz haqida tezkor javoblar.",
+            "q1": "Qanday qilib sotuvchi bo‘lish mumkin?",
+            "a1": "Pastki qismdagi 'Sotuvchi bo‘lish' tugmasini bosib, ro‘yxatdan o‘ting.",
+            "q2": "Narxlar yakuniymi?",
+            "a2": "Ha, biz zavodlar bilan bevosita ishlaymiz va narxlar yakuniy hamda shaffof.",
+            "q3": "Texnik yordam mavjudmi?",
+            "a3": "Ha, AI maslahatchi va qo‘llab-quvvatlash jamoamiz 24/7 xizmat ko‘rsatadi."
+        }
+    },
+    "About": {
+        "hero": {
+            "title": "Birga Quramiz: Birgalikda yaxshiroq",
+            "subtitle": "O‘zbekistondagi birinchi kompleks qurilish marketplace platformasi — tasdiqlangan sotuvchilar va xaridorlarni professional ekotizim orqali bog‘laymiz.",
+            "badge": "Platforma haqida"
+        },
+        "who": {
+            "title": "Biz kimmiz",
+            "p1": "Birga Quramiz oddiy marketplace emas. Biz qurilish sohasidagi xarid va logistika jarayonlarini soddalashtirish uchun yaratilgan maxsus platformamiz.",
+            "p2": "Shaffoflik va samaradorlik tamoyillari asosida biz zavodlar, distributorlar va quruvchilarni yagona tizimda birlashtiramiz."
+        },
+        "features": {
+            "mission": "Bizning missiyamiz",
+            "missionDesc": "O‘zbekistonda qurilish sohasini modernizatsiya qilish va hamma uchun shaffof hamda ishonchli bozor yaratish.",
+            "everyone": "Hamma uchun",
+            "everyoneDesc": "Professional quruvchi, zavod yetkazib beruvchi yoki uy egasi bo‘lishingizdan qat’i nazar — siz uchun qulay vositalarni taqdim etamiz.",
+            "quality": "Tasdiqlangan sifat",
+            "qualityDesc": "Har bir sotuvchi va mahsulot qat’iy moderatsiyadan o‘tadi.",
+            "speed": "Tezlik va samaradorlik",
+            "speedDesc": "Tez yetkazib berish, sotuvchilar bilan tezkor aloqa va AI-maslahatchi."
+        },
+        "values": {
+            "title": "Bizning qadriyatlarimiz",
+            "subtitle": "Birga Quramiz faoliyatini boshqaruvchi asosiy tamoyillar.",
+            "transparency": "Shaffoflik",
+            "transparencyDesc": "Real vaqt rejimida mavjudlik, zavod narxlari va tekshirilgan sharhlar.",
+            "excellence": "Mukammallik",
+            "excellenceDesc": "Faqat yuqori sifatli materiallar va professional xizmatlar.",
+            "community": "Hamjamiyat",
+            "communityDesc": "Yetkazib beruvchilar va mijozlar o‘rtasida mustahkam hamkorlik."
+        },
+        "cta": {
+            "title": "Qurilishni boshlashga tayyormisiz?",
+            "subtitle": "Minglab quruvchilar va uy egalari allaqachon Birga Quramiz platformasidan foydalanmoqda.",
+            "browse": "Katalogni ko‘rish",
+            "becomeSeller": "Sotuvchi bo‘lish"
+        }
     }
 }

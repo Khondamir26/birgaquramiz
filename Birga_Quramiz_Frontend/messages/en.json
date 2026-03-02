@@ -52,10 +52,15 @@
         "buildersLink": "Builders",
         "equipmentLink": "Equipment",
         "aiChatLink": "AI Consultant",
+        "about": "About us",
         "becomeSellerLink": "Become a seller",
-        "sellerPanelLink": "Seller panel",
-        "adminLink": "Administration",
         "faqLink": "FAQ",
+        "payment": "Payment",
+        "delivery": "Delivery",
+        "guarantee": "Guarantees",
+        "returns": "Returns",
+        "credit": "Installments",
+        "contacts": "Contacts",
         "privacyLink": "Privacy Policy",
         "termsLink": "Terms of Use"
     },
@@ -166,13 +171,26 @@
         "signIn": "Sign in",
         "signingIn": "Signing in...",
         "registering": "Registering...",
+        "registerAsSeller": "Register",
         "adminSignIn": "Admin sign in",
+        "sellerSignupTitle": "Seller Registration",
         "name": "Name",
+        "companyName": "Company name",
+        "companyNamePlaceholder": "Birga-Quramiz",   
         "namePlaceholder": "John Doe",
         "phone": "Phone number",
         "password": "Password",
         "subtitle": "Platform for construction materials marketplace",
         "loginFailed": "Login failed",
+        "securePayments": "Secure & Protected Transactions",
+        "aiConsultant": "AI-Powered Consultant",
+        "wideCatalog": "Comprehensive Product Catalog",
+        "personalProfile": "Personalized User Profile",
+        "orderTracking": "Real-Time Order Tracking",
+        "earlyAccess": "Early Access to Exclusive Offers",
+        "factoryPrices": "Direct Factory Pricing Access",
+        "comprehensiveAnalytics": "Advanced Sales & Performance Analytics",
+        "quickSales": "Accelerated Sales Growth",
         "registrationFailed": "Registration failed"
     },
     "Profile": {
@@ -455,5 +473,108 @@
         "submitting": "Submitting...",
         "saving": "Saving...",
         "saveChanges": "Save changes"
+    },
+    "Help": {
+        "title": "Help Center & Support",
+        "subtitle": "Comprehensive guide to shopping, secure payments, and logistics at Birga Quramiz.",
+        "tabs": {
+            "payment": "Payments",
+            "delivery": "Shipping & Logistics",
+            "guarantee": "Trust & Guarantee",
+            "returns": "Return Policy",
+            "credit": "Installment Plans",
+            "faq": "FAQ",
+            "about": "About the Platform"
+        },
+        "payment": {
+            "title": "Secure Payment Options",
+            "description": "We provide established payment gateways to ensure your transactions are protected and seamless.",
+            "onlineTitle": "Digital Payments",
+            "onlineDescription": "Securely process your order using UzCard, Humo, or international payment systems.",
+            "deliveryTitle": "Payment on Arrival",
+            "deliveryDescription": "Flexible payment via cash or terminal directly to the courier upon inspection."
+        },
+        "delivery": {
+            "title": "Logistics & Fulfillment",
+            "description": "Professional delivery network covering Tashkent and all regions of Uzbekistan.",
+            "tashkentTitle": "Capital Delivery",
+            "tashkentDescription": "Express fulfillment within 24 hours for all orders within Tashkent city.",
+            "regionsTitle": "National Shipping",
+            "regionsDescription": "Secure transport for heavy construction materials to any province within 48-72 hours.",
+            "pickupTitle": "Warehouse Pickup",
+            "pickupDescription": "Convenient self-collection from our verified partner distribution centers."
+        },
+        "guarantee": {
+            "title": "Consumer Protection",
+            "description": "Our platform ensures every transaction meets the highest quality standards.",
+            "verifiedTitle": "Certified Vendors",
+            "verifiedDescription": "A rigorous onboarding process ensures only legitimate manufacturers and distributors are present.",
+            "qualityTitle": "Pre-shipment Inspection",
+            "qualityDescription": "Multi-stage quality control ensures your materials arrive exactly as specified."
+        },
+        "returns": {
+            "title": "Returns & Refunds",
+            "description": "Transparent return policy providing peace of mind for every purchase.",
+            "conditionsTitle": "Eligibility",
+            "conditionsDescription": "Standard 14-day return window for unused items in original commercial packaging.",
+            "processTitle": "Return Procedure",
+            "processDescription": "Initiate your request via the dashboard or contact our dedicated support specialists."
+        },
+        "credit": {
+            "title": "Financial Solutions",
+            "description": "Optimize your construction budget with flexible financing and installment options.",
+            "installmentTitle": "Monthly Installments",
+            "installmentDescription": "0% interest financing for up to 6 months through our integrated banking partners.",
+            "scoringTitle": "Fast Scoring",
+            "scoringDescription": "Get approved for credit limit within 15 minutes directly on our site."
+        },
+        "faq": {
+            "title": "Frequently Asked Questions",
+            "description": "Quick answers to common questions about our platform.",
+            "q1": "How do I become a seller?",
+            "a1": "Click on 'Become a seller' in the footer and fill out the registration form.",
+            "q2": "Are prices final?",
+            "a2": "Yes, we work directly with factories to ensure transparent and final pricing.",
+            "q3": "Do you offer technical support?",
+            "a3": "Yes, our AI Consultant and human support team are available 24/7."
+        }
+    },
+    "About": {
+        "hero": {
+            "title": "Birga Quramiz: Better Together",
+            "subtitle": "The first comprehensive construction marketplace in Uzbekistan, connecting verified sellers with customers through a professional ecosystem.",
+            "badge": "About Our Platform"
+        },
+        "who": {
+            "title": "Who We Are",
+            "p1": "Birga Quramiz is more than just a marketplace. We are a dedicated platform designed to solve the complexities of construction sourcing and logistics.",
+            "p2": "Founded on the principles of transparency and efficiency, we bring together factories, distributors, and individual builders into a single, cohesive workflow."
+        },
+        "features": {
+            "mission": "Our Mission",
+            "missionDesc": "To modernize the construction industry in Uzbekistan by providing a transparent, efficient, and reliable marketplace for everyone.",
+            "everyone": "For Everyone",
+            "everyoneDesc": "Whether you are a professional builder, a factory supplier, or a homeowner, Birga Quramiz provides the tools you need.",
+            "quality": "Verified Quality",
+            "qualityDesc": "Every seller and product on our platform undergoes a strict moderation process to ensure top-tier standards.",
+            "speed": "Speed & Efficiency",
+            "speedDesc": "Fast delivery, instant communication with sellers, and an AI-powered consultant to speed up your workflow."
+        },
+        "values": {
+            "title": "Our Values",
+            "subtitle": "The core principles that drive everything we do at Birga Quramiz.",
+            "transparency": "Transparency",
+            "transparencyDesc": "Real-time stock, factory prices, and verified reviews for every purchase.",
+            "excellence": "Excellence",
+            "excellenceDesc": "Only the highest quality materials and professional services for your projects.",
+            "community": "Community",
+            "communityDesc": "Building strong, lasting relationships between suppliers and customers."
+        },
+        "cta": {
+            "title": "Ready to start building?",
+            "subtitle": "Join thousands of builders and homeowners already using Birga Quramiz.",
+            "browse": "Browse Catalog",
+            "becomeSeller": "Become a Seller"
+        }
     }
 }

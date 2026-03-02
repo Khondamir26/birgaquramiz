@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Phone, MapPin, ExternalLink } from "lucide-react";
+import { Mail, Phone, MapPin, ExternalLink, Linkedin, Instagram, Twitter, Facebook } from "lucide-react";
 
 export default function Footer() {
   const t = useTranslations("Footer");
@@ -29,55 +29,41 @@ export default function Footer() {
               className="h-12 w-auto brightness-0 invert"
             />
           </Link>
-          <p className="text-[14px] leading-relaxed text-white/70">
+          <p className="text-[14px] leading-relaxed text-white/70 mb-8">
             {t("description")}
           </p>
-          <div className="mt-8 flex gap-3">
+
+          {/* Social Icons Row */}
+          <div className="flex items-center gap-6">
             <a
-              href="tel:+998900000000"
-              className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 hover:bg-white hover:text-[#1B4D91] hover:scale-105 active:scale-95 transition-all"
+              href="#"
+              aria-label={t("linkedin")}
+              className="text-white/40 hover:text-white transition-colors"
             >
-              <Phone className="size-[18px]" />
-            </a>
-            <a
-              href="mailto:info@birgaquramiz.uz"
-              className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 hover:bg-white hover:text-[#1B4D91] hover:scale-105 active:scale-95 transition-all"
-            >
-              <Mail className="size-[18px]" />
+              <Linkedin className="size-5" />
             </a>
             <a
               href="#"
-              className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 hover:bg-white hover:text-[#1B4D91] hover:scale-105 active:scale-95 transition-all"
+              aria-label={t("instagram")}
+              className="text-white/40 hover:text-white transition-colors"
             >
-              <MapPin className="size-[18px]" />
+              <Instagram className="size-5" />
+            </a>
+            <a
+              href="#"
+              aria-label={t("twitter")}
+              className="text-white/40 hover:text-white transition-colors"
+            >
+              <Twitter className="size-5" />
+            </a>
+            <a
+              href="#"
+              aria-label={t("facebook")}
+              className="text-white/40 hover:text-white transition-colors"
+            >
+              <Facebook className="size-5" />
             </a>
           </div>
-        </div>
-
-        {/* Marketplace links */}
-        <div>
-          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/50 mb-6">
-            {t("marketplace")}
-          </p>
-          <ul className="space-y-4">
-            {[
-              { href: "/catalog", label: t("catalogLink") },
-              { href: "/builders", label: t("buildersLink") },
-              { href: "/equipment", label: t("equipmentLink") },
-              { href: "/ai-chat", label: t("aiChatLink") },
-            ].map(({ href, label }) => (
-              <li key={href}>
-                <Link
-                  prefetch={false}
-                  href={href}
-                  className="text-[14px] font-medium text-white/75 hover:text-white transition-colors flex items-center gap-2 group"
-                >
-                  <span className="w-0 h-px bg-white transition-all group-hover:w-3" />
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* Business links */}
@@ -87,9 +73,8 @@ export default function Footer() {
           </p>
           <ul className="space-y-4">
             {[
-              { href: "/become-seller", label: t("becomeSellerLink") },
-              { href: "/seller/dashboard", label: t("sellerPanelLink") },
-              { href: "/admin", label: t("adminLink") },
+              { href: "/seller-register", label: t("becomeSellerLink") },
+              { href: "/about", label: t("about") },
             ].map(({ href, label }) => (
               <li key={href}>
                 <Link
@@ -105,45 +90,60 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Support */}
+        {/* Support links */}
         <div>
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/50 mb-6">
             {t("support")}
           </p>
           <ul className="space-y-4">
-            <li>
-              <a
-                href="tel:+998900000000"
-                className="flex items-center gap-3 text-[14px] font-medium text-white/75 hover:text-white transition-colors p-3 rounded-2xl bg-white/5 hover:bg-white/10"
-              >
-                <div className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white shrink-0">
-                  <Phone className="size-4" />
-                </div>
-                +998 90 000 00 00
-              </a>
-            </li>
-            <li>
-              <a
-                href="mailto:info@birgaquramiz.uz"
-                className="flex items-center gap-3 text-[14px] font-medium text-white/75 hover:text-white transition-colors p-3 rounded-2xl bg-white/5 hover:bg-white/10"
-              >
-                <div className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white shrink-0">
-                  <Mail className="size-4" />
-                </div>
-                info@birgaquramiz.uz
-              </a>
-            </li>
-            <li>
-              <Link
-                prefetch={false}
-                href="/faq"
-                className="flex items-center gap-3 text-[14px] font-medium text-white/75 hover:text-white transition-colors ml-1 mt-2 group"
-              >
-                <ExternalLink className="size-4 shrink-0 text-white/30 group-hover:text-white" />
-                {t("faqLink")}
-              </Link>
-            </li>
+            {[
+              { href: "/help", label: t("payment") },
+              { href: "/help/delivery", label: t("delivery") },
+              { href: "/help/gauranties", label: t("guarantee") },
+              { href: "/help/return", label: t("returns") },
+              { href: "/help/credit", label: t("credit") },
+              { href: "/help/faq", label: t("faqLink") },
+            ].map(({ href, label }) => (
+              <li key={href}>
+                <Link
+                  prefetch={false}
+                  href={href}
+                  className="text-[14px] font-medium text-white/75 hover:text-white transition-colors flex items-center gap-2 group"
+                >
+                  <span className="w-0 h-px bg-white transition-all group-hover:w-3" />
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
+        </div>
+
+        {/* Contacts column */}
+        <div>
+          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/50 mb-6">
+            {t("contacts")}
+          </p>
+          <div className="space-y-3">
+            <a
+              href="tel:+998900000000"
+              className="flex items-center gap-4 rounded-3xl bg-white/5 p-3 pr-6 hover:bg-white/10 transition-all group border border-white/5"
+            >
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 group-hover:bg-[#1B4D91] group-hover:text-white transition-all shadow-sm">
+                <Phone className="size-[18px]" />
+              </div>
+              <span className="text-[14px] font-bold tracking-tight text-white/90">+998 90 000 00 00</span>
+            </a>
+
+            <a
+              href="mailto:info@birgaquramiz.uz"
+              className="flex items-center gap-4 rounded-3xl bg-white/5 p-3 pr-6 hover:bg-white/10 transition-all group border border-white/5"
+            >
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 group-hover:bg-[#1B4D91] group-hover:text-white transition-all shadow-sm">
+                <Mail className="size-[18px]" />
+              </div>
+              <span className="text-[14px] font-bold tracking-tight text-white/90">info@birgaquramiz.uz</span>
+            </a>
+          </div>
         </div>
       </div>
 
