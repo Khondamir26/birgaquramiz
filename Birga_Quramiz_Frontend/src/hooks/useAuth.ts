@@ -2,30 +2,36 @@
 
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { getProfile } from '@/lib/api/auth'
+import { restoreSession } from '@/lib/api/auth'
+
+let authInitPromise: Promise<void> | null = null
+
+function initializeAuth() {
+  if (authInitPromise) return authInitPromise
+
+  authInitPromise = (async () => {
+    const { setUser, setInitialized } = useAuthStore.getState()
+
+    try {
+      const user = await restoreSession()
+      setUser(user)
+    } finally {
+      setInitialized(true)
+      authInitPromise = null
+    }
+  })()
+
+  return authInitPromise
+}
 
 export function useAuth() {
-  const {
-    user,
-    token,
-    isAuthenticated,
-    isInitialized,
-    setUser,
-    logout,
-    initFromStorage,
-  } = useAuthStore()
+  const { user, isAuthenticated, isInitialized } = useAuthStore()
 
   useEffect(() => {
-    initFromStorage()
-  }, [initFromStorage])
+    if (isInitialized) return
 
-  useEffect(() => {
-    if (isInitialized && token && !user) {
-      getProfile()
-        .then(setUser)
-        .catch(() => logout())
-    }
-  }, [isInitialized, token, user, setUser, logout])
+    void initializeAuth()
+  }, [isInitialized])
 
-  return { user, token, isAuthenticated, isInitialized }
+  return { user, isAuthenticated, isInitialized }
 }

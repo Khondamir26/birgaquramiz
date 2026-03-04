@@ -2,8 +2,7 @@ node_modules
 dist
 test
 .git
-.env
-.env.example
+.env*
 *.log
 uploads
 coverage

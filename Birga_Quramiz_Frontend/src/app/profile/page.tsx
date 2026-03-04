@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/authStore";
+import { logout as apiLogout } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCartStore } from "@/store/cartStore";
@@ -14,19 +16,28 @@ import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth();
+  const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
   const t = useTranslations("Profile");
   const cartCount = useCartStore((s) => s.items.length);
   const { items: favItems } = useFavorites();
 
-  // ── Quick stats (authenticated only) ──
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // ignore logout errors, clear client state anyway
+    }
+    logout();
+    router.push("/");
+  };
+
   const quickStats = isAuthenticated ? [
     { label: t("myOrders") || "Заказы", icon: Package, href: "/orders", color: "#1B4D91", count: null },
     { label: t("favoritesLink") || "Избранное", icon: Heart, href: "/favorites", color: "#E31E24", count: favItems.length || null },
     { label: t("cart") || "Корзина", icon: ShoppingCart, href: "/cart", color: "#1B4D91", count: cartCount || null },
   ] : [];
 
-  // ── General settings menu ──
   const menuItems = [
     {
       label: t("login") || "Войти в кабинет",
@@ -89,8 +100,6 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-40 md:pb-12">
       <div className="mx-auto w-full md:max-w-7xl">
         <div className="mx-auto flex flex-col gap-0 max-w-md md:max-w-none pb-0 md:px-6 md:pt-6">
-
-          {/* ── Desktop heading ── */}
           <div className="hidden md:flex items-center gap-3 mb-8">
             <h1 className="text-2xl font-black text-[#1B4D91]">{t("title")}</h1>
             {isAuthenticated && user && (
@@ -100,13 +109,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* ── Two-column desktop layout ── */}
           <div className="md:grid md:grid-cols-[300px,1fr] md:gap-6 md:items-start">
-
-            {/* ════ LEFT COLUMN ════ */}
             <div className="bg-white px-5 pt-8 pb-6 md:rounded-3xl md:shadow-sm md:sticky md:top-24">
-
-              {/* ── Avatar + name ── */}
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <div className="flex size-[64px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1B4D91]/20 to-[#1B4D91]/5 border border-[#1B4D91]/10">
@@ -151,7 +155,6 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* ── Quick stats row (auth) ── */}
               {isAuthenticated && (
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   {quickStats.map((stat) => {
@@ -179,7 +182,6 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* ── Desktop edit profile hint ── */}
               {isAuthenticated && (
                 <button className="hidden md:flex mt-4 w-full items-center gap-2 rounded-2xl border border-[#1B4D91]/15 bg-[#f4f6fa] px-4 py-3 text-[12px] font-semibold text-[#1B4D91] hover:bg-[#1B4D91]/5 transition-colors">
                   <Settings className="size-4" />
@@ -187,11 +189,9 @@ export default function ProfilePage() {
                 </button>
               )}
 
-
-              {/* ── Desktop logout ── */}
               {isAuthenticated && (
                 <button
-                  onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+                  onClick={handleLogout}
                   className="hidden md:flex mt-4 w-full items-center justify-center gap-2.5 h-11 rounded-2xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] hover:bg-[#E31E24]/10 transition-colors"
                 >
                   <LogOut className="size-4" />
@@ -200,15 +200,11 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* ════ RIGHT COLUMN: Menu ════ */}
             <div className="px-4 mt-5 space-y-4 md:px-0 md:mt-0">
-
-              {/* General settings label */}
               <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                 {t("generalSettings") || "Общие настройки"}
               </p>
 
-              {/* Menu list */}
               <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white divide-y divide-[#f4f6fa]">
                 {menuItems.filter((i) => i.show).map((item, idx) => {
                   const Icon = item.icon;
@@ -238,7 +234,6 @@ export default function ProfilePage() {
                 })}
               </div>
 
-              {/* Seller panel */}
               {user?.role === "SELLER" && (
                 <>
                   <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -262,7 +257,6 @@ export default function ProfilePage() {
                 </>
               )}
 
-              {/* ── Mobile: Language switcher ── */}
               <div className="md:hidden rounded-3xl border border-slate-100 bg-white overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-[15px]">
                   <div className="flex items-center gap-4">
@@ -277,10 +271,9 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Mobile logout */}
               {isAuthenticated && (
                 <button
-                  onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+                  onClick={handleLogout}
                   className="md:hidden flex w-full items-center justify-center gap-2.5 h-14 rounded-2xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] active:bg-[#E31E24]/10 transition-colors"
                 >
                   <LogOut className="size-4" />

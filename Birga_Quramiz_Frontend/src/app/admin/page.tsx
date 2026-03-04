@@ -90,11 +90,12 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* ── Quick actions ── */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               { label: t("actionProducts") || "Products", sub: t("actionProductsSub") || "Moderation", icon: Package, href: "/admin/products", accent: "#1B4D91" },
               { label: t("actionUsers") || "Users", sub: t("actionUsersSub") || "Control", icon: Users, href: "/admin/users", accent: "#10b981" },
               { label: t("actionOrders") || "Orders", sub: t("actionOrdersSub") || "Oversight", icon: ClipboardList, href: "/admin/orders", accent: "#f59e0b" },
+              { label: t("actionDeletionRequests") || "Deletion Requests", sub: t("actionDeletionRequestsSub") || "Review", icon: Shield, href: "/admin/deletion-requests", accent: "#E31E24" },
             ].map((action) => {
               const Icon = action.icon;
               return (

@@ -1,4 +1,4 @@
-    'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -17,7 +17,8 @@ export function SellerSignupForm({
 }: React.ComponentProps<'div'>) {
     const router = useRouter()
     const t = useTranslations('Auth')
-    const setAuth = useAuthStore((s) => s.setAuth)
+    const setUser = useAuthStore((s) => s.setUser)
+    const setInitialized = useAuthStore((s) => s.setInitialized)
 
     const [name, setName] = useState('')
     const [phone, setPhone] = useState('')
@@ -32,19 +33,18 @@ export function SellerSignupForm({
         setLoading(true)
 
         try {
-            const resp = await registerSeller({ name, phone, password, company })
+            await registerSeller({ name, phone, password, company })
 
-            // Auto-login after successful registration
             try {
-                const { token } = await apiLogin({ phone, password })
-                setAuth(token, resp.user)
+                const { user } = await apiLogin({ phone, password })
+                setUser(user)
+                setInitialized(true)
                 router.push('/seller/dashboard')
-            } catch (loginErr) {
-                // If auto-login fails, redirect to login page anyway
+            } catch {
                 router.push('/login')
             }
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : t('errors.registerFailed'))
+            setError(err instanceof Error ? err.message : t('registrationFailed'))
         } finally {
             setLoading(false)
         }

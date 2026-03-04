@@ -8,6 +8,7 @@ RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL
@@ -18,6 +19,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

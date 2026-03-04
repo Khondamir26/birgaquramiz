@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { getAdminUsers } from "@/lib/api/admin";
+import { getAdminUsers, updateAdminUserRole } from "@/lib/api/admin";
 import type { PaginatedResponse, Role, User } from "@/types";
 import { useTranslations } from "next-intl";
 import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store } from "lucide-react";
@@ -15,6 +15,9 @@ export default function AdminUsersPage() {
   const [meta, setMeta] = useState<PaginatedResponse<User>["meta"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [roleError, setRoleError] = useState("");
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const [page, setPage] = useState(1);
   const [role, setRole] = useState<"ALL" | Role>("ALL");
@@ -52,7 +55,33 @@ export default function AdminUsersPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, role, query, t]);
+  }, [page, role, query, t, reloadTick]);
+
+  const handleRoleChange = async (user: User, nextRole: Role) => {
+    if (user.role === nextRole || updatingUserId) return;
+
+    const ok = window.confirm(`Change role for ${user.name} to ${nextRole}?`);
+    if (!ok) return;
+    let company: string | undefined;
+
+    if (nextRole === "SELLER" && user.role !== "SELLER") {
+      const input = window.prompt("Seller company name (optional):", `${user.name} Store`);
+      if (input === null) return;
+      company = input.trim() || undefined;
+    }
+
+    setUpdatingUserId(user.id);
+    setRoleError("");
+
+    try {
+      await updateAdminUserRole(user.id, { role: nextRole, company });
+      setReloadTick((value) => value + 1);
+    } catch (err: unknown) {
+      setRoleError(err instanceof Error ? err.message : "Failed to update role");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
 
   const getRoleBadge = (r: Role) => {
     switch (r) {
@@ -107,6 +136,12 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
+          {roleError && (
+            <div className="rounded-2xl border border-[#E31E24]/20 bg-[#E31E24]/5 px-4 py-3 text-[12px] font-semibold text-[#E31E24]">
+              {roleError}
+            </div>
+          )}
+
           {/* ── Content ── */}
           {loading ? (
             <div className="space-y-4">
@@ -148,6 +183,20 @@ export default function AdminUsersPage() {
                       <p className="text-[11px] font-bold text-slate-500">
                         {t("colCreated")}: {new Date(u.createdAt).toLocaleDateString()}
                       </p>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">{t("colRole")}</p>
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u, e.target.value as Role)}
+                        disabled={updatingUserId === u.id}
+                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-[#1B4D91] outline-none transition-all focus:border-[#1B4D91]/40 focus:ring-2 focus:ring-[#1B4D91]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <option value="USER">{t("roleUser")}</option>
+                        <option value="SELLER">{t("roleSeller")}</option>
+                        <option value="ADMIN">{t("roleAdmin")}</option>
+                      </select>
                     </div>
                   </article>
                 )

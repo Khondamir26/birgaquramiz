@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuthStore } from "@/store/authStore";
+import { logout as apiLogout } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -62,7 +63,15 @@ export default function Navbar() {
   const tNav = useTranslations("Navbar");
 
   const canAccessCart = !isAuthenticated || user?.role === "USER";
-  const handleLogout = () => { logout(); router.push("/"); };
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // ignore
+    }
+    logout();
+    router.push("/");
+  };
   const roleMenuItems = user ? getRoleMenuItems(user.role, tCommon) : [];
 
   const isSeller = user?.role === "SELLER";
@@ -71,7 +80,7 @@ export default function Navbar() {
   const logoSrc = isSeller || isAdmin ? "/sellers-panel-logo.png" : "/logo.png"; // We can reuse the seller logo for admins or keep the main one
 
   // Dynamic nav links — swap Home for Seller Dashboard or Admin Dashboard
-  let navLinks: Array<{ href: string, key: any, icon: React.ElementType }> = [];
+  let navLinks: Array<{ href: string; key: string; icon: React.ElementType }> = [];
 
   if (isAdmin) {
     navLinks = [

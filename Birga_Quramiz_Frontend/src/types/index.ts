@@ -19,9 +19,19 @@ export type Seller = {
   verified: boolean
 }
 
+export type Category = {
+  id: string
+  name: string
+  code: string
+  parentId?: string | null
+  parent?: { id: string; name: string } | null
+}
+
 export type Product = {
   id: string
+  sku?: string | null
   sellerId: string
+  categoryId?: string | null
   name: string
   description: string
   imageUrl: string
@@ -30,6 +40,7 @@ export type Product = {
   status: ProductStatus
   createdAt: string
   seller?: Seller & { user?: User }
+  category?: Category | null
 }
 
 export type OrderItem = {
@@ -76,5 +87,39 @@ export type SellerAnalytics = {
     SHIPPED: number
     DELIVERED: number
     CANCELLED: number
+  }
+}
+
+export type ModerationLogEntry = {
+  id: string
+  adminId: string
+  productId: string
+  action: string
+  reason?: string | null
+  createdAt: string
+}
+
+export type AdminProductDetail = {
+  product: {
+    id: string
+    sku?: string | null
+    title: string
+    description: string
+    price: number
+    images: string[]
+    stock: number
+    createdAt: string
+    status: ProductStatus
+    rejectionReason?: string | null
+    moderationLogs: ModerationLogEntry[]
+    category?: Category | null
+  }
+  seller: {
+    id: string
+    name: string
+    companyName?: string
+    phone: string
+    createdAt: string
+    productsCount: number
   }
 }

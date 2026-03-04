@@ -17,6 +17,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+type Translator = ReturnType<typeof useTranslations>
+
 export default function HelpPage() {
     const t = useTranslations('Help')
     const params = useParams()
@@ -203,7 +205,7 @@ export default function HelpPage() {
     )
 }
 
-function renderContent(id: string, t: any, isMobile: boolean) {
+function renderContent(id: string, t: Translator, isMobile: boolean) {
     if (id === 'faq') {
         return (
             <div className="space-y-4">

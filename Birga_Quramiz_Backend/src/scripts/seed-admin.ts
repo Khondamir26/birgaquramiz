@@ -29,12 +29,12 @@ async function main() {
     },
   })
 
-  console.log(`Admin ready: ${admin.phone} (${admin.id})`)
+  process.stdout.write(`Admin ready: ${admin.phone} (${admin.id})\n`)
 }
 
 main()
   .catch((error) => {
-    console.error(error)
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
     process.exitCode = 1
   })
   .finally(async () => {

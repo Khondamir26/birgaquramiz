@@ -1,4 +1,5 @@
-﻿import { IsString, IsNotEmpty, IsNumber, Min, MaxLength, IsOptional } from 'class-validator'
+import { IsString, IsNotEmpty, IsNumber, Min, MaxLength, IsOptional, IsInt } from 'class-validator'
+import { Type } from 'class-transformer'
 
 export class CreateProductDto {
   @IsString()
@@ -18,9 +19,15 @@ export class CreateProductDto {
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
+  @Type(() => Number)
   readonly price: number
 
-  @IsNumber()
+  @IsInt()
   @Min(0)
+  @Type(() => Number)
   readonly stock: number
+
+  @IsString()
+  @IsNotEmpty()
+  readonly categoryId: string
 }

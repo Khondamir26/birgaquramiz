@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
@@ -7,9 +7,9 @@ import { resolveImageUrl } from "@/lib/image";
 import { ShoppingBag, Trash2, Minus, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-// ── Brand colours ─────────────────────────────────────────────────────────────
+// -- Brand colours -------------------------------------------------------------
 // Primary Blue #1B4D91 | Accent Red #E31E24
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 export default function CartPage() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function CartPage() {
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  /* ── Empty State ── */
+  /* -- Empty State -- */
   if (items.length === 0) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-8 text-center pt-12 md:pt-0">
@@ -43,20 +43,20 @@ export default function CartPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-48 md:pb-16 md:page-shell w-full relative">
 
-      {/* ── Top Header ── */}
+      {/* -- Top Header -- */}
       <div className="sticky top-0 z-30 bg-white md:bg-transparent px-5 pt-6 pb-4 shadow-sm md:static md:shadow-none md:px-0 md:pt-10 w-full max-w-4xl mx-auto md:flex md:items-center md:justify-between">
         <div className="flex md:flex-col items-end md:items-start justify-between md:justify-start w-full md:w-auto">
           <div>
             <h1 className="text-xl md:text-3xl font-black text-[#1B4D91]">{t("title")}</h1>
             <p className="text-[12px] md:text-[14px] font-medium text-slate-400 mt-0.5 md:mt-1">
-              {itemCount} {itemCount === 1 ? "товар" : itemCount < 5 ? "товара" : "товаров"}
+              {itemCount} {itemCount === 1 ? "�����" : itemCount < 5 ? "������" : "�������"}
             </p>
           </div>
           <button
             onClick={() => useCartStore.getState().clearCart()}
             className="md:hidden rounded-xl border border-[#E31E24]/20 px-4 py-2 text-[11px] font-black uppercase tracking-wide text-[#E31E24] active:bg-[#E31E24]/5 transition-colors"
           >
-            Очистить
+            ��������
           </button>
         </div>
 
@@ -65,11 +65,11 @@ export default function CartPage() {
           onClick={() => useCartStore.getState().clearCart()}
           className="hidden md:flex rounded-full border border-[#E31E24]/30 px-6 py-2.5 text-[12px] font-black uppercase tracking-wider text-[#E31E24] hover:bg-[#E31E24]/5 transition-colors"
         >
-          ОЧИСТИТЬ
+          ��������
         </button>
       </div>
 
-      {/* ── Layout ── */}
+      {/* -- Layout -- */}
       <div className="px-4 pt-4 md:px-0 md:w-full md:max-w-4xl md:mx-auto flex flex-col gap-6 md:mt-4">
 
         {/* Items list */}
@@ -80,7 +80,7 @@ export default function CartPage() {
               className="flex items-start md:items-center gap-4 md:gap-8 rounded-3xl md:rounded-[32px] bg-white p-4 md:p-6 md:pl-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-100 transition-all hover:bg-slate-50/50"
             >
               {/* Image */}
-              <Link href={`/catalog/${item.id}`} className="shrink-0">
+              <Link href={`/catalog/product/${item.id}`} className="shrink-0">
                 <div className="size-24 md:size-[140px] overflow-hidden rounded-2xl md:rounded-[24px] bg-slate-50 border border-slate-100/60 flex items-center justify-center p-2">
                   {item.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -97,7 +97,7 @@ export default function CartPage() {
                   <p className="line-clamp-2 text-[14px] md:text-[18px] font-bold leading-snug text-[#1B4D91] hover:underline md:mb-1">{item.name}</p>
                   <p className="text-[15px] md:text-[22px] font-black text-[#1B4D91]">
                     {(item.price * item.quantity).toLocaleString("ru-RU")}{" "}
-                    <span className="text-[12px] md:text-[14px] font-semibold text-slate-400">сум</span>
+                    <span className="text-[12px] md:text-[14px] font-semibold text-slate-400">���</span>
                   </p>
                 </div>
 
@@ -131,7 +131,7 @@ export default function CartPage() {
           ))}
         </section>
 
-        {/* ── Desktop order summary ── */}
+        {/* -- Desktop order summary -- */}
         <aside className="hidden md:flex flex-col rounded-[32px] bg-white border border-slate-100 shadow-[0_4px_30px_rgb(0,0,0,0.03)] p-8 md:p-10 space-y-6 w-full">
           <h2 className="text-[22px] font-black text-[#1B4D91]">{t("summary")}</h2>
 
@@ -147,7 +147,7 @@ export default function CartPage() {
           </div>
 
           <div className="w-full">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Итоговая сумма</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">�������� �����</p>
             <p className="text-[36px] font-black text-[#E31E24] leading-none mb-6">
               {total.toLocaleString("ru-RU")} <span className="text-[18px] text-[#1B4D91] ml-2">UZS</span>
             </p>
@@ -168,7 +168,7 @@ export default function CartPage() {
         </aside>
       </div>
 
-      {/* ── Mobile sticky checkout bar ── */}
+      {/* -- Mobile sticky checkout bar -- */}
       <div className="fixed bottom-[72px] left-0 right-0 z-40 border-t border-slate-100 bg-white/96 backdrop-blur-md px-5 py-4 md:hidden shadow-[0_-4px_20px_rgba(27,77,145,0.06)]">
         <div className="flex items-center gap-4">
           <div className="flex-1 min-w-0">
@@ -186,3 +186,4 @@ export default function CartPage() {
     </div>
   );
 }
+

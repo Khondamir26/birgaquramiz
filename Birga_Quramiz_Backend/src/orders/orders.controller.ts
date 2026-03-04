@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Post,
   Body,
@@ -8,11 +8,15 @@
   Param,
   Query,
 } from '@nestjs/common'
+import type { Request } from 'express'
 import { OrdersService } from './orders.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
 import { CreateOrderDto } from './dto/create-order.dto'
+import type { AuthUser } from '../auth/auth.types'
+
+type AuthedRequest = Request & { user: AuthUser }
 
 @Controller('orders')
 export class OrdersController {
@@ -21,7 +25,7 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('USER')
   @Post()
-  create(@Req() req: any, @Body() body: CreateOrderDto) {
+  create(@Req() req: AuthedRequest, @Body() body: CreateOrderDto) {
     return this.ordersService.create(req.user, body)
   }
 
@@ -33,14 +37,14 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('USER')
   @Post(':id/pay')
-  pay(@Param('id') id: string, @Req() req: any) {
+  pay(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.ordersService.payOrder(id, req.user)
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('my')
   myOrders(
-    @Req() req: any,
+    @Req() req: AuthedRequest,
     @Query('status') status?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
@@ -51,7 +55,7 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('USER')
   @Post(':id/deliver')
-  deliver(@Param('id') id: string, @Req() req: any) {
+  deliver(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.ordersService.updateStatus(id, 'DELIVERED', req.user)
   }
 
@@ -59,7 +63,7 @@ export class OrdersController {
   @Roles('SELLER')
   @Get('seller')
   sellerOrders(
-    @Req() req: any,
+    @Req() req: AuthedRequest,
     @Query('status') status?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
@@ -70,20 +74,20 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @Post(':id/confirm')
-  confirm(@Param('id') id: string, @Req() req: any) {
+  confirm(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.ordersService.updateStatus(id, 'CONFIRMED', req.user)
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @Post(':id/ship')
-  ship(@Param('id') id: string, @Req() req: any) {
+  ship(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.ordersService.updateStatus(id, 'SHIPPED', req.user)
   }
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/cancel')
-  cancel(@Param('id') id: string, @Req() req: any) {
+  cancel(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.ordersService.cancelOrder(id, req.user)
   }
 }

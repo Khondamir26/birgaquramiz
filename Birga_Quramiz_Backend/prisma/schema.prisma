@@ -39,67 +39,137 @@ enum PaymentMethod {
   TRANSFER
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
+enum DeletionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
-  seller    Seller?
-  orders    Order[]
+model User {
+  id               String   @id @default(uuid())
+  name             String
+  phone            String   @unique
+  password         String
+  role             Role     @default(USER)
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+
+  authSessions AuthSession[]
+  orders       Order[]
+  seller       Seller?
+}
+
+model AuthSession {
+  id               String   @id @default(uuid())
+  userId           String
+  tokenId          String   @unique
+  refreshTokenHash String
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model Seller {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  company   String
-  verified  Boolean  @default(false)
+  id       String  @id @default(uuid())
+  userId   String  @unique
+  company  String
+  verified Boolean @default(false)
 
-  user      User     @relation(fields: [userId], references: [id])
-  products  Product[]
+  deletionRequests DeletionRequest[]
+  products         Product[]
+  user             User              @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  code          String   @unique
+  lastSkuNumber Int      @default(0)
+  parentId      String?
+
+  parent   Category?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryParent")
+  products Product[]
 }
 
 model Product {
-  id          String        @id @default(uuid())
-  sellerId    String
-  name        String
-  description String
-  imageUrl    String        @default("")
-  price       Float
-  stock       Int
-  status      ProductStatus @default(PENDING)
-  createdAt   DateTime      @default(now())
+  id              String        @id @default(uuid())
+  sellerId        String
+  name            String
+  description     String
+  price           Float
+  stock           Int
+  status          ProductStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  imageUrl        String        @default("")
+  rejectionReason String?
+  categoryId      String?
+  sku             String?       @unique
+  articleNumber   Int           @unique @default(autoincrement())
 
-  seller      Seller      @relation(fields: [sellerId], references: [id])
-  orderItems  OrderItem[]
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  deletionRequests DeletionRequest[]
+  moderationLogs   ModerationLog[]
+  orderItems       OrderItem[]
+  seller           Seller            @relation(fields: [sellerId], references: [id])
+}
+
+model ModerationLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  productId String
+  action    String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model DeletionRequest {
+  id        String                @id @default(uuid())
+  productId String
+  sellerId  String
+  reason    String
+  status    DeletionRequestStatus @default(PENDING)
+  createdAt DateTime              @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  seller  Seller  @relation(fields: [sellerId], references: [id])
 }
 
 model Order {
-  id              String       @id @default(uuid())
+  id              String        @id @default(uuid())
   userId          String?
+  total           Float
+  status          OrderStatus   @default(NEW)
+  createdAt       DateTime      @default(now())
+  comment         String?
   customerName    String
   customerPhone   String
-  deliveryType    DeliveryType @default(DELIVERY)
   deliveryAddress String?
+  deliveryType    DeliveryType  @default(DELIVERY)
   paymentMethod   PaymentMethod @default(CASH)
-  comment         String?
-  total           Float
-  status          OrderStatus  @default(NEW)
-  createdAt       DateTime     @default(now())
 
-  user            User?        @relation(fields: [userId], references: [id])
-  items           OrderItem[]
+  items OrderItem[]
+  user  User?       @relation(fields: [userId], references: [id])
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
+  id        String @id @default(uuid())
   orderId   String
-  productId String
   quantity  Int
   price     Float
+  productId String
 
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }

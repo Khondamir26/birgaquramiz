@@ -6,28 +6,29 @@ import {
   Req,
   Get,
 } from '@nestjs/common'
+import type { Request } from 'express'
 import { SellerService } from './seller.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import type { Request } from 'express'
+import type { AuthUser } from '../auth/auth.types'
+
+type AuthedRequest = Request & { user: AuthUser }
 
 @Controller('seller')
 export class SellerController {
   constructor(private sellerService: SellerService) {}
 
-  // 🟢 USER → становится SELLER
   @Post('register')
   @UseGuards(JwtAuthGuard)
   becomeSeller(
     @Body('company') company: string,
-    @Req() req: Request,
+    @Req() req: AuthedRequest,
   ) {
-    return this.sellerService.becomeSeller(company, req['user'])
+    return this.sellerService.becomeSeller(company, req.user)
   }
 
-  // 🔵 SELLER — Analytics
   @UseGuards(JwtAuthGuard)
   @Get('analytics')
-  analytics(@Req() req: any) {
+  analytics(@Req() req: AuthedRequest) {
     return this.sellerService.getAnalytics(req.user)
   }
 }

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,8 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const router = useRouter()
-  const setAuth = useAuthStore((s) => s.setAuth)
+  const setUser = useAuthStore((s) => s.setUser)
+  const setInitialized = useAuthStore((s) => s.setInitialized)
   const t = useTranslations('Auth')
 
   const [phone, setPhone] = useState('')
@@ -30,11 +31,9 @@ export function LoginForm({
     setLoading(true)
 
     try {
-      const { token } = await login({ phone, password })
-      localStorage.setItem('token', token)
-      const { getProfile } = await import('@/lib/api/auth')
-      const user = await getProfile()
-      setAuth(token, user)
+      const { user } = await login({ phone, password })
+      setUser(user)
+      setInitialized(true)
 
       if (user.role === 'ADMIN') {
         router.push('/admin')
@@ -48,7 +47,7 @@ export function LoginForm({
 
       router.push('/catalog')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('errors.loginFailed'))
+      setError(err instanceof Error ? err.message : t('loginFailed'))
     } finally {
       setLoading(false)
     }

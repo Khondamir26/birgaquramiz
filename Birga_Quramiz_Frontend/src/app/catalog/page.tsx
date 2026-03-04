@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { Search, X, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,6 +7,7 @@ import ProductCard from "@/components/product/ProductCard";
 import type { PaginatedResponse, Product } from "@/types";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 
 export default function CatalogPage() {
   const [page, setPage] = useState(1);
@@ -16,15 +17,18 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const t = useTranslations("Catalog");
+  const tNav = useTranslations("Navbar");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setError("");
 
     getProducts(page, 12, search)
       .then((res) => {
-        if (!cancelled) setData(res);
+        if (!cancelled) {
+          setError("");
+          setData(res);
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof Error ? err.message : t("loadFailed"));
@@ -37,10 +41,15 @@ export default function CatalogPage() {
   }, [page, search, t]);
 
   const products = data?.data ?? [];
+  const breadcrumbItems = [
+    { label: tNav("home"), href: "/" },
+    { label: tNav("catalog") },
+  ];
   const meta = data?.meta;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
     setPage(1);
     setSearch(query.trim());
@@ -48,6 +57,7 @@ export default function CatalogPage() {
   };
 
   const handleClear = () => {
+    setError("");
     setLoading(true);
     setQuery("");
     setSearch("");
@@ -58,7 +68,7 @@ export default function CatalogPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] md:pb-12">
 
-      {/* ── Mobile Search Bar ── */}
+      {/* -- Mobile Search Bar -- */}
       <section className="sticky top-0 z-30 bg-[#1B4D91] px-4 pt-3 pb-4 shadow-md md:hidden rounded-b-3xl">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[16px] font-black text-white">{t("title")}</p>
@@ -93,9 +103,12 @@ export default function CatalogPage() {
       </section>
 
       <div className="mx-auto w-full md:max-w-7xl">
+        <div className="px-4 md:px-6 pt-3 md:pt-5">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
         <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pb-36 md:pb-0 pt-4 md:pt-6">
 
-          {/* ── Desktop Hero + Search ── */}
+          {/* -- Desktop Hero + Search -- */}
           <section className="hidden md:block">
             {/* Hero bar */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1B4D91] to-[#123666] px-10 py-10 shadow-lg shadow-[#1B4D91]/20 mb-6">
@@ -138,19 +151,19 @@ export default function CatalogPage() {
             {!loading && data && (
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[13px] font-semibold text-slate-500">
-                  {search ? `Результаты для «${search}»` : "Все товары"}
-                  {meta ? ` · ${meta.total ?? products.length} товаров` : ""}
+                  {search ? `Results for "${search}"` : "All products"}
+                  {meta ? ` · ${meta.total ?? products.length} products` : ""}
                 </p>
                 {search && (
                   <button onClick={handleClear} className="text-[12px] font-bold text-[#E31E24] hover:underline">
-                    Сбросить поиск
+                    Clear search
                   </button>
                 )}
               </div>
             )}
           </section>
 
-          {/* ── Products Area ── */}
+          {/* -- Products Area -- */}
           <div className="px-4 pt-3 pb-36 md:px-0 md:pb-0">
 
             {/* Loading skeleton */}
@@ -173,9 +186,9 @@ export default function CatalogPage() {
                 <p className="mt-1 text-xs text-red-400">{error}</p>
                 <button
                   className="mt-4 rounded-xl bg-[#E31E24] px-6 py-2.5 text-[12px] font-black text-white active:scale-95 transition-transform"
-                  onClick={() => { setPage(1); setSearch(""); setQuery(""); }}
+                  onClick={() => { setError(""); setPage(1); setSearch(""); setQuery(""); }}
                 >
-                  Повторить
+                  Retry
                 </button>
               </div>
             )}
@@ -187,7 +200,7 @@ export default function CatalogPage() {
                   <Search className="size-9 text-[#1B4D91]/20" />
                 </div>
                 <p className="text-base font-black text-[#1B4D91]">{t("empty")}</p>
-                <p className="mt-1 text-[13px] text-slate-400">Попробуйте другой запрос</p>
+                <p className="mt-1 text-[13px] text-slate-400">Try another search query</p>
               </div>
             )}
 
@@ -259,10 +272,10 @@ export default function CatalogPage() {
             )}
           </div>
 
-          {/* ── Floating filter (mobile only) ── */}
+          {/* -- Floating filter (mobile only) -- */}
           <button
             className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B4D91] text-white shadow-xl shadow-[#1B4D91]/30 active:scale-90 transition-transform duration-150 md:hidden"
-            aria-label="Фильтры"
+            aria-label="Filters"
           >
             <SlidersHorizontal className="size-6" />
           </button>

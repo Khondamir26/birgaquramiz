@@ -1,5 +1,6 @@
-﻿export type CartItem = {
+export type CartItem = {
   id: string
+  sku?: string | null
   name: string
   price: number
   image: string
@@ -8,6 +9,7 @@
 
 export type CartProductInput = {
   id: string
+  sku?: string | null
   name: string
   price: number
   image: string

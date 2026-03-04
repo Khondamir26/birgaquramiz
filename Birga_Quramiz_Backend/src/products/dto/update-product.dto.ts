@@ -1,4 +1,5 @@
-import { IsString, IsNumber, Min, MaxLength, IsOptional } from 'class-validator'
+import { IsString, IsNumber, Min, MaxLength, IsOptional, IsInt } from 'class-validator'
+import { Type } from 'class-transformer'
 
 export class UpdateProductDto {
   @IsOptional()
@@ -13,16 +14,18 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000000)
+  @MaxLength(2048)
   readonly imageUrl?: string
 
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
+  @Type(() => Number)
   readonly price?: number
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(0)
+  @Type(() => Number)
   readonly stock?: number
 }

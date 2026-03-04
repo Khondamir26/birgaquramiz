@@ -1,46 +1,105 @@
-﻿import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
+import type { Prisma } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 import type { UpdateProductDto } from './dto/update-product.dto'
+import type { CreateProductDto } from './dto/create-product.dto'
+import type { AuthUser } from '../auth/auth.types'
+
+type CreateProductInput = CreateProductDto & { imageUrl: string }
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: any, user: any) {
-    const seller = await this.prisma.seller.findUnique({
-      where: { userId: user.id },
-    })
-
-    if (!seller) {
+  private ensureSellerProfile(user: AuthUser) {
+    if (user.role !== 'SELLER') {
       throw new BadRequestException('You are not a seller')
     }
 
-    return this.prisma.product.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        imageUrl: data.imageUrl,
-        price: data.price,
-        stock: data.stock,
-        sellerId: seller.id,
+    return this.prisma.seller.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        company: `${user.name} Store`,
       },
     })
   }
 
-  async getApproved(page = 1, limit = 10, q?: string) {
+  async create(data: CreateProductInput, user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
+
+    return this.prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true, code: true, lastSkuNumber: true },
+      })
+
+      if (!category) {
+        throw new BadRequestException('Invalid category')
+      }
+
+      const updatedCategory = await tx.category.update({
+        where: { id: category.id },
+        data: { lastSkuNumber: { increment: 1 } },
+        select: { id: true, code: true, lastSkuNumber: true },
+      })
+
+      const padded = String(updatedCategory.lastSkuNumber).padStart(6, '0')
+      const sku = `${updatedCategory.code}-${padded}`
+
+      return tx.product.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          price: data.price,
+          stock: data.stock,
+          sellerId: seller.id,
+          categoryId: category.id,
+          sku,
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              parentId: true,
+              parent: { select: { id: true, name: true } },
+            },
+          },
+        },
+      })
+    })
+  }
+
+  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
 
-    const whereCondition: any = {
+    const whereCondition: Prisma.ProductWhereInput = {
       status: 'APPROVED',
     }
 
+    if (categoryId?.trim()) {
+      whereCondition.categoryId = categoryId.trim()
+    }
+
     if (q?.trim()) {
+      const trimmed = q.trim()
+      const numeric = Number(trimmed)
+
       whereCondition.OR = [
-        { name: { contains: q.trim(), mode: 'insensitive' } },
-        { description: { contains: q.trim(), mode: 'insensitive' } },
+        { name: { contains: trimmed, mode: 'insensitive' } },
+        { description: { contains: trimmed, mode: 'insensitive' } },
+        { sku: { contains: trimmed, mode: 'insensitive' } },
       ]
+
+      if (Number.isInteger(numeric) && numeric > 0) {
+        whereCondition.OR.push({ articleNumber: numeric })
+      }
     }
 
     const [products, total] = await this.prisma.$transaction([
@@ -48,6 +107,15 @@ export class ProductsService {
         where: whereCondition,
         include: {
           seller: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              parentId: true,
+              parent: { select: { id: true, name: true } },
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -69,19 +137,63 @@ export class ProductsService {
     }
   }
 
-  async getMyProducts(user: any) {
-    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-    if (!seller) throw new BadRequestException('Seller not found')
+  async getMyProducts(user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
 
     return this.prisma.product.findMany({
       where: { sellerId: seller.id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     })
   }
 
-  async updateMyProduct(id: string, data: UpdateProductDto, user: any) {
-    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-    if (!seller) throw new BadRequestException('Seller not found')
+  async getMyProductById(id: string, user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
+
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
+    })
+    if (!product) throw new NotFoundException('Product not found')
+    if (product.sellerId !== seller.id) throw new ForbiddenException('Access denied')
+
+    return {
+      id: product.id,
+      sku: product.sku,
+      title: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      images: product.imageUrl ? [product.imageUrl] : [],
+      status: product.status,
+      rejectionReason: product.rejectionReason,
+      createdAt: product.createdAt.toISOString(),
+      category: product.category,
+    }
+  }
+
+  async updateMyProduct(id: string, data: UpdateProductDto, user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
 
     const product = await this.prisma.product.findFirst({
       where: {
@@ -92,8 +204,10 @@ export class ProductsService {
 
     if (!product) throw new NotFoundException('Product not found')
 
+    const updateData = { ...data }
+
     const hasAnyField = ['name', 'description', 'imageUrl', 'price', 'stock'].some(
-      (key) => (data as any)[key] !== undefined,
+      (key) => updateData[key as keyof typeof updateData] !== undefined,
     )
 
     if (!hasAnyField) {
@@ -103,15 +217,25 @@ export class ProductsService {
     return this.prisma.product.update({
       where: { id },
       data: {
-        ...data,
+        ...updateData,
         status: 'PENDING',
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
       },
     })
   }
 
-  async setMyProductVisibility(id: string, active: boolean, user: any) {
-    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-    if (!seller) throw new BadRequestException('Seller not found')
+  async setMyProductVisibility(id: string, active: boolean, user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
 
     const product = await this.prisma.product.findFirst({
       where: {
@@ -138,9 +262,8 @@ export class ProductsService {
     })
   }
 
-  async deleteMyProduct(id: string, user: any) {
-    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-    if (!seller) throw new BadRequestException('Seller not found')
+  async deleteMyProduct(id: string, user: AuthUser) {
+    const seller = await this.ensureSellerProfile(user)
 
     const product = await this.prisma.product.findFirst({
       where: {
@@ -151,13 +274,42 @@ export class ProductsService {
 
     if (!product) throw new NotFoundException('Product not found')
 
-    const linkedItems = await this.prisma.orderItem.count({ where: { productId: id } })
-    if (linkedItems > 0) {
-      throw new BadRequestException('Cannot delete product with existing order history')
+    if (product.status === 'APPROVED') {
+      throw new BadRequestException('Approved products cannot be deleted directly. Please request deletion from admin.')
     }
 
     await this.prisma.product.delete({ where: { id } })
     return { message: 'Product deleted' }
+  }
+
+  async requestProductDeletion(id: string, user: AuthUser, reason: string) {
+    const seller = await this.ensureSellerProfile(user)
+
+    const product = await this.prisma.product.findFirst({
+      where: { id, sellerId: seller.id },
+    })
+    if (!product) throw new NotFoundException('Product not found')
+
+    if (product.status !== 'APPROVED') {
+      throw new BadRequestException('Only approved products require deletion requests. You can delete pending/rejected products directly.')
+    }
+
+    const existing = await this.prisma.deletionRequest.findFirst({
+      where: { productId: id, status: 'PENDING' },
+    })
+    if (existing) {
+      throw new BadRequestException('A deletion request is already pending for this product.')
+    }
+
+    const request = await this.prisma.deletionRequest.create({
+      data: {
+        productId: id,
+        sellerId: seller.id,
+        reason,
+      },
+    })
+
+    return { message: 'Deletion request submitted. Admin will review it.', requestId: request.id }
   }
 
   async getById(id: string) {
@@ -168,6 +320,15 @@ export class ProductsService {
       },
       include: {
         seller: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
       },
     })
 
@@ -179,7 +340,18 @@ export class ProductsService {
   async getPending() {
     return this.prisma.product.findMany({
       where: { status: 'PENDING' },
-      include: { seller: true },
+      include: {
+        seller: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
     })
   }
 
@@ -192,6 +364,7 @@ export class ProductsService {
       data: { status: 'APPROVED' },
     })
   }
+
   async reject(productId: string) {
     const product = await this.prisma.product.findUnique({ where: { id: productId } })
     if (!product) throw new NotFoundException('Product not found')
@@ -201,5 +374,41 @@ export class ProductsService {
       data: { status: 'REJECTED' },
     })
   }
-}
 
+  async getDeletionRequests() {
+    return this.prisma.deletionRequest.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        product: true,
+        seller: { include: { user: { select: { name: true, phone: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  async approveDeletionRequest(requestId: string) {
+    const request = await this.prisma.deletionRequest.findUnique({
+      where: { id: requestId },
+      include: { product: true },
+    })
+    if (!request) throw new NotFoundException('Deletion request not found')
+    if (request.status !== 'PENDING') throw new BadRequestException('Request already processed')
+
+    await this.prisma.product.delete({ where: { id: request.productId } })
+
+    return { message: 'Product deleted and request approved' }
+  }
+
+  async rejectDeletionRequest(requestId: string) {
+    const request = await this.prisma.deletionRequest.findUnique({ where: { id: requestId } })
+    if (!request) throw new NotFoundException('Deletion request not found')
+    if (request.status !== 'PENDING') throw new BadRequestException('Request already processed')
+
+    await this.prisma.deletionRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED' },
+    })
+
+    return { message: 'Deletion request rejected' }
+  }
+}

@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import type { CreateOrderDto } from './dto/create-order.dto'
+import type { AuthUser } from '../auth/auth.types'
+import type { OrderStatus, Prisma, ProductStatus } from '@prisma/client'
 
 interface OrderItemInput {
   productId: string
@@ -9,9 +11,23 @@ interface OrderItemInput {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async create(user: any, payload: CreateOrderDto) {
+  private ensureSellerProfile(
+    user: AuthUser,
+    prismaClient: PrismaService | Prisma.TransactionClient = this.prisma,
+  ) {
+    return prismaClient.seller.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        company: `${user.name} Store`,
+      },
+    })
+  }
+
+  async create(user: AuthUser, payload: CreateOrderDto) {
     if (user.role !== 'USER') {
       throw new BadRequestException('Only users can place orders')
     }
@@ -39,7 +55,7 @@ export class OrdersService {
 
     return this.prisma.$transaction(async (tx) => {
       let total = 0
-      const productsMap: Record<string, any> = {}
+      const productsMap = new Map<string, { id: string; sellerId: string; price: number; stock: number; status: ProductStatus }>()
 
       let sellerId: string | null = null
       if (enforceOwnProductRule && userId) {
@@ -50,12 +66,15 @@ export class OrdersService {
       const productIds = items.map((item) => item.productId)
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
-        include: { seller: true },
+        select: { id: true, sellerId: true, price: true, stock: true, status: true },
       })
-      const productDict = new Map(products.map((p) => [p.id, p]))
+
+      for (const product of products) {
+        productsMap.set(product.id, product)
+      }
 
       for (const item of items) {
-        const product = productDict.get(item.productId)
+        const product = productsMap.get(item.productId)
 
         if (!product) {
           throw new BadRequestException('Product not found')
@@ -73,7 +92,6 @@ export class OrdersService {
           throw new BadRequestException('You cannot order your own product')
         }
 
-        productsMap[item.productId] = product
         total += product.price * item.quantity
       }
 
@@ -91,7 +109,8 @@ export class OrdersService {
       })
 
       for (const item of items) {
-        const product = productsMap[item.productId]
+        const product = productsMap.get(item.productId)
+        if (!product) continue
 
         await tx.orderItem.create({
           data: {
@@ -125,7 +144,7 @@ export class OrdersService {
     })
   }
 
-  async payOrder(orderId: string, user: any) {
+  async payOrder(orderId: string, user: AuthUser) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     })
@@ -148,23 +167,24 @@ export class OrdersService {
     })
   }
 
-  async myOrders(user: any, status?: string, page = 1, limit = 10) {
+  async myOrders(user: AuthUser, status?: string, page = 1, limit = 10) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
 
-    const whereCondition: any = {
+    const whereCondition: Prisma.OrderWhereInput = {
       userId: user.id,
     }
 
     if (status) {
-      const allowedStatuses = ['NEW', 'PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+      const allowedStatuses: OrderStatus[] = ['NEW', 'PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+      const normalizedStatus = status as OrderStatus
 
-      if (!allowedStatuses.includes(status)) {
+      if (!allowedStatuses.includes(normalizedStatus)) {
         throw new BadRequestException('Invalid status filter')
       }
 
-      whereCondition.status = status
+      whereCondition.status = normalizedStatus
     }
 
     const [orders, total] = await this.prisma.$transaction([
@@ -197,7 +217,7 @@ export class OrdersService {
     }
   }
 
-  async updateStatus(orderId: string, status: 'CONFIRMED' | 'SHIPPED' | 'DELIVERED', user: any) {
+  async updateStatus(orderId: string, status: 'CONFIRMED' | 'SHIPPED' | 'DELIVERED', user: AuthUser) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -212,8 +232,7 @@ export class OrdersService {
     }
 
     if (user.role === 'SELLER') {
-      const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-      if (!seller) throw new BadRequestException('Seller not found')
+      const seller = await this.ensureSellerProfile(user)
 
       const ownsProduct = order.items.some((item) => item.product.sellerId === seller.id)
       if (!ownsProduct) throw new BadRequestException('Not your order')
@@ -238,15 +257,14 @@ export class OrdersService {
     throw new BadRequestException('Invalid status transition')
   }
 
-  async sellerOrders(user: any, status?: string, page = 1, limit = 10) {
-    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
-    if (!seller) throw new BadRequestException('Seller not found')
+  async sellerOrders(user: AuthUser, status?: string, page = 1, limit = 10) {
+    const seller = await this.ensureSellerProfile(user)
 
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
 
-    const whereCondition: any = {
+    const whereCondition: Prisma.OrderWhereInput = {
       items: {
         some: {
           product: {
@@ -257,9 +275,10 @@ export class OrdersService {
     }
 
     if (status) {
-      const allowedStatuses = ['NEW', 'PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
-      if (!allowedStatuses.includes(status)) throw new BadRequestException('Invalid status filter')
-      whereCondition.status = status
+      const allowedStatuses: OrderStatus[] = ['NEW', 'PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+      const normalizedStatus = status as OrderStatus
+      if (!allowedStatuses.includes(normalizedStatus)) throw new BadRequestException('Invalid status filter')
+      whereCondition.status = normalizedStatus
     }
 
     const [orders, total] = await this.prisma.$transaction([
@@ -299,7 +318,7 @@ export class OrdersService {
     }
   }
 
-  async cancelOrder(orderId: string, user: any) {
+  async cancelOrder(orderId: string, user: AuthUser) {
     if (user.role !== 'USER' && user.role !== 'SELLER') {
       throw new BadRequestException('Only users and sellers can cancel orders')
     }
@@ -324,8 +343,7 @@ export class OrdersService {
       }
 
       if (user.role === 'SELLER') {
-        const seller = await tx.seller.findUnique({ where: { userId: user.id } })
-        if (!seller) throw new BadRequestException('Seller not found')
+        const seller = await this.ensureSellerProfile(user, tx)
 
         const ownsProduct = await tx.orderItem.findFirst({
           where: {

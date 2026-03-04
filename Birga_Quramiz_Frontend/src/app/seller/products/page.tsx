@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -7,8 +7,10 @@ import {
   getMySellerProducts,
   setMySellerProductVisibility,
   updateMySellerProduct,
+  getCategories,
 } from "@/lib/api/products";
 import { useAuth } from "@/hooks/useAuth";
+import type { Category } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { resolveImageUrl } from "@/lib/image";
@@ -21,12 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { z } from "zod";
 
 type ProductFormState = {
   name: string;
   description: string;
   price: string;
   stock: string;
+  categoryId: string | null;
 };
 
 const initialForm: ProductFormState = {
@@ -34,7 +38,16 @@ const initialForm: ProductFormState = {
   description: "",
   price: "",
   stock: "",
+  categoryId: null,
 };
+
+const createProductSchema = z.object({
+  name: z.string().min(1, "Product name is required").max(100),
+  description: z.string().min(1, "Description is required").max(2000),
+  price: z.coerce.number().min(0, "Price must be 0 or higher"),
+  stock: z.coerce.number().int().min(0, "Stock must be 0 or higher"),
+  categoryId: z.string().min(1, "Category is required"),
+});
 
 export default function SellerProductsPage() {
   const t = useTranslations("SellerProducts");
@@ -54,6 +67,7 @@ export default function SellerProductsPage() {
   const [actionProductId, setActionProductId] = useState<string | null>(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Filtering and Sorting States
   const [searchQuery, setSearchQuery] = useState("");
@@ -139,6 +153,7 @@ export default function SellerProductsPage() {
     }
 
     void loadProducts();
+    getCategories().then(setCategories).catch(() => { });
   }, [user, isAuthenticated, isInitialized, router]);
 
   const handleCreateImage = (file: File | null) => {
@@ -173,12 +188,27 @@ export default function SellerProductsPage() {
 
     setLoading(true);
 
+    const parsed = createProductSchema.safeParse({
+      name: form.name,
+      description: form.description,
+      price: form.price,
+      stock: form.stock,
+      categoryId: form.categoryId ?? "",
+    });
+
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid form data");
+      setLoading(false);
+      return;
+    }
+
     try {
       await createProduct({
         name: form.name,
         description: form.description,
         price: Number(form.price),
         stock: Number(form.stock),
+        categoryId: parsed.data.categoryId,
         image: createImageFile,
       });
 
@@ -206,12 +236,13 @@ export default function SellerProductsPage() {
 
     setEditingImageFile(null);
     setEditingId(product.id);
-    setEditingForm({
-      name: product.name,
-      description: product.description,
-      price: String(product.price),
-      stock: String(product.stock),
-    });
+      setEditingForm({
+        name: product.name,
+        description: product.description,
+        price: String(product.price),
+        stock: String(product.stock),
+        categoryId: product.categoryId ?? null,
+      });
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -420,7 +451,7 @@ export default function SellerProductsPage() {
               const actionBusy = actionProductId === product.id;
 
               return (
-                <article key={product.id} className="surface-card rounded-2xl md:rounded-[32px] p-3 md:p-5 shadow-[0_4px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all border border-slate-100 flex flex-col h-[320px] md:h-[480px] bg-white group overflow-hidden">
+                <article key={product.id} onClick={() => router.push(`/seller/products/${product.id}`)} className="surface-card rounded-2xl md:rounded-[32px] p-3 md:p-5 shadow-[0_4px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all border border-slate-100 flex flex-col h-[320px] md:h-[480px] bg-white group overflow-hidden cursor-pointer">
 
                   {/* Top Header: Image & Quick Info */}
                   <div className="flex flex-col md:flex-col gap-3 md:gap-4 shrink-0">
@@ -444,6 +475,10 @@ export default function SellerProductsPage() {
 
                     {/* Core Info - Strict Height Constraints */}
                     <div className="flex-1 w-full flex flex-col px-0.5">
+                      {/* SKU */}
+                      {product.sku && (
+                        <p className="text-[10px] md:text-[11px] font-semibold text-slate-400 mb-0.5">Art: {product.sku}</p>
+                      )}
                       {/* Name - Exactly 2 lines */}
                       <div className="h-10 md:h-[48px] overflow-hidden mb-1">
                         <p className="font-bold md:font-extrabold text-[13px] md:text-[17px] text-slate-800 leading-tight md:leading-tight line-clamp-2" title={product.name}>{product.name}</p>
@@ -472,27 +507,30 @@ export default function SellerProductsPage() {
                   {/* Actions (Pushed to bottom using auto margins) */}
                   <div className="mt-2 md:mt-0 md:pt-4 pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 md:gap-2 shrink-0 md:mt-auto">
                     <button
-                      onClick={() => openEdit(product)}
+                      onClick={(e) => { e.stopPropagation(); openEdit(product); }}
                       disabled={actionBusy}
                       className="h-8 md:h-10 px-2 md:px-4 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px] md:text-[13px] hover:bg-slate-200 transition-colors disabled:opacity-50 flex-1 min-w-[30%]"
                     >
                       {t("edit")}
                     </button>
                     <button
-                      onClick={() => void handleToggleVisibility(product)}
+                      onClick={(e) => { e.stopPropagation(); void handleToggleVisibility(product); }}
                       disabled={actionBusy}
                       className={`h-8 md:h-10 px-2 md:px-4 rounded-full font-bold text-[11px] md:text-[13px] transition-colors disabled:opacity-50 flex-1 min-w-[30%] ${active ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                     >
                       {actionBusy ? "..." : active ? t("hide") : t("activate")}
                     </button>
-                    <button
-                      onClick={() => void handleDelete(product)}
-                      disabled={actionBusy}
-                      className="h-8 md:h-10 w-8 md:px-4 md:w-auto flex items-center justify-center rounded-full bg-red-50 text-[#E31E24] font-bold text-[11px] md:text-[13px] hover:bg-red-100 transition-colors disabled:opacity-50 flex-none"
-                      title={t("delete")}
-                    >
-                      <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
+                    {/* Delete — only for PENDING/REJECTED */}
+                    {!active && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void handleDelete(product); }}
+                        disabled={actionBusy}
+                        className="h-8 md:h-10 w-8 md:px-4 md:w-auto flex items-center justify-center rounded-full bg-red-50 text-[#E31E24] font-bold text-[11px] md:text-[13px] hover:bg-red-100 transition-colors disabled:opacity-50 flex-none"
+                        title={t("delete")}
+                      >
+                        <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    )}
                   </div>
 
                 </article>
@@ -576,6 +614,24 @@ export default function SellerProductsPage() {
                       placeholder={t("stockPlaceholder")}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
+                  <select
+                    value={form.categoryId ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((p) => ({ ...p, categoryId: value || null }));
+                    }}
+                    required
+                    className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10 appearance-none"
+                  >
+                    <option value="">Select category...</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name} ({cat.code})</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

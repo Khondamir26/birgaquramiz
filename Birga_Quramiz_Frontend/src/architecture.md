@@ -10,7 +10,7 @@
 ## Page Map
 - `/` Landing page
 - `/catalog` Marketplace page
-- `/catalog/[id]` Product detail page
+- `/product/[id]` Product detail page
 - `/builders` Builders catalog
 - `/builders/[id]` Builder profile
 - `/equipment` Equipment rental
@@ -59,3 +59,4 @@
 - Medium/2xl radius and soft card shadows
 - Clear page hierarchy and modular sections
 - Mobile-friendly responsive behavior on all core pages
+

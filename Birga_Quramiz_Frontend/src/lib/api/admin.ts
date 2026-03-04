@@ -1,5 +1,5 @@
-﻿import { apiFetch } from './client'
-import type { PaginatedResponse, User, Order, OrderStatus, Role } from '@/types'
+import { apiFetch } from './client'
+import type { PaginatedResponse, User, Order, OrderStatus, Role, AdminProductDetail } from '@/types'
 
 export function getAdminUsers(params?: {
   page?: number
@@ -17,6 +17,16 @@ export function getAdminUsers(params?: {
   return apiFetch<PaginatedResponse<User>>(`/admin/users${qs ? `?${qs}` : ''}`)
 }
 
+export function updateAdminUserRole(
+  id: string,
+  payload: { role: Role; company?: string },
+) {
+  return apiFetch<{ message: string; user: User }>(`/admin/users/${id}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getAdminOrders(params?: {
   page?: number
   limit?: number
@@ -31,4 +41,61 @@ export function getAdminOrders(params?: {
   const qs = query.toString()
 
   return apiFetch<PaginatedResponse<Order>>(`/admin/orders${qs ? `?${qs}` : ''}`)
+}
+
+export function getAdminProduct(id: string) {
+  return apiFetch<AdminProductDetail>(`/admin/products/${id}`)
+}
+
+export function approveAdminProduct(id: string) {
+  return apiFetch<{ message: string }>(`/admin/products/${id}/approve`, {
+    method: 'PATCH',
+  })
+}
+
+export function rejectAdminProduct(id: string, reason: string) {
+  return apiFetch<{ message: string }>(`/admin/products/${id}/reject`, {
+    method: 'PATCH',
+    body: JSON.stringify({ reason }),
+  })
+}
+
+export function getAdminDeletionRequests() {
+  return apiFetch<DeletionRequest[]>('/products/admin/deletion-requests')
+}
+
+export function approveAdminDeletionRequest(id: string) {
+  return apiFetch<{ message: string }>(`/products/admin/deletion-requests/${id}/approve`, {
+    method: 'PATCH',
+  })
+}
+
+export function rejectAdminDeletionRequest(id: string) {
+  return apiFetch<{ message: string }>(`/products/admin/deletion-requests/${id}/reject`, {
+    method: 'PATCH',
+  })
+}
+
+export interface DeletionRequest {
+  id: string
+  productId: string
+  sellerId: string
+  reason: string
+  status: string
+  createdAt: string
+  product: {
+    id: string
+    name: string
+    imageUrl: string
+    price: number
+    status: string
+  }
+  seller: {
+    id: string
+    company: string
+    user: {
+      name: string
+      phone: string
+    }
+  }
 }

@@ -5,32 +5,33 @@ WORKDIR /app
 COPY package.json ./
 COPY prisma ./prisma/
 
-RUN npm install
+RUN npm install --no-audit --no-fund --omit=optional
 
 COPY . .
 
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
+ENV NODE_ENV=production
+ENV PORT=5000
+
 RUN apk add --no-cache openssl
 
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
-# Re-install ONLY production dependencies so the image stays small
-RUN npm install --omit=dev
+RUN npm install --omit=dev --omit=optional --no-audit --no-fund && npx prisma generate
 
-# Generate the exact Prisma Client required by this specific alpine container architecture
-RUN npx prisma generate
+RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
+RUN chown -R nestjs:nodejs /app
+
+USER nestjs
 
 EXPOSE 5000
-
-ENV PORT=5000
 
 CMD ["npm", "run", "start:prod"]

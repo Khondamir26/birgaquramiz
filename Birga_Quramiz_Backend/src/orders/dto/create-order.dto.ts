@@ -2,7 +2,6 @@ import {
   IsArray,
   ArrayNotEmpty,
   ValidateNested,
-  IsUUID,
   IsInt,
   Min,
   IsNotEmpty,
@@ -24,12 +23,13 @@ export enum PaymentMethodDto {
 }
 
 export class OrderItemDto {
-  @IsUUID('4')
+  @IsString()
   @IsNotEmpty()
   readonly productId: string
 
   @IsInt()
   @Min(1)
+  @Type(() => Number)
   readonly quantity: number
 }
 

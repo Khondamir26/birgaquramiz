@@ -10,6 +10,12 @@ export default function Footer() {
   const t = useTranslations("Footer");
   const { user } = useAuth();
   const logoSrc = user?.role === "SELLER" ? "/sellers-panel-logo.png" : "/logo.png";
+  const socialLabels = {
+    linkedin: t.has("linkedin") ? t("linkedin") : "LinkedIn",
+    instagram: t.has("instagram") ? t("instagram") : "Instagram",
+    twitter: t.has("twitter") ? t("twitter") : "Twitter",
+    facebook: t.has("facebook") ? t("facebook") : "Facebook",
+  };
 
   const year = new Date().getFullYear();
 
@@ -37,28 +43,28 @@ export default function Footer() {
           <div className="flex items-center gap-6">
             <a
               href="#"
-              aria-label={t("linkedin")}
+              aria-label={socialLabels.linkedin}
               className="text-white/40 hover:text-white transition-colors"
             >
               <Linkedin className="size-5" />
             </a>
             <a
               href="#"
-              aria-label={t("instagram")}
+              aria-label={socialLabels.instagram}
               className="text-white/40 hover:text-white transition-colors"
             >
               <Instagram className="size-5" />
             </a>
             <a
               href="#"
-              aria-label={t("twitter")}
+              aria-label={socialLabels.twitter}
               className="text-white/40 hover:text-white transition-colors"
             >
               <Twitter className="size-5" />
             </a>
             <a
               href="#"
-              aria-label={t("facebook")}
+              aria-label={socialLabels.facebook}
               className="text-white/40 hover:text-white transition-colors"
             >
               <Facebook className="size-5" />

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Post,
   Body,
@@ -16,6 +16,7 @@
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
+import type { Request } from 'express'
 import { UploadService } from '../upload/upload.service'
 import { ProductsService } from './products.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
@@ -23,10 +24,10 @@ import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
+import type { AuthUser } from '../auth/auth.types'
 
-// Use diskStorage so uploaded files land on disk immediately, without loading
-// the entire file into Node.js memory. The SupabaseService (now local) reads
-// req.file.path instead of req.file.buffer.
+type AuthedRequest = Request & { user: AuthUser }
+
 const multerStorage = diskStorage({
   destination: join(process.cwd(), 'uploads', 'products'),
   filename: (_req, file, cb) => {
@@ -48,7 +49,7 @@ export class ProductsController {
   constructor(
     private productsService: ProductsService,
     private uploadService: UploadService,
-  ) { }
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -60,7 +61,7 @@ export class ProductsController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  async create(@Body() body: CreateProductDto, @Req() req: any, @UploadedFile() file?: Express.Multer.File) {
+  async create(@Body() body: CreateProductDto, @Req() req: AuthedRequest, @UploadedFile() file?: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('Product image is required')
     }
@@ -75,15 +76,23 @@ export class ProductsController {
     @Query('page') page = '1',
     @Query('limit') limit = '10',
     @Query('q') q?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
-    return this.productsService.getApproved(Number(page), Number(limit), q)
+    return this.productsService.getApproved(Number(page), Number(limit), q, categoryId)
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @Get('seller/my')
-  getMyProducts(@Req() req: any) {
+  getMyProducts(@Req() req: AuthedRequest) {
     return this.productsService.getMyProducts(req.user)
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER')
+  @Get('seller/my/:id')
+  getMyProductById(@Param('id') id: string, @Req() req: AuthedRequest) {
+    return this.productsService.getMyProductById(id, req.user)
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -99,7 +108,7 @@ export class ProductsController {
   async updateMyProduct(
     @Param('id') id: string,
     @Body() body: UpdateProductDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     let imageUrl: string | undefined
@@ -118,7 +127,7 @@ export class ProductsController {
   updateMyProductVisibility(
     @Param('id') id: string,
     @Body('active') active: boolean,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.productsService.setMyProductVisibility(id, Boolean(active), req.user)
   }
@@ -126,8 +135,22 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @Delete('seller/my/:id')
-  deleteMyProduct(@Param('id') id: string, @Req() req: any) {
+  deleteMyProduct(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.productsService.deleteMyProduct(id, req.user)
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER')
+  @Post('seller/my/:id/request-deletion')
+  requestDeletion(
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+    @Req() req: AuthedRequest,
+  ) {
+    if (!reason?.trim()) {
+      throw new BadRequestException('Deletion reason is required')
+    }
+    return this.productsService.requestProductDeletion(id, req.user, reason.trim())
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -151,9 +174,29 @@ export class ProductsController {
     return this.productsService.reject(id)
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin/deletion-requests')
+  getDeletionRequests() {
+    return this.productsService.getDeletionRequests()
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Patch('admin/deletion-requests/:id/approve')
+  approveDeletionRequest(@Param('id') id: string) {
+    return this.productsService.approveDeletionRequest(id)
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Patch('admin/deletion-requests/:id/reject')
+  rejectDeletionRequest(@Param('id') id: string) {
+    return this.productsService.rejectDeletionRequest(id)
+  }
+
   @Get(':id')
   getById(@Param('id') id: string) {
     return this.productsService.getById(id)
   }
 }
-

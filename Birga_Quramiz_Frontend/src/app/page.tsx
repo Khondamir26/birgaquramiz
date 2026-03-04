@@ -14,14 +14,15 @@ export default function HomePage() {
   const tCatalog = useTranslations('Catalog');
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
         const res = await getProducts(1, 40);
         setProducts(res.data);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        setLoadFailed(true);
       } finally {
         setIsLoading(false);
       }
@@ -95,6 +96,10 @@ export default function HomePage() {
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="rounded-2xl md:rounded-[32px] bg-white animate-pulse" style={{ height: 320 }} />
                 ))}
+              </div>
+            ) : loadFailed ? (
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-600">
+                Products are temporarily unavailable. Please try again shortly.
               </div>
             ) : (
               sections.map((section) => {

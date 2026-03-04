@@ -211,7 +211,7 @@ export default function SellerOrdersPage() {
                           {order.items.map((item) => (
                             <div key={item.id} className="flex items-center justify-between rounded-xl bg-[#f4f6fa] px-3 py-2">
                               <span className="text-[12px] font-semibold text-slate-700 truncate flex-1 mr-3">
-                                {item.product?.name ?? `Товар #${item.productId.slice(0, 6)}`}
+                                {item.product?.name ?? `Товар #${item.productId}`}
                               </span>
                               <div className="flex items-center gap-3 shrink-0">
                                 <span className="text-[11px] text-slate-400">×{item.quantity}</span>

@@ -1,14 +1,153 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
+import { randomUUID } from 'crypto'
+import type { Prisma } from '@prisma/client'
+import type { AuthUser, JwtPayload } from './auth.types'
+
+const ACCESS_TOKEN_TTL = '15m'
+const REFRESH_TOKEN_TTL = '7d'
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+const MIN_BCRYPT_SALT_ROUNDS = 10
+const MAX_BCRYPT_SALT_ROUNDS = 14
+
+function requiredEnv(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`${name} environment variable is required`)
+  }
+  return value
+}
+
+const jwtAccessSecret = requiredEnv('JWT_SECRET')
+const jwtRefreshSecret = requiredEnv('JWT_REFRESH_SECRET')
+
+function getBcryptSaltRounds() {
+  const rawValue = process.env.BCRYPT_SALT_ROUNDS?.trim()
+  if (!rawValue) {
+    return 12
+  }
+
+  const rounds = Number.parseInt(rawValue, 10)
+  if (!Number.isFinite(rounds)) {
+    throw new Error('BCRYPT_SALT_ROUNDS must be a valid integer')
+  }
+
+  if (rounds < MIN_BCRYPT_SALT_ROUNDS || rounds > MAX_BCRYPT_SALT_ROUNDS) {
+    throw new Error(
+      `BCRYPT_SALT_ROUNDS must be between ${MIN_BCRYPT_SALT_ROUNDS} and ${MAX_BCRYPT_SALT_ROUNDS}`,
+    )
+  }
+
+  return rounds
+}
+
+const bcryptSaltRounds = getBcryptSaltRounds()
+
+type SessionMetadata = {
+  userAgent?: string | null
+  ipAddress?: string | null
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-  ) { }
+  ) {}
+
+  private async toAuthUser(userId: string): Promise<AuthUser> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+      },
+    })
+
+    if (!user) {
+      throw new UnauthorizedException('User not found')
+    }
+
+    return user
+  }
+
+  private async generateTokens(user: AuthUser, tokenId: string) {
+    const payload: JwtPayload = { userId: user.id, role: user.role, tokenId }
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwt.signAsync(payload, {
+        secret: jwtAccessSecret,
+        expiresIn: ACCESS_TOKEN_TTL,
+      }),
+      this.jwt.signAsync(payload, {
+        secret: jwtRefreshSecret,
+        expiresIn: REFRESH_TOKEN_TTL,
+      }),
+    ])
+
+    return { accessToken, refreshToken }
+  }
+
+  private async createRefreshSession(
+    userId: string,
+    tokenId: string,
+    refreshToken: string,
+    metadata: SessionMetadata,
+    tx: Prisma.TransactionClient | PrismaService = this.prisma,
+  ) {
+    const refreshTokenHash = await bcrypt.hash(refreshToken, bcryptSaltRounds)
+
+    return tx.authSession.create({
+      data: {
+        userId,
+        tokenId,
+        refreshTokenHash,
+        userAgent: metadata.userAgent ?? null,
+        ipAddress: metadata.ipAddress ?? null,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      },
+    })
+  }
+
+  private async revokeSession(userId: string, tokenId: string) {
+    return this.prisma.authSession.updateMany({
+      where: {
+        userId,
+        tokenId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    })
+  }
+
+  async revokeAllSessions(userId: string) {
+    await this.prisma.authSession.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    })
+  }
+
+  private async verifyRefreshToken(refreshToken: string): Promise<JwtPayload> {
+    try {
+      return await this.jwt.verifyAsync<JwtPayload>(refreshToken, {
+        secret: jwtRefreshSecret,
+      })
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token')
+    }
+  }
 
   async register(name: string, phone: string, password: string) {
     const existing = await this.prisma.user.findUnique({
@@ -19,7 +158,7 @@ export class AuthService {
       throw new BadRequestException('User already exists')
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, bcryptSaltRounds)
 
     const user = await this.prisma.user.create({
       data: {
@@ -41,6 +180,7 @@ export class AuthService {
       user,
     }
   }
+
   async registerSeller(name: string, phone: string, password: string, company: string) {
     const existing = await this.prisma.user.findUnique({
       where: { phone },
@@ -50,7 +190,7 @@ export class AuthService {
       throw new BadRequestException('User already exists')
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, bcryptSaltRounds)
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -58,13 +198,14 @@ export class AuthService {
           name,
           phone,
           password: hashedPassword,
-          role: 'SELLER'
+          role: 'SELLER',
         },
         select: {
           id: true,
           name: true,
           phone: true,
           role: true,
+          createdAt: true,
         },
       })
 
@@ -83,7 +224,7 @@ export class AuthService {
     })
   }
 
-  async login(phone: string, password: string) {
+  async login(phone: string, password: string, metadata: SessionMetadata = {}) {
     const user = await this.prisma.user.findUnique({
       where: { phone },
     })
@@ -98,11 +239,146 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials')
     }
 
-    const token = this.jwt.sign({
-      userId: user.id,
+    const safeUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
       role: user.role,
+      createdAt: user.createdAt,
+    }
+
+    const tokenId = randomUUID()
+    const tokens = await this.generateTokens(safeUser, tokenId)
+
+    await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
+
+    return { user: safeUser, tokens }
+  }
+
+  async refresh(refreshToken: string, metadata: SessionMetadata = {}) {
+    const payload = await this.verifyRefreshToken(refreshToken)
+    if (!payload.tokenId) {
+      throw new UnauthorizedException('Invalid refresh token payload')
+    }
+
+    const existingSession = await this.prisma.authSession.findUnique({
+      where: { tokenId: payload.tokenId },
+      select: {
+        id: true,
+        tokenId: true,
+        userId: true,
+        refreshTokenHash: true,
+        revokedAt: true,
+        expiresAt: true,
+      },
     })
 
-    return { token }
+    if (!existingSession || existingSession.userId !== payload.userId) {
+      throw new UnauthorizedException('Refresh token revoked')
+    }
+
+    if (existingSession.revokedAt || existingSession.expiresAt <= new Date()) {
+      await this.revokeAllSessions(payload.userId)
+      throw new UnauthorizedException('Refresh token revoked')
+    }
+
+    const isValid = await bcrypt.compare(refreshToken, existingSession.refreshTokenHash)
+    if (!isValid) {
+      await this.revokeAllSessions(payload.userId)
+      throw new UnauthorizedException('Invalid refresh token')
+    }
+
+    const user = await this.toAuthUser(payload.userId)
+    const safeUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+    }
+
+    const nextTokenId = randomUUID()
+    const tokens = await this.generateTokens(safeUser, nextTokenId)
+
+    await this.prisma.$transaction(async (tx) => {
+      const revokeResult = await tx.authSession.updateMany({
+        where: {
+          tokenId: existingSession.tokenId,
+          userId: existingSession.userId,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: new Date(),
+        },
+      })
+
+      if (revokeResult.count === 0) {
+        throw new UnauthorizedException('Refresh token already used')
+      }
+
+      await this.createRefreshSession(
+        safeUser.id,
+        nextTokenId,
+        tokens.refreshToken,
+        metadata,
+        tx,
+      )
+    })
+
+    return { user: safeUser, tokens }
+  }
+
+  async logoutCurrentSession(refreshToken?: string) {
+    if (!refreshToken) return
+
+    try {
+      const payload = await this.verifyRefreshToken(refreshToken)
+      if (!payload.tokenId) return
+      await this.revokeSession(payload.userId, payload.tokenId)
+    } catch {
+      // Logout should be idempotent; ignore invalid/expired token
+    }
+  }
+
+  async logoutAll(userId: string) {
+    await this.revokeAllSessions(userId)
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    })
+
+    if (!user) {
+      throw new UnauthorizedException('User not found')
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password)
+    if (!isValid) {
+      throw new BadRequestException('Current password is incorrect')
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('New password must be different')
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, bcryptSaltRounds)
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+      })
+
+      await tx.authSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      })
+    })
+  }
+
+  async getProfile(userId: string) {
+    return this.toAuthUser(userId)
   }
 }

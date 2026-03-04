@@ -1,28 +1,29 @@
 {
-    email support@birga-quramiz.uz
+  email support@birga-quramiz.uz
 }
 
-# Redirect Secondary Domain to Primary Domain
-birgaquramiz.uz, www.birgaquramiz.uz {
-    redir https://birga-quramiz.uz{uri} permanent
+(site_security) {
+  encode zstd gzip
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server
+  }
 }
 
-# Redirect www to non-www
-www.birga-quramiz.uz {
-    redir https://birga-quramiz.uz{uri} permanent
+birgaquramiz.uz, www.birgaquramiz.uz, www.birga-quramiz.uz {
+  redir https://birga-quramiz.uz{uri} permanent
 }
 
-# Primary Web App
 birga-quramiz.uz {
-    reverse_proxy frontend:3000
+  import site_security
+  reverse_proxy frontend:3000
 }
 
-# Direct IP access fallback (Useful for testing before DNS propagates)
-http://128.140.48.85 {
-    reverse_proxy frontend:3000
-}
-
-# Backend API
 api.birga-quramiz.uz {
-    reverse_proxy host.docker.internal:5000
+  import site_security
+  reverse_proxy backend:5000
 }

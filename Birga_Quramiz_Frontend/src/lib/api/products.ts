@@ -1,11 +1,12 @@
-﻿import { apiFetch } from './client'
-import type { Product, PaginatedResponse } from '@/types'
+import { apiFetch } from './client'
+import type { Product, PaginatedResponse, Category } from '@/types'
 
-export function getProducts(page = 1, limit = 12, q?: string) {
+export function getProducts(page = 1, limit = 12, q?: string, categoryId?: string) {
   const query = new URLSearchParams()
   query.set('page', String(page))
   query.set('limit', String(limit))
   if (q?.trim()) query.set('q', q.trim())
+  if (categoryId?.trim()) query.set('categoryId', categoryId.trim())
 
   return apiFetch<PaginatedResponse<Product>>(`/products?${query.toString()}`)
 }
@@ -19,6 +20,7 @@ type ProductInput = {
   description: string
   price: number
   stock: number
+  categoryId: string
   image?: File
 }
 
@@ -28,6 +30,7 @@ function toFormData(data: ProductInput) {
   formData.append('description', data.description)
   formData.append('price', String(data.price))
   formData.append('stock', String(data.stock))
+  formData.append('categoryId', String(data.categoryId))
   if (data.image) {
     formData.append('image', data.image)
   }
@@ -43,6 +46,22 @@ export function createProduct(data: ProductInput) {
 
 export function getMySellerProducts() {
   return apiFetch<Product[]>('/products/seller/my')
+}
+
+export function getMySellerProduct(id: string) {
+  return apiFetch<{
+    id: string
+    sku?: string | null
+    title: string
+    description: string
+    price: number
+    stock: number
+    images: string[]
+    status: string
+    rejectionReason?: string | null
+    createdAt: string
+    category?: Category | null
+  }>(`/products/seller/my/${id}`)
 }
 
 export function updateMySellerProduct(
@@ -82,6 +101,13 @@ export function deleteMySellerProduct(id: string) {
   })
 }
 
+export function requestProductDeletion(id: string, reason: string) {
+  return apiFetch<{ message: string; requestId: string }>(`/products/seller/my/${id}/request-deletion`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+}
+
 export function getPendingProducts() {
   return apiFetch<Product[]>('/products/admin/pending')
 }
@@ -96,4 +122,12 @@ export function rejectProduct(id: string) {
   return apiFetch<Product>(`/products/admin/reject/${id}`, {
     method: 'POST',
   })
+}
+
+export function getCategories() {
+  return apiFetch<Category[]>('/categories')
+}
+
+export function getCategoryById(id: string) {
+  return apiFetch<Category>(`/categories/${id}`)
 }
