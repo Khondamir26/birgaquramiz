@@ -59,8 +59,14 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 
+# Copy entrypoint script
+COPY entrypoint.sh ./entrypoint.sh
+
 # Generate Prisma client (safe for runtime)
 RUN pnpm prisma generate
+
+# Make entrypoint executable
+RUN chmod +x ./entrypoint.sh
 
 # Create non-root user
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
@@ -70,4 +76,4 @@ USER nestjs
 
 EXPOSE 5000
 
-CMD ["node", "dist/main.js"]
+CMD ["./entrypoint.sh"]
