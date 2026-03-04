@@ -68,6 +68,9 @@ RUN pnpm prisma generate
 # Make entrypoint executable
 RUN chmod +x ./entrypoint.sh
 
+# Create uploads directory with correct ownership before switching user
+RUN mkdir -p /app/uploads/products
+
 # Create non-root user
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
 RUN chown -R nestjs:nodejs /app
