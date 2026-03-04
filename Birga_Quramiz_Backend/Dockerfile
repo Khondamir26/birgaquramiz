@@ -15,6 +15,18 @@ RUN pnpm prisma generate
 RUN pnpm build
 
 
+FROM node:20-alpine AS deps-prod
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+
+RUN pnpm install --prod --frozen-lockfile
+
+
 FROM node:20-alpine AS runner
 
 WORKDIR /app
@@ -29,7 +41,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps-prod /app/node_modules ./node_modules
 
 RUN pnpm prisma generate
 

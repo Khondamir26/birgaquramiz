@@ -38,6 +38,10 @@ jobs:
           script: |
             set -Eeuo pipefail
 
+            ############################################
+            # Install Docker if missing
+            ############################################
+
             if ! command -v docker >/dev/null 2>&1; then
               curl -fsSL https://get.docker.com -o get-docker.sh
               sudo sh get-docker.sh
@@ -50,41 +54,89 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
+            ############################################
+            # Firewall setup
+            ############################################
+
             if command -v ufw >/dev/null 2>&1; then
               sudo ufw allow OpenSSH || true
-              sudo ufw allow 80/tcp || true
+              sudo ufw allow 80/tcp  || true
               sudo ufw allow 443/tcp || true
               sudo ufw delete allow 3000/tcp || true
               sudo ufw delete allow 5000/tcp || true
               sudo ufw --force enable || true
             fi
 
+            ############################################
+            # Disable Apache if installed
+            ############################################
+
             if systemctl list-unit-files | grep -q '^apache2\.service'; then
-              sudo systemctl stop apache2 || true
+              sudo systemctl stop apache2    || true
               sudo systemctl disable apache2 || true
             fi
+
+            ############################################
+            # Ensure PostgreSQL accepts Docker connections
+            ############################################
+
+            if command -v psql >/dev/null 2>&1 || dpkg -l postgresql* 2>/dev/null | grep -q '^ii'; then
+
+              # Allow password auth from Docker bridge network (172.17.0.0/16)
+              PG_HBA=$(sudo -u postgres psql -tAc "SHOW hba_file")
+              DOCKER_RULE="host    birga_app    birga_admin    172.17.0.0/16    scram-sha-256"
+              if ! sudo grep -qF "172.17.0.0/16" "$PG_HBA"; then
+                echo "$DOCKER_RULE" | sudo tee -a "$PG_HBA" > /dev/null
+                echo "Added Docker subnet rule to pg_hba.conf"
+              fi
+
+              # Allow PostgreSQL to listen on all interfaces (needed for host.docker.internal routing)
+              PG_CONF=$(sudo -u postgres psql -tAc "SHOW config_file")
+              sudo sed -i "s/^#*\s*listen_addresses\s*=.*/listen_addresses = '*'/" "$PG_CONF"
+
+              # Reload PostgreSQL config (no restart needed)
+              sudo systemctl reload postgresql || sudo -u postgres pg_ctlcluster "$(pg_lsclusters -h | awk '{print $1}' | head -1)" main reload || true
+              echo "PostgreSQL config reloaded."
+
+            else
+              echo "PostgreSQL not installed locally — assuming external DB, skipping pg config."
+            fi
+
+            ############################################
+            # Prepare project directory
+            ############################################
 
             mkdir -p ~/birgaquramiz
             cd ~/birgaquramiz
 
             REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/Khondamir26/birgaquramiz.git"
+
             if [ ! -d ".git" ]; then
               git clone --depth 1 --branch main "$REPO_URL" .
             else
               git remote set-url origin "$REPO_URL"
               git fetch --depth 1 origin main
-              git checkout -B main origin/main
+              git reset --hard origin/main
             fi
 
-            # Replace localhost or 127.0.0.1 with host.docker.internal
-            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/(127\.0\.0\.1|localhost)/128.140.48.85/g')"
+            ############################################
+            # Fix DB connection URL for Docker containers
+            # (replace localhost/127.0.0.1 → host.docker.internal)
+            ############################################
+
+            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/(127\.0\.0\.1|localhost)/host.docker.internal/g')"
+
             EFFECTIVE_CORS_ORIGINS="${CORS_ORIGINS:-https://birga-quramiz.uz}"
             EFFECTIVE_COOKIE_DOMAIN="${COOKIE_DOMAIN:-.birga-quramiz.uz}"
             EFFECTIVE_API_URL="${NEXT_PUBLIC_API_URL:-https://api.birga-quramiz.uz}"
             EFFECTIVE_BCRYPT_ROUNDS="${BCRYPT_SALT_ROUNDS:-12}"
 
+            ############################################
+            # Create .env file for Docker Compose
+            ############################################
+
             umask 077
-            cat > .env <<-EOF
+            cat > .env <<EOF
             APP_IMAGE_TAG=${IMAGE_TAG}
             DATABASE_URL=${DATABASE_URL_DOCKER}
             JWT_SECRET=${JWT_SECRET}
@@ -94,23 +146,52 @@ jobs:
             NEXT_PUBLIC_API_URL=${EFFECTIVE_API_URL}
             BCRYPT_SALT_ROUNDS=${EFFECTIVE_BCRYPT_ROUNDS}
             EOF
-            sed -i 's/^[[:space:]]*//' .env
 
-            # Unset variables exported by appleboy/ssh-action so docker compose strictly uses the .env file values
-            unset IMAGE_TAG DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL BCRYPT_SALT_ROUNDS GITHUB_TOKEN || true
+            ############################################
+            # Save tag & unset shell env vars
+            # (prevents docker compose from preferring
+            #  raw shell values over the .env file)
+            ############################################
 
+            DEPLOY_IMAGE_TAG="$IMAGE_TAG"
             PREVIOUS_TAG=""
             if [ -f ".last_successful_tag" ]; then
               PREVIOUS_TAG="$(cat .last_successful_tag)"
             fi
 
+            unset IMAGE_TAG DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET \
+                  CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL \
+                  BCRYPT_SALT_ROUNDS GITHUB_TOKEN || true
+
+            ############################################
+            # Build containers
+            ############################################
+
             docker compose build --pull backend frontend
-            docker compose run --rm backend npx prisma migrate deploy
+
+            ############################################
+            # Run database migrations
+            ############################################
+
+            docker compose run --rm backend pnpm prisma migrate deploy
+
+            ############################################
+            # Start services
+            ############################################
+
             docker compose up -d --remove-orphans
+
+            ############################################
+            # Health check (2 minutes, every 5s)
+            # Uses --resolve so health check works even
+            # before DNS propagation on first deploy
+            ############################################
 
             HEALTH_OK=0
             for _ in $(seq 1 24); do
-              STATUS="$(curl -ksS -o /dev/null -w '%{http_code}' --resolve api.birga-quramiz.uz:443:127.0.0.1 https://api.birga-quramiz.uz/health || true)"
+              STATUS=$(curl -ksS -o /dev/null -w "%{http_code}" \
+                --resolve "api.birga-quramiz.uz:443:127.0.0.1" \
+                https://api.birga-quramiz.uz/health || true)
               if [ "$STATUS" = "200" ]; then
                 HEALTH_OK=1
                 break
@@ -118,15 +199,24 @@ jobs:
               sleep 5
             done
 
+            ############################################
+            # Rollback if health check failed
+            ############################################
+
             if [ "$HEALTH_OK" -ne 1 ]; then
-              echo "Deployment health check failed, attempting rollback..."
-              if [ -n "$PREVIOUS_TAG" ] && [ "$PREVIOUS_TAG" != "$IMAGE_TAG" ]; then
+              echo "::error::Deployment health check failed!"
+              docker compose logs --tail=150 backend frontend caddy || true
+
+              if [ -n "$PREVIOUS_TAG" ] && [ "$PREVIOUS_TAG" != "$DEPLOY_IMAGE_TAG" ]; then
+                echo "Rolling back to tag: $PREVIOUS_TAG"
                 sed -i "s/^APP_IMAGE_TAG=.*/APP_IMAGE_TAG=${PREVIOUS_TAG}/" .env
                 docker compose up -d --remove-orphans
 
                 ROLLBACK_OK=0
-                for _ in $(seq 1 24); do
-                  STATUS="$(curl -ksS -o /dev/null -w '%{http_code}' --resolve api.birga-quramiz.uz:443:127.0.0.1 https://api.birga-quramiz.uz/health || true)"
+                for _ in $(seq 1 12); do
+                  STATUS=$(curl -ksS -o /dev/null -w "%{http_code}" \
+                    --resolve "api.birga-quramiz.uz:443:127.0.0.1" \
+                    https://api.birga-quramiz.uz/health || true)
                   if [ "$STATUS" = "200" ]; then
                     ROLLBACK_OK=1
                     break
@@ -134,21 +224,22 @@ jobs:
                   sleep 5
                 done
 
-                if [ "$ROLLBACK_OK" -ne 1 ]; then
-                  docker compose logs --tail=120 backend frontend caddy || true
-                  echo "Rollback failed."
-                  exit 1
+                if [ "$ROLLBACK_OK" -eq 1 ]; then
+                  echo "::warning::Rolled back to $PREVIOUS_TAG successfully."
+                else
+                  echo "::error::Rollback also failed. Manual intervention required."
                 fi
-
-                echo "Rollback completed successfully."
-                exit 1
+              else
+                echo "No previous tag available for rollback."
               fi
 
-              docker compose logs --tail=120 backend frontend caddy || true
-              echo "No rollback tag available."
               exit 1
             fi
 
-            echo "$IMAGE_TAG" > .last_successful_tag
+            ############################################
+            # Success: save tag & clean up old images
+            ############################################
+
+            echo "$DEPLOY_IMAGE_TAG" > .last_successful_tag
             docker image prune -f
             docker compose ps
