@@ -77,7 +77,7 @@ jobs:
             fi
 
             # Replace localhost or 127.0.0.1 with host.docker.internal
-            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/(127\.0\.0\.1|localhost)/host.docker.internal/g')"
+            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/(127\.0\.0\.1|localhost)/128.140.48.85/g')"
             EFFECTIVE_CORS_ORIGINS="${CORS_ORIGINS:-https://birga-quramiz.uz}"
             EFFECTIVE_COOKIE_DOMAIN="${COOKIE_DOMAIN:-.birga-quramiz.uz}"
             EFFECTIVE_API_URL="${NEXT_PUBLIC_API_URL:-https://api.birga-quramiz.uz}"
