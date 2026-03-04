@@ -16,9 +16,7 @@
   }
 }
 
-# Redirect all incorrect domains → main domain
-birgaquramiz.uz,
-www.birgaquramiz.uz,
+# Redirect www → main domain
 www.birga-quramiz.uz {
   redir https://birga-quramiz.uz{uri} permanent
 }
