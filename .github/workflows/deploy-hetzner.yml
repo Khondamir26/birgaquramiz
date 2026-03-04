@@ -76,7 +76,8 @@ jobs:
               git checkout -B main origin/main
             fi
 
-            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/@(127\.0\.0\.1|localhost):/@host.docker.internal:/')"
+            # Replace localhost or 127.0.0.1 with host.docker.internal
+            DATABASE_URL_DOCKER="$(printf '%s' "$DATABASE_URL" | sed -E 's/(127\.0\.0\.1|localhost)/host.docker.internal/g')"
             EFFECTIVE_CORS_ORIGINS="${CORS_ORIGINS:-https://birga-quramiz.uz}"
             EFFECTIVE_COOKIE_DOMAIN="${COOKIE_DOMAIN:-.birga-quramiz.uz}"
             EFFECTIVE_API_URL="${NEXT_PUBLIC_API_URL:-https://api.birga-quramiz.uz}"
@@ -94,6 +95,9 @@ jobs:
             BCRYPT_SALT_ROUNDS=${EFFECTIVE_BCRYPT_ROUNDS}
             EOF
             sed -i 's/^[[:space:]]*//' .env
+
+            # Unset variables exported by appleboy/ssh-action so docker compose strictly uses the .env file values
+            unset IMAGE_TAG DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL BCRYPT_SALT_ROUNDS GITHUB_TOKEN || true
 
             PREVIOUS_TAG=""
             if [ -f ".last_successful_tag" ]; then
