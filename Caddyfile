@@ -4,26 +4,43 @@
 
 (site_security) {
   encode zstd gzip
+
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
     X-Frame-Options "DENY"
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    X-XSS-Protection "1; mode=block"
     -Server
   }
 }
 
-birgaquramiz.uz, www.birgaquramiz.uz, www.birga-quramiz.uz {
+# Redirect all incorrect domains → main domain
+birgaquramiz.uz,
+www.birgaquramiz.uz,
+www.birga-quramiz.uz {
   redir https://birga-quramiz.uz{uri} permanent
 }
 
+# Main website
 birga-quramiz.uz {
   import site_security
-  reverse_proxy frontend:3000
+
+  reverse_proxy frontend:3000 {
+    health_uri /
+    health_interval 10s
+    health_timeout 5s
+  }
 }
 
+# API
 api.birga-quramiz.uz {
   import site_security
-  reverse_proxy backend:5000
+
+  reverse_proxy backend:5000 {
+    health_uri /health
+    health_interval 10s
+    health_timeout 5s
+  }
 }
