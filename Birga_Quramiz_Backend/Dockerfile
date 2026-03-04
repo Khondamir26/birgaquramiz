@@ -2,15 +2,18 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-COPY prisma ./prisma/
+RUN corepack enable
 
-RUN npm install --no-audit --no-fund --omit=optional
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN npx prisma generate
-RUN npm run build
+RUN pnpm prisma generate
+RUN pnpm build
+
 
 FROM node:20-alpine AS runner
 
@@ -19,13 +22,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5000
 
+RUN corepack enable
 RUN apk add --no-cache openssl
 
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
 
-RUN npm install --omit=dev --omit=optional --no-audit --no-fund && npx prisma generate
+RUN pnpm prisma generate
 
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
 RUN chown -R nestjs:nodejs /app
@@ -34,4 +40,4 @@ USER nestjs
 
 EXPOSE 5000
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]
