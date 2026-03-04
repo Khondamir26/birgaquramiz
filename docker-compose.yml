@@ -77,10 +77,6 @@ services:
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
 
-    # IMPORTANT: allows container to reach host PostgreSQL
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
     volumes:
       - backend_uploads:/app/uploads
 
