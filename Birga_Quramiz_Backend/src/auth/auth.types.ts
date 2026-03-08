@@ -9,7 +9,7 @@ export type JwtPayload = {
 export type AuthUser = {
   id: string
   name: string
-  phone: string
+  phone: string | null
   role: Role
   createdAt: Date
 }

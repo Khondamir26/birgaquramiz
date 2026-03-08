@@ -112,6 +112,20 @@ export default function ProductDetailPage() {
     toast.success("Product added to cart");
   };
 
+  const handleShare = () => {
+    const url = window.location.href;
+    const text = product.name;
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+
+    // @ts-ignore
+    const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+    if (tg?.initData) {
+      tg.openTelegramLink(telegramShareUrl);
+    } else {
+      window.open(telegramShareUrl, '_blank');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-36 md:pb-16 pt-4 md:pt-8">
       <div className="max-w-7xl mx-auto w-full px-5 md:px-8 mb-3">
@@ -127,7 +141,7 @@ export default function ProductDetailPage() {
             <Heart className={cn("size-4", liked && "fill-[#E31E24]")} />
             {liked ? t("favorited") : t("favorite")}
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 text-slate-500 hover:text-[#1B4D91] transition-colors font-bold text-[13px]">
+          <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 text-slate-500 hover:text-[#1B4D91] transition-colors font-bold text-[13px]">
             <Share2 className="size-4" />
             {t("share")}
           </button>
@@ -176,11 +190,7 @@ export default function ProductDetailPage() {
             <div className="md:hidden absolute right-4 top-4 flex flex-col gap-2">
               <button
                 className="flex size-10 items-center justify-center rounded-full bg-white/90 shadow-md border border-slate-100 text-slate-400 active:text-[#1B4D91] transition-colors backdrop-blur-sm"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: product.name, url: window.location.href });
-                  }
-                }}
+                onClick={handleShare}
               >
                 <Share2 className="size-[18px]" />
               </button>

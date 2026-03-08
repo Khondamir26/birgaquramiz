@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
 import { RegisterSellerDto } from './dto/register-seller.dto'
 import { ChangePasswordDto } from './dto/change-password.dto'
+import { TelegramLoginDto } from './dto/telegram-login.dto'
 import type { AuthUser } from './auth.types'
 
 const ACCESS_COOKIE = 'access_token'
@@ -79,7 +80,7 @@ function getUserAgent(req: Request) {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   register(@Body() body: RegisterDto) {
@@ -99,6 +100,18 @@ export class AuthController {
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, tokens } = await this.authService.login(body.phone, body.password, {
+      userAgent: getUserAgent(req),
+      ipAddress: getClientIp(req),
+    })
+
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
+
+    return { user }
+  }
+
+  @Post('telegram')
+  async telegramLogin(@Body() body: TelegramLoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { user, tokens } = await this.authService.telegramLogin(body.initData, {
       userAgent: getUserAgent(req),
       ipAddress: getClientIp(req),
     })

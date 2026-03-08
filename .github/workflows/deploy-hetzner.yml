@@ -30,11 +30,12 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         with:
           host: ${{ secrets.HETZNER_IP }}
           username: ${{ secrets.HETZNER_USERNAME }}
           password: ${{ secrets.HETZNER_PASSWORD }}
-          envs: IMAGE_TAG,DATABASE_URL,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN
+          envs: IMAGE_TAG,DATABASE_URL,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN
           script: |
             set -Eeuo pipefail
 
@@ -145,6 +146,7 @@ jobs:
             COOKIE_DOMAIN=${EFFECTIVE_COOKIE_DOMAIN}
             NEXT_PUBLIC_API_URL=${EFFECTIVE_API_URL}
             BCRYPT_SALT_ROUNDS=${EFFECTIVE_BCRYPT_ROUNDS}
+            TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
             EOF
 
             ############################################
@@ -161,7 +163,7 @@ jobs:
 
             unset IMAGE_TAG DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET \
                   CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL \
-                  BCRYPT_SALT_ROUNDS GITHUB_TOKEN || true
+                  BCRYPT_SALT_ROUNDS GITHUB_TOKEN TELEGRAM_BOT_TOKEN || true
 
             ############################################
             # Build containers

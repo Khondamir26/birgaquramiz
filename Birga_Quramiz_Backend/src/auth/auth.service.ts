@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
-import { randomUUID } from 'crypto'
+import { randomUUID, createHmac } from 'crypto'
 import type { Prisma } from '@prisma/client'
 import type { AuthUser, JwtPayload } from './auth.types'
 
@@ -22,6 +22,7 @@ function requiredEnv(name: string) {
 
 const jwtAccessSecret = requiredEnv('JWT_SECRET')
 const jwtRefreshSecret = requiredEnv('JWT_REFRESH_SECRET')
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN?.trim()
 
 function getBcryptSaltRounds() {
   const rawValue = process.env.BCRYPT_SALT_ROUNDS?.trim()
@@ -55,7 +56,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-  ) {}
+  ) { }
 
   private async toAuthUser(userId: string): Promise<AuthUser> {
     const user = await this.prisma.user.findUnique({
@@ -149,6 +150,116 @@ export class AuthService {
     }
   }
 
+  async telegramLogin(initData: string, metadata: SessionMetadata = {}) {
+    if (!telegramBotToken) {
+      throw new BadRequestException('Telegram integration is not configured')
+    }
+
+    const urlParams = new URLSearchParams(initData)
+    const hash = urlParams.get('hash')
+
+    if (!hash) {
+      throw new UnauthorizedException('Invalid initData: missing hash')
+    }
+
+    urlParams.delete('hash')
+
+    const params: string[] = []
+
+    urlParams.forEach((value, key) => {
+      params.push(`${key}=${value}`)
+    })
+
+    params.sort()
+
+    const dataCheckString = params.join('\n')
+
+    const secretKey = createHmac('sha256', 'WebAppData')
+      .update(telegramBotToken)
+      .digest()
+
+    const calculatedHash = createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex')
+
+    if (calculatedHash !== hash) {
+      throw new UnauthorizedException('Invalid Telegram signature')
+    }
+
+    const authDate = Number(urlParams.get('auth_date'))
+
+    if (!authDate) {
+      throw new UnauthorizedException('Invalid initData: missing auth_date')
+    }
+
+    const now = Math.floor(Date.now() / 1000)
+
+    if (now - authDate > 86400) {
+      throw new UnauthorizedException('Telegram initData is expired')
+    }
+
+    const userStr = urlParams.get('user')
+
+    if (!userStr) {
+      throw new UnauthorizedException('Invalid initData: missing user data')
+    }
+
+    let tgUser: any
+
+    try {
+      tgUser = JSON.parse(userStr)
+    } catch {
+      throw new UnauthorizedException('Invalid initData: invalid user JSON')
+    }
+
+    const telegramId = String(tgUser.id)
+    const telegramUsername = tgUser.username ?? null
+    const telegramPhoto = tgUser.photo_url ?? null
+    const languageCode = tgUser.language_code ?? null
+
+    const name =
+      tgUser.first_name +
+      (tgUser.last_name ? ` ${tgUser.last_name}` : '')
+
+    // Use upsert to avoid race conditions
+    const user = await this.prisma.user.upsert({
+      where: { telegramId },
+      create: {
+        telegramId,
+        name,
+        telegramUsername,
+        telegramPhoto,
+        languageCode,
+      },
+      update: {
+        telegramUsername,
+        telegramPhoto,
+        languageCode,
+      },
+    })
+
+    const safeUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+    }
+
+    const tokenId = randomUUID()
+
+    const tokens = await this.generateTokens(safeUser, tokenId)
+
+    await this.createRefreshSession(
+      user.id,
+      tokenId,
+      tokens.refreshToken,
+      metadata,
+    )
+
+    return { user: safeUser, tokens }
+  }
+
   async register(name: string, phone: string, password: string) {
     const existing = await this.prisma.user.findUnique({
       where: { phone },
@@ -229,7 +340,7 @@ export class AuthService {
       where: { phone },
     })
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new BadRequestException('Invalid credentials')
     }
 
@@ -352,6 +463,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('User not found')
+    }
+
+    if (!user.password) {
+      throw new BadRequestException('Password not set for this account. Please use Telegram to log in.')
     }
 
     const isValid = await bcrypt.compare(currentPassword, user.password)

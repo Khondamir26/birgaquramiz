@@ -30,6 +30,16 @@ export function login(data: { phone: string; password: string }) {
   })
 }
 
+export function telegramLogin(initData: string) {
+  return apiFetch<{ user: User }>('/auth/telegram', {
+    method: 'POST',
+    body: JSON.stringify({ initData }),
+  }).then((result) => {
+    markSessionHint()
+    return result
+  })
+}
+
 export function logout() {
   return apiFetch<{ message: string }>('/auth/refresh/logout', {
     method: 'POST',

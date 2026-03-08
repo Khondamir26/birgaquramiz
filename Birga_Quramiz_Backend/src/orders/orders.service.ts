@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import type { CreateOrderDto } from './dto/create-order.dto'
 import type { AuthUser } from '../auth/auth.types'
 import type { OrderStatus, Prisma, ProductStatus } from '@prisma/client'
+import { TelegramService } from '../telegram/telegram.service'
 
 interface OrderItemInput {
   productId: string
@@ -11,7 +12,10 @@ interface OrderItemInput {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegramService: TelegramService,
+  ) { }
 
   private ensureSellerProfile(
     user: AuthUser,
@@ -53,7 +57,7 @@ export class OrdersService {
       throw new BadRequestException('Delivery address is required for delivery orders')
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const createdOrder = await this.prisma.$transaction(async (tx) => {
       let total = 0
       const productsMap = new Map<string, { id: string; sellerId: string; price: number; stock: number; status: ProductStatus }>()
 
@@ -63,7 +67,7 @@ export class OrdersService {
         sellerId = seller?.id ?? null
       }
 
-      const productIds = items.map((item) => item.productId)
+      const productIds = [...new Set(items.map((item) => item.productId))]
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
         select: { id: true, sellerId: true, price: true, stock: true, status: true },
@@ -106,6 +110,11 @@ export class OrdersService {
           comment: payload.comment,
           total,
         },
+        include: {
+          user: {
+            select: { telegramId: true }
+          }
+        }
       })
 
       for (const item of items) {
@@ -142,6 +151,13 @@ export class OrdersService {
 
       return order
     })
+
+    if (createdOrder.user?.telegramId) {
+      const text = `📦 *Order Received*\n\nOrder #${createdOrder.id.slice(0, 8)}\nTotal: $${createdOrder.total}\nStatus: NEW\n\nWe are preparing your order.`
+      this.telegramService.sendMessage(createdOrder.user.telegramId, text).catch(e => console.error(e))
+    }
+
+    return createdOrder
   }
 
   async payOrder(orderId: string, user: AuthUser) {
@@ -224,6 +240,9 @@ export class OrdersService {
         items: {
           include: { product: true },
         },
+        user: {
+          select: { telegramId: true }
+        }
       },
     })
 
@@ -238,11 +257,21 @@ export class OrdersService {
       if (!ownsProduct) throw new BadRequestException('Not your order')
 
       if (status === 'CONFIRMED' && order.status === 'PAID') {
-        return this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } })
+        const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } })
+        if (order.user?.telegramId) {
+          const text = `✅ *Order Confirmed*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been confirmed.`
+          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
+        }
+        return updated
       }
 
       if (status === 'SHIPPED' && order.status === 'CONFIRMED') {
-        return this.prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED' } })
+        const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED' } })
+        if (order.user?.telegramId) {
+          const text = `🚚 *Order Shipped*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been shipped.`
+          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
+        }
+        return updated
       }
     }
 
@@ -250,7 +279,12 @@ export class OrdersService {
       if (order.userId !== user.id) throw new BadRequestException('Not your order')
 
       if (status === 'DELIVERED' && order.status === 'SHIPPED') {
-        return this.prisma.order.update({ where: { id: orderId }, data: { status: 'DELIVERED' } })
+        const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'DELIVERED' } })
+        if (order.user?.telegramId) {
+          const text = `📦 *Order Delivered*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been delivered.`
+          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
+        }
+        return updated
       }
     }
 
