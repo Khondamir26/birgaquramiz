@@ -36,8 +36,11 @@ function getCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict' as const,
-    ...(cookieDomain ? { domain: cookieDomain } : {}),
+    // When working on localhost with separate frontend/backend ports,
+    // sameSite: 'none' and 'secure: false' might be needed depending on the browser,
+    // but typically sameSite: 'lax' should suffice. Let's explicitly remove standard domain completely.
+    sameSite: isProd ? ('strict' as const) : ('lax' as const),
+    ...(isProd && cookieDomain ? { domain: cookieDomain } : {}),
   }
 }
 

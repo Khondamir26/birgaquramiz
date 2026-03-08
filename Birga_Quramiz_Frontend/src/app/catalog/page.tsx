@@ -8,6 +8,7 @@ import type { PaginatedResponse, Product } from "@/types";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
+import SidebarFilter from "@/components/catalog/SidebarFilter";
 
 export default function CatalogPage() {
   const [page, setPage] = useState(1);
@@ -16,14 +17,17 @@ export default function CatalogPage() {
   const [data, setData] = useState<PaginatedResponse<Product> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<{ minPrice?: number; maxPrice?: number; sortBy?: string }>({ sortBy: "newest" });
   const t = useTranslations("Catalog");
   const tNav = useTranslations("Navbar");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
 
-    getProducts(page, 12, search)
+    getProducts(page, 12, search, undefined, filters.minPrice, filters.maxPrice, filters.sortBy)
       .then((res) => {
         if (!cancelled) {
           setError("");
@@ -38,7 +42,7 @@ export default function CatalogPage() {
       });
 
     return () => { cancelled = true; };
-  }, [page, search, t]);
+  }, [page, search, filters.minPrice, filters.maxPrice, filters.sortBy, t]);
 
   const products = data?.data ?? [];
   const breadcrumbItems = [
@@ -95,6 +99,7 @@ export default function CatalogPage() {
           </div>
           <button
             type="button"
+            onClick={() => setIsFilterOpen(true)}
             className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white backdrop-blur-sm active:bg-white/20 transition-colors"
           >
             <SlidersHorizontal className="size-5" />
@@ -163,117 +168,134 @@ export default function CatalogPage() {
             )}
           </section>
 
-          {/* -- Products Area -- */}
-          <div className="px-4 pt-3 pb-36 md:px-0 md:pb-0">
+          {/* -- Main Content Grid (Sidebar + Products) -- */}
+          <div className="flex gap-6 items-start">
+            {/* Sidebar */}
+            <SidebarFilter
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              currentMinPrice={filters.minPrice}
+              currentMaxPrice={filters.maxPrice}
+              currentSortBy={filters.sortBy}
+              onApplyFilters={(f) => {
+                setFilters(f);
+                setPage(1);
+              }}
+            />
 
-            {/* Loading skeleton */}
-            {loading && (
-              <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-2xl bg-white animate-pulse"
-                    style={{ height: "280px" }}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Products Area */}
+            <div className="flex-1 w-full min-w-0 pb-36 md:pb-0">
 
-            {/* Error */}
-            {!loading && error && (
-              <div className="rounded-2xl bg-red-50 border border-red-100 p-6 text-center">
-                <p className="text-sm font-bold text-red-500">{t("loadFailed")}</p>
-                <p className="mt-1 text-xs text-red-400">{error}</p>
-                <button
-                  className="mt-4 rounded-xl bg-[#E31E24] px-6 py-2.5 text-[12px] font-black text-white active:scale-95 transition-transform"
-                  onClick={() => { setError(""); setPage(1); setSearch(""); setQuery(""); }}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {/* Empty */}
-            {!loading && !error && products.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-[#1B4D91]/5">
-                  <Search className="size-9 text-[#1B4D91]/20" />
+              {/* Loading skeleton */}
+              {loading && (
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-2xl bg-white animate-pulse"
+                      style={{ height: "280px" }}
+                    />
+                  ))}
                 </div>
-                <p className="text-base font-black text-[#1B4D91]">{t("empty")}</p>
-                <p className="mt-1 text-[13px] text-slate-400">Try another search query</p>
-              </div>
-            )}
+              )}
 
-            {/* Products grid */}
-            {!loading && !error && products.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {meta && meta.totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => { setPage((p) => p - 1); window.scrollTo(0, 0); }}
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-xl border-2 font-bold transition-all",
-                    page <= 1
-                      ? "border-slate-100 text-slate-300 cursor-not-allowed"
-                      : "border-[#1B4D91]/20 text-[#1B4D91] hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
-                  )}
-                >
-                  <ChevronLeft className="size-5" />
-                </button>
-
-                {/* Numbered pages (desktop) */}
-                <div className="hidden md:flex items-center gap-1">
-                  {Array.from({ length: Math.min(meta.totalPages, 7) }, (_, i) => {
-                    const p = i + 1;
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => { setPage(p); window.scrollTo(0, 0); }}
-                        className={cn(
-                          "flex size-10 items-center justify-center rounded-xl text-[13px] font-bold transition-all",
-                          p === page
-                            ? "bg-[#1B4D91] text-white shadow-sm"
-                            : "text-slate-500 hover:bg-slate-100"
-                        )}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                  {meta.totalPages > 7 && <span className="px-2 text-slate-400">...</span>}
+              {/* Error */}
+              {!loading && error && (
+                <div className="rounded-2xl bg-red-50 border border-red-100 p-6 text-center">
+                  <p className="text-sm font-bold text-red-500">{t("loadFailed")}</p>
+                  <p className="mt-1 text-xs text-red-400">{error}</p>
+                  <button
+                    className="mt-4 rounded-xl bg-[#E31E24] px-6 py-2.5 text-[12px] font-black text-white active:scale-95 transition-transform"
+                    onClick={() => { setError(""); setPage(1); setSearch(""); setQuery(""); }}
+                  >
+                    Retry
+                  </button>
                 </div>
+              )}
 
-                {/* Mobile page indicator */}
-                <span className="md:hidden rounded-xl border-2 border-[#1B4D91]/20 bg-white px-5 py-2 text-[13px] font-black text-[#1B4D91]">
-                  {page} / {meta.totalPages}
-                </span>
+              {/* Empty */}
+              {!loading && !error && products.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-[#1B4D91]/5">
+                    <Search className="size-9 text-[#1B4D91]/20" />
+                  </div>
+                  <p className="text-base font-black text-[#1B4D91]">{t("empty")}</p>
+                  <p className="mt-1 text-[13px] text-slate-400">Try another search query</p>
+                </div>
+              )}
 
-                <button
-                  disabled={page >= meta.totalPages}
-                  onClick={() => { setPage((p) => p + 1); window.scrollTo(0, 0); }}
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-xl border-2 font-bold transition-all",
-                    page >= meta.totalPages
-                      ? "border-slate-100 text-slate-300 cursor-not-allowed"
-                      : "border-[#1B4D91]/20 text-[#1B4D91] hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
-                  )}
-                >
-                  <ChevronRight className="size-5" />
-                </button>
-              </div>
-            )}
+              {/* Products grid */}
+              {!loading && !error && products.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {meta && meta.totalPages > 1 && (
+                <div className="mt-10 flex items-center justify-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => { setPage((p) => p - 1); window.scrollTo(0, 0); }}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-xl border-2 font-bold transition-all",
+                      page <= 1
+                        ? "border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "border-[#1B4D91]/20 text-[#1B4D91] hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
+                    )}
+                  >
+                    <ChevronLeft className="size-5" />
+                  </button>
+
+                  {/* Numbered pages (desktop) */}
+                  <div className="hidden md:flex items-center gap-1">
+                    {Array.from({ length: Math.min(meta.totalPages, 7) }, (_, i) => {
+                      const p = i + 1;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => { setPage(p); window.scrollTo(0, 0); }}
+                          className={cn(
+                            "flex size-10 items-center justify-center rounded-xl text-[13px] font-bold transition-all",
+                            p === page
+                              ? "bg-[#1B4D91] text-white shadow-sm"
+                              : "text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    {meta.totalPages > 7 && <span className="px-2 text-slate-400">...</span>}
+                  </div>
+
+                  {/* Mobile page indicator */}
+                  <span className="md:hidden rounded-xl border-2 border-[#1B4D91]/20 bg-white px-5 py-2 text-[13px] font-black text-[#1B4D91]">
+                    {page} / {meta.totalPages}
+                  </span>
+
+                  <button
+                    disabled={page >= meta.totalPages}
+                    onClick={() => { setPage((p) => p + 1); window.scrollTo(0, 0); }}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-xl border-2 font-bold transition-all",
+                      page >= meta.totalPages
+                        ? "border-slate-100 text-slate-300 cursor-not-allowed"
+                        : "border-[#1B4D91]/20 text-[#1B4D91] hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
+                    )}
+                  >
+                    <ChevronRight className="size-5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* -- Floating filter (mobile only) -- */}
           <button
+            onClick={() => setIsFilterOpen(true)}
             className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B4D91] text-white shadow-xl shadow-[#1B4D91]/30 active:scale-90 transition-transform duration-150 md:hidden"
             aria-label="Filters"
           >

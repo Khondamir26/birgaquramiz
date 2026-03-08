@@ -1,12 +1,23 @@
 import { apiFetch } from './client'
 import type { Product, PaginatedResponse, Category } from '@/types'
 
-export function getProducts(page = 1, limit = 12, q?: string, categoryId?: string) {
+export function getProducts(
+  page = 1,
+  limit = 12,
+  q?: string,
+  categoryId?: string,
+  minPrice?: number,
+  maxPrice?: number,
+  sortBy?: string
+) {
   const query = new URLSearchParams()
   query.set('page', String(page))
   query.set('limit', String(limit))
   if (q?.trim()) query.set('q', q.trim())
   if (categoryId?.trim()) query.set('categoryId', categoryId.trim())
+  if (minPrice !== undefined) query.set('minPrice', String(minPrice))
+  if (maxPrice !== undefined) query.set('maxPrice', String(maxPrice))
+  if (sortBy?.trim()) query.set('sortBy', sortBy.trim())
 
   return apiFetch<PaginatedResponse<Product>>(`/products?${query.toString()}`)
 }

@@ -49,7 +49,7 @@ export class ProductsController {
   constructor(
     private productsService: ProductsService,
     private uploadService: UploadService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -77,8 +77,19 @@ export class ProductsController {
     @Query('limit') limit = '10',
     @Query('q') q?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('sortBy') sortBy?: string,
   ) {
-    return this.productsService.getApproved(Number(page), Number(limit), q, categoryId)
+    return this.productsService.getApproved(
+      Number(page),
+      Number(limit),
+      q,
+      categoryId,
+      minPrice ? Number(minPrice) : undefined,
+      maxPrice ? Number(maxPrice) : undefined,
+      sortBy
+    )
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

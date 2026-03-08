@@ -39,6 +39,9 @@ services:
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      PAYME_MERCHANT_KEY: ${PAYME_MERCHANT_KEY}
+      CLICK_SECRET_KEY: ${CLICK_SECRET_KEY}
+      CLICK_SERVICE_ID: ${CLICK_SERVICE_ID}
     depends_on:
       postgres:
         condition: service_healthy

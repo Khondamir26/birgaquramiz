@@ -31,11 +31,14 @@ jobs:
           BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          PAYME_MERCHANT_KEY: ${{ secrets.PAYME_MERCHANT_KEY }}
+          CLICK_SECRET_KEY: ${{ secrets.CLICK_SECRET_KEY }}
+          CLICK_SERVICE_ID: ${{ secrets.CLICK_SERVICE_ID }}
         with:
           host: ${{ secrets.HETZNER_IP }}
           username: ${{ secrets.HETZNER_USERNAME }}
           password: ${{ secrets.HETZNER_PASSWORD }}
-          envs: IMAGE_TAG,DATABASE_URL,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN
+          envs: IMAGE_TAG,DATABASE_URL,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID
           script: |
             set -Eeuo pipefail
 
@@ -147,6 +150,9 @@ jobs:
             NEXT_PUBLIC_API_URL=${EFFECTIVE_API_URL}
             BCRYPT_SALT_ROUNDS=${EFFECTIVE_BCRYPT_ROUNDS}
             TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+            PAYME_MERCHANT_KEY=${PAYME_MERCHANT_KEY:-"test-payme-secret-key"}
+            CLICK_SECRET_KEY=${CLICK_SECRET_KEY:-"test-click-secret-key"}
+            CLICK_SERVICE_ID=${CLICK_SERVICE_ID:-"test-click-service-id"}
             EOF
 
             ############################################
@@ -163,7 +169,8 @@ jobs:
 
             unset IMAGE_TAG DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET \
                   CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL \
-                  BCRYPT_SALT_ROUNDS GITHUB_TOKEN TELEGRAM_BOT_TOKEN || true
+                  BCRYPT_SALT_ROUNDS GITHUB_TOKEN TELEGRAM_BOT_TOKEN \
+                  PAYME_MERCHANT_KEY CLICK_SECRET_KEY CLICK_SERVICE_ID || true
 
             ############################################
             # Build containers

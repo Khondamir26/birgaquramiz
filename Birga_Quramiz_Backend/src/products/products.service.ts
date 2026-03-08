@@ -9,7 +9,7 @@ type CreateProductInput = CreateProductDto & { imageUrl: string }
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   private ensureSellerProfile(user: AuthUser) {
     if (user.role !== 'SELLER') {
@@ -74,7 +74,7 @@ export class ProductsService {
     })
   }
 
-  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string) {
+  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string, minPrice?: number, maxPrice?: number, sortBy?: string) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
@@ -102,6 +102,22 @@ export class ProductsService {
       }
     }
 
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      whereCondition.price = {}
+      if (minPrice !== undefined) whereCondition.price.gte = minPrice
+      if (maxPrice !== undefined) whereCondition.price.lte = maxPrice
+    }
+
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
+
+    if (sortBy === 'price_asc') {
+      orderBy = { price: 'asc' };
+    } else if (sortBy === 'price_desc') {
+      orderBy = { price: 'desc' };
+    } else if (sortBy === 'newest') {
+      orderBy = { createdAt: 'desc' };
+    }
+
     const [products, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where: whereCondition,
@@ -117,9 +133,7 @@ export class ProductsService {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy,
         skip,
         take: safeLimit,
       }),
