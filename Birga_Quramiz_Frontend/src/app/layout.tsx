@@ -7,7 +7,7 @@ import MobileTopHeader from '@/components/layout/MobileTopHeader';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/sonner';
-import { satoshi } from './fonts';
+import { acrom } from './fonts';
 
 export const metadata: Metadata = {
   title: 'Birga Quramiz',
@@ -29,7 +29,7 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
         <script src="https://telegram.org/js/telegram-web-app.js" async={true}></script>
       </head>
-      <body className={`${satoshi.className} font-sans antialiased tap-highlight-none text-foreground bg-background`}>
+      <body className={`${acrom.className} font-sans antialiased tap-highlight-none text-foreground bg-background`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex min-h-screen flex-col">
             <Navbar />

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const LANGUAGE_META: Record<AppLocale, { flag: string; short: string }> = {
-  en: { flag: "/flags/us.png", short: "EN" },
+  en: { flag: "/flags/en.png", short: "EN" },
   ru: { flag: "/flags/ru.png", short: "RU" },
   uz: { flag: "/flags/uz.png", short: "UZ" },
 };
