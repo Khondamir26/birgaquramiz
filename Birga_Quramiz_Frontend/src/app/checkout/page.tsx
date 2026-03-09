@@ -140,6 +140,9 @@ export default function CheckoutPage() {
     setLoading(true);
     try {
       const payload = {
+        items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        customerName: form.customerName.trim(),
+        customerPhone: normalizePhone(form.customerPhone),
         deliveryType: form.deliveryType,
         deliveryAddress: form.deliveryType === "DELIVERY" ? form.deliveryAddress.trim() : undefined,
         paymentMethod: form.paymentMethod,
