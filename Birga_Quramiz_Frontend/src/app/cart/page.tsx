@@ -49,14 +49,14 @@ export default function CartPage() {
           <div>
             <h1 className="text-xl md:text-3xl font-black text-[#1B4D91]">{t("title")}</h1>
             <p className="text-[12px] md:text-[14px] font-medium text-slate-400 mt-0.5 md:mt-1">
-              {itemCount} {itemCount === 1 ? "�����" : itemCount < 5 ? "������" : "�������"}
+              {itemCount} {t("items").toLowerCase()}
             </p>
           </div>
           <button
             onClick={() => useCartStore.getState().clearCart()}
             className="md:hidden rounded-xl border border-[#E31E24]/20 px-4 py-2 text-[11px] font-black uppercase tracking-wide text-[#E31E24] active:bg-[#E31E24]/5 transition-colors"
           >
-            ��������
+            {t("clearCart")}
           </button>
         </div>
 
@@ -65,7 +65,7 @@ export default function CartPage() {
           onClick={() => useCartStore.getState().clearCart()}
           className="hidden md:flex rounded-full border border-[#E31E24]/30 px-6 py-2.5 text-[12px] font-black uppercase tracking-wider text-[#E31E24] hover:bg-[#E31E24]/5 transition-colors"
         >
-          ��������
+          {t("clearCart")}
         </button>
       </div>
 
@@ -77,7 +77,7 @@ export default function CartPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-start md:items-center gap-4 md:gap-8 rounded-3xl md:rounded-[32px] bg-white p-4 md:p-6 md:pl-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-100 transition-all hover:bg-slate-50/50"
+              className="flex items-start md:items-center gap-4 md:gap-8 rounded-3xl md:rounded-[32px] bg-white p-4 md:p-6 md:pl-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-100 transition-all duration-300 hover:bg-slate-50/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5"
             >
               {/* Image */}
               <Link href={`/catalog/product/${item.id}`} className="shrink-0">
@@ -97,7 +97,7 @@ export default function CartPage() {
                   <p className="line-clamp-2 text-[14px] md:text-[18px] font-bold leading-snug text-[#1B4D91] hover:underline md:mb-1">{item.name}</p>
                   <p className="text-[15px] md:text-[22px] font-black text-[#1B4D91]">
                     {(item.price * item.quantity).toLocaleString("ru-RU")}{" "}
-                    <span className="text-[12px] md:text-[14px] font-semibold text-slate-400">���</span>
+                    <span className="text-[12px] md:text-[14px] font-semibold text-slate-400">UZS</span>
                   </p>
                 </div>
 
@@ -132,7 +132,7 @@ export default function CartPage() {
         </section>
 
         {/* -- Desktop order summary -- */}
-        <aside className="hidden md:flex flex-col rounded-[32px] bg-white border border-slate-100 shadow-[0_4px_30px_rgb(0,0,0,0.03)] p-8 md:p-10 space-y-6 w-full">
+        <aside className="hidden md:flex flex-col rounded-[32px] bg-gradient-to-br from-white to-slate-50/50 border border-slate-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.04)] p-8 md:p-10 space-y-6 w-full">
           <h2 className="text-[22px] font-black text-[#1B4D91]">{t("summary")}</h2>
 
           <div className="space-y-4 text-[14px] font-semibold text-slate-500 w-full mb-4">
@@ -142,27 +142,27 @@ export default function CartPage() {
             </div>
             <div className="flex justify-between w-full">
               <span>{t("delivery")}</span>
-              <span className="text-[#1B4D91] font-bold">Selected during checkout</span>
+              <span className="text-[#1B4D91] font-bold">{t("deliveryAtCheckout")}</span>
             </div>
           </div>
 
           <div className="w-full">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">�������� �����</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">{t("total")}</p>
             <p className="text-[36px] font-black text-[#E31E24] leading-none mb-6">
               {total.toLocaleString("ru-RU")} <span className="text-[18px] text-[#1B4D91] ml-2">UZS</span>
             </p>
 
             <button
               onClick={() => router.push("/checkout")}
-              className="flex w-full items-center justify-center gap-2 h-14 rounded-full bg-[#E31E24] hover:bg-[#C91A20] text-[15px] font-black text-white shadow-lg shadow-[#E31E24]/20 active:scale-95 transition-all mb-4"
+              className="flex w-full items-center justify-center gap-2 h-14 rounded-full bg-gradient-to-r from-[#E31E24] to-[#C91A20] hover:-translate-y-0.5 text-[15px] font-black text-white shadow-xl shadow-[#E31E24]/20 active:scale-95 transition-all duration-300 mb-4"
             >
-              Proceed to checkout <ArrowRight className="size-5" />
+              {t("proceed")} <ArrowRight className="size-5" />
             </button>
             <Link
               href="/catalog"
               className="flex w-full items-center justify-center h-14 rounded-full border border-slate-200 hover:bg-slate-50 text-[14px] font-bold text-[#1B4D91] transition-colors"
             >
-              Continue shopping
+              {t("continueShopping")}
             </Link>
           </div>
         </aside>
@@ -177,7 +177,7 @@ export default function CartPage() {
           </div>
           <button
             onClick={() => router.push("/checkout")}
-            className="flex flex-[1.1] items-center justify-center gap-2 h-13 rounded-2xl bg-[#E31E24] text-[13px] font-black text-white shadow-lg shadow-[#E31E24]/20 active:scale-[0.97] transition-transform"
+            className="flex flex-[1.1] items-center justify-center gap-2 h-13 rounded-2xl bg-gradient-to-r from-[#E31E24] to-[#C91A20] text-[13px] font-black text-white shadow-lg shadow-[#E31E24]/20 active:scale-[0.97] transition-all"
           >
             {t("proceed")} <ArrowRight className="size-4" />
           </button>

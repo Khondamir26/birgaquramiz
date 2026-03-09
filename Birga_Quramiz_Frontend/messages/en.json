@@ -118,7 +118,9 @@
         "delivery": "Delivery",
         "deliveryAtCheckout": "Selected during checkout",
         "proceed": "Proceed to checkout",
-        "continueShopping": "Continue shopping"
+        "continueShopping": "Continue shopping",
+        "clearCart": "Clear cart",
+        "total": "Total amount"
     },
     "Checkout": {
         "title": "Checkout",

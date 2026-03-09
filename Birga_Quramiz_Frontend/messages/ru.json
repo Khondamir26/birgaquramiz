@@ -118,7 +118,9 @@
         "delivery": "Доставка",
         "deliveryAtCheckout": "Выбирается при оформлении",
         "proceed": "Перейти к оформлению",
-        "continueShopping": "Продолжить покупки"
+        "continueShopping": "Продолжить покупки",
+        "clearCart": "Очистить корзину",
+        "total": "Итоговая сумма"
     },
     "Checkout": {
         "title": "Оформление заказа",

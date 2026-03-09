@@ -25,11 +25,12 @@ type CheckoutField = "customerName" | "customerPhone" | "deliveryAddress";
 
 type FieldErrors = Partial<Record<CheckoutField, string>>;
 
-function getDigits(value: string) {
+function getDigits(value: string | undefined | null) {
+  if (!value) return "";
   return value.replace(/\D/g, "");
 }
 
-function formatPhoneInput(value: string) {
+function formatPhoneInput(value: string | undefined | null) {
   const digits = getDigits(value).slice(0, 12);
   const local = digits.startsWith("998") ? digits.slice(3) : digits.slice(-9);
 
@@ -42,13 +43,13 @@ function formatPhoneInput(value: string) {
   return parts.length ? `+998 ${parts.join(" ")}` : "+998 ";
 }
 
-function normalizePhone(value: string) {
+function normalizePhone(value: string | undefined | null) {
   const digits = getDigits(value);
   const local = digits.startsWith("998") ? digits.slice(3) : digits.slice(-9);
   return `+998${local}`;
 }
 
-function isValidPhone(value: string) {
+function isValidPhone(value: string | undefined | null) {
   const digits = getDigits(value);
   if (digits.startsWith("998")) return digits.length === 12;
   return digits.length === 9;
@@ -139,9 +140,6 @@ export default function CheckoutPage() {
     setLoading(true);
     try {
       const payload = {
-        items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
-        customerName: form.customerName.trim(),
-        customerPhone: normalizePhone(form.customerPhone),
         deliveryType: form.deliveryType,
         deliveryAddress: form.deliveryType === "DELIVERY" ? form.deliveryAddress.trim() : undefined,
         paymentMethod: form.paymentMethod,
@@ -229,11 +227,11 @@ export default function CheckoutPage() {
             <ShoppingBag className="size-16 text-[#1B4D91]/15" />
           </div>
           <p className="text-[16px] font-medium text-slate-500">{t("emptyCart")}</p>
-          <Link href="/catalog" className="mt-6 inline-flex h-14 items-center justify-center rounded-full bg-[#1B4D91] px-8 text-[15px] font-black text-white hover:bg-[#143d75] transition-colors">{t("goMarketplace")}</Link>
+          <Link href="/catalog" className="mt-6 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#1B4D91] to-[#143d75] px-8 text-[15px] font-black text-white hover:-translate-y-0.5 shadow-xl shadow-[#1B4D91]/20 transition-all duration-300">{t("goMarketplace")}</Link>
         </section>
       ) : (
         <section className="grid gap-6 md:gap-12 lg:grid-cols-[1.2fr,0.85fr] items-start">
-          <form onSubmit={placeOrder} className="surface-card rounded-[32px] p-6 md:p-10 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 space-y-8">
+          <form onSubmit={placeOrder} className="surface-card bg-gradient-to-br from-white to-slate-50/30 rounded-[32px] p-6 md:p-10 shadow-[0_8px_40px_rgba(0,0,0,0.04)] border border-slate-100/60 space-y-8">
             <h2 className="text-xl md:text-2xl font-black text-[#1B4D91] border-b border-slate-100 pb-4">{t("deliveryDetails")}</h2>
 
             <div className="space-y-6">
@@ -354,7 +352,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="w-full rounded-full bg-[#1B4D91] h-14 text-[16px] font-black text-white hover:bg-[#143d75] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#1B4D91]/20 mt-8"
+              className="w-full rounded-full bg-gradient-to-r from-[#1B4D91] to-[#143d75] h-14 text-[16px] font-black text-white hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-[#1B4D91]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 shadow-xl shadow-[#1B4D91]/20 mt-8"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -366,7 +364,7 @@ export default function CheckoutPage() {
           </form>
 
           {/* ── Desktop order summary (Aesthetic matched to Cart) ── */}
-          <aside className="sticky top-24 rounded-[32px] bg-white border border-slate-100 shadow-[0_4px_30px_rgb(0,0,0,0.03)] p-8 md:p-10 flex flex-col w-full h-max">
+          <aside className="sticky top-24 rounded-[32px] bg-gradient-to-br from-white to-slate-50/50 border border-slate-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.04)] p-8 md:p-10 flex flex-col w-full h-max">
             <h2 className="text-[22px] font-black text-[#1B4D91] border-b border-slate-100 pb-4 mb-6">{t("summary.title")}</h2>
 
             <div className="space-y-4 mb-8">
@@ -393,7 +391,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="w-full pt-6 border-t border-slate-100 mt-auto">
-              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Итоговая сумма</p>
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">{t("summary.total")}</p>
               <p className="text-[36px] font-black text-[#E31E24] leading-none mb-2">
                 {total.toLocaleString("ru-RU")} <span className="text-[18px] text-[#1B4D91] ml-2">UZS</span>
               </p>

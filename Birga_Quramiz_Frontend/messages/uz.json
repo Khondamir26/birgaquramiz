@@ -118,7 +118,9 @@
         "delivery": "Yetkazib berish",
         "deliveryAtCheckout": "Checkoutda tanlanadi",
         "proceed": "Checkoutga otish",
-        "continueShopping": "Xaridni davom ettirish"
+        "continueShopping": "Xaridni davom ettirish",
+        "clearCart": "Savatni tozalash",
+        "total": "Jami summa"
     },
     "Checkout": {
         "title": "Checkout",
