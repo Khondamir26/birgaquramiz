@@ -28,6 +28,7 @@ jobs:
         run: |
           cd Birga_Quramiz_Backend
           pnpm install --frozen-lockfile
+          npx prisma generate
           pnpm run lint
           pnpm run build
 
