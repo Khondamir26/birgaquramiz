@@ -21,13 +21,13 @@ function initializeAuth() {
       if (typeof window !== 'undefined') {
         let attempts = 0
         // Wait up to 500ms for Telegram WebApp
-        // @ts-ignore
+        // @ts-expect-error window.Telegram might not be defined
         while (!window.Telegram?.WebApp && attempts < 10) {
           await new Promise(resolve => setTimeout(resolve, 50))
           attempts++
         }
 
-        // @ts-ignore
+        // @ts-expect-error window.Telegram might not be defined
         const tg = window.Telegram?.WebApp
 
         if (tg?.initData) {
@@ -66,7 +66,7 @@ export function useAuth() {
     if (isInitialized) {
       // Check for Telegram deep link after auth is initialized
       if (typeof window !== 'undefined') {
-        // @ts-ignore
+        // @ts-expect-error window.Telegram might not be defined
         const tg = window.Telegram?.WebApp
         const startParam = tg?.initDataUnsafe?.start_param
         if (startParam && startParam.startsWith('product_')) {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/authStore";
 import { logout as apiLogout } from "@/lib/api/auth";
@@ -10,9 +11,40 @@ import { useFavorites } from "@/hooks/useFavorites";
 import {
   User2, Bell, HelpCircle, Store, Heart,
   ChevronRight, LogOut, Package, MapPin, Users,
-  Info, Bot, Settings, ShoppingCart, Globe
+  Info, Bot, Settings, ShoppingCart, Globe,
+  Truck, CreditCard, RefreshCw, Phone
 } from "lucide-react";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import { cn } from "@/lib/utils";
+
+function MenuItem({ item }: { item: any }) {
+  const Icon = item.icon;
+  const isExternal = item.href.startsWith("tel:");
+  const Component = isExternal ? "a" : Link;
+
+  return (
+    <Component
+      href={item.href}
+      className="flex w-full items-center gap-4 px-5 py-[15px] transition-colors hover:bg-[#1B4D91]/3 active:bg-[#1B4D91]/5 group select-none touch-manipulation"
+    >
+      <div
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors"
+        style={{ backgroundColor: `${item.accent}12`, color: item.accent }}
+      >
+        <Icon className="size-[18px]" />
+      </div>
+      <span className="text-[13.5px] font-semibold text-slate-700 text-left flex-1 group-hover:text-[#1B4D91] transition-colors">
+        {item.label}
+      </span>
+      {item.badge && (
+        <span className="rounded-lg bg-[#7c3aed]/10 px-2 py-0.5 text-[9px] font-black text-[#7c3aed] uppercase tracking-wider">
+          {item.badge}
+        </span>
+      )}
+      <ChevronRight className="size-4 text-slate-300 group-hover:text-[#1B4D91]/40 transition-colors" />
+    </Component>
+  );
+}
 
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth();
@@ -59,26 +91,32 @@ export default function ProfilePage() {
       badge: t("beta") || "Beta",
     },
     {
-      label: t("notifications") || "Уведомления",
-      icon: Bell, href: "/notifications",
+      label: t("delivery") || "Доставка",
+      icon: Truck, href: "/help/delivery",
       show: true,
       accent: "#1B4D91",
     },
     {
-      label: t("pickupPoints") || "Адреса ПВЗ",
-      icon: MapPin, href: "/points",
+      label: t("payment") || "Оплата",
+      icon: CreditCard, href: "/help",
+      show: true,
+      accent: "#1B4D91",
+    },
+    {
+      label: t("returns") || "Возврат",
+      icon: RefreshCw, href: "/help/return",
       show: true,
       accent: "#1B4D91",
     },
     {
       label: t("support") || "Служба поддержки",
-      icon: HelpCircle, href: "/support",
+      icon: Phone, href: "tel:+998900000000",
       show: true,
       accent: "#1B4D91",
     },
     {
       label: t("faq") || "FAQ",
-      icon: Info, href: "/faq",
+      icon: HelpCircle, href: "/help/faq",
       show: true,
       accent: "#1B4D91",
     },
@@ -109,8 +147,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="md:grid md:grid-cols-[300px,1fr] md:gap-6 md:items-start">
-            <div className="bg-white px-5 pt-8 pb-6 md:rounded-3xl md:shadow-sm md:sticky md:top-24">
+          <div className="md:grid md:grid-cols-[300px,1fr] md:gap-6 md:items-start px-4 pt-4 md:px-6 md:pt-6">
+            <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 md:sticky md:top-24">
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <div className="flex size-[64px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1B4D91]/20 to-[#1B4D91]/5 border border-[#1B4D91]/10">
@@ -146,12 +184,12 @@ export default function ProfilePage() {
                 </div>
 
                 {!isAuthenticated && (
-                  <button
-                    onClick={() => router.push("/login")}
-                    className="shrink-0 h-10 rounded-xl bg-[#E31E24] px-4 text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform"
+                  <Link
+                    href="/login"
+                    className="shrink-0 flex h-10 items-center justify-center rounded-xl bg-navbar-gradient px-4 text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform select-none touch-manipulation"
                   >
                     {t("signIn") || "Войти"}
-                  </button>
+                  </Link>
                 )}
               </div>
 
@@ -160,10 +198,10 @@ export default function ProfilePage() {
                   {quickStats.map((stat) => {
                     const Icon = stat.icon;
                     return (
-                      <button
+                      <Link
                         key={stat.href}
-                        onClick={() => router.push(stat.href)}
-                        className="flex flex-col items-center gap-1.5 rounded-2xl border border-slate-100 bg-[#f4f6fa] py-3 px-2 hover:bg-[#1B4D91]/5 active:scale-95 transition-all relative"
+                        href={stat.href}
+                        className="flex flex-col items-center gap-1.5 rounded-2xl border border-slate-100 bg-[#f4f6fa] py-3 px-2 hover:bg-[#1B4D91]/5 active:scale-95 transition-all relative select-none touch-manipulation"
                       >
                         {stat.count !== null && (
                           <span className="absolute -top-1.5 -right-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#E31E24] px-1 text-[9px] font-black text-white ring-2 ring-white">
@@ -176,14 +214,14 @@ export default function ProfilePage() {
                         <p className="text-[9px] font-black uppercase tracking-widest text-center" style={{ color: stat.color }}>
                           {stat.label}
                         </p>
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
               )}
 
               {isAuthenticated && (
-                <button className="hidden md:flex mt-4 w-full items-center gap-2 rounded-2xl border border-[#1B4D91]/15 bg-[#f4f6fa] px-4 py-3 text-[12px] font-semibold text-[#1B4D91] hover:bg-[#1B4D91]/5 transition-colors">
+                <button className="hidden md:flex mt-4 w-full items-center gap-2 rounded-2xl border border-[#1B4D91]/15 bg-[#f4f6fa] px-4 py-3 text-[12px] font-semibold text-[#1B4D91] hover:bg-[#1B4D91]/5 transition-colors select-none touch-manipulation">
                   <Settings className="size-4" />
                   {t("editProfile") || "Редактировать профиль"}
                 </button>
@@ -192,7 +230,7 @@ export default function ProfilePage() {
               {isAuthenticated && (
                 <button
                   onClick={handleLogout}
-                  className="hidden md:flex mt-4 w-full items-center justify-center gap-2.5 h-11 rounded-2xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] hover:bg-[#E31E24]/10 transition-colors"
+                  className="hidden md:flex mt-4 w-full items-center justify-center gap-2.5 h-11 rounded-2xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] hover:bg-[#E31E24]/10 transition-colors select-none touch-manipulation"
                 >
                   <LogOut className="size-4" />
                   {t("logout") || "Выйти из аккаунта"}
@@ -200,48 +238,48 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <div className="px-4 mt-5 space-y-4 md:px-0 md:mt-0">
-              <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                {t("generalSettings") || "Общие настройки"}
-              </p>
+            <div className="mt-5 space-y-6 md:mt-0 pb-10">
+              {/* Services Section */}
+              <div className="space-y-3">
+                <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {t("services") || "Сервисы"}
+                </p>
+                <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white divide-y divide-[#f4f6fa]">
+                  {menuItems
+                    .filter((item) => item.show && (item.icon === Bot || item.href === "/seller-register"))
+                    .map((item, idx) => (
+                      <MenuItem key={idx} item={item} />
+                    ))}
+                </div>
+              </div>
 
-              <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white divide-y divide-[#f4f6fa]">
-                {menuItems.filter((i) => i.show).map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => router.push(item.href)}
-                      className="flex w-full items-center gap-4 px-5 py-[15px] transition-colors hover:bg-[#1B4D91]/3 active:bg-[#1B4D91]/5 group"
-                    >
-                      <div
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors"
-                        style={{ backgroundColor: `${item.accent}12`, color: item.accent }}
-                      >
-                        <Icon className="size-[18px]" />
-                      </div>
-                      <span className="text-[13.5px] font-semibold text-slate-700 text-left flex-1 group-hover:text-[#1B4D91] transition-colors">
-                        {item.label}
-                      </span>
-                      {item.badge && (
-                        <span className="rounded-lg bg-[#7c3aed]/10 px-2 py-0.5 text-[9px] font-black text-[#7c3aed] uppercase tracking-wider">
-                          {item.badge}
-                        </span>
-                      )}
-                      <ChevronRight className="size-4 text-slate-300 group-hover:text-[#1B4D91]/40 transition-colors" />
-                    </button>
-                  );
-                })}
+              {/* Information Section */}
+              <div className="space-y-3">
+                <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {t("information") || "Информация"}
+                </p>
+                <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white divide-y divide-[#f4f6fa]">
+                  {menuItems
+                    .filter((item) => 
+                      item.show && 
+                      item.icon !== Bot && 
+                      item.href !== "/seller-register" && 
+                      item.href !== "/login"
+                    )
+                    .map((item, idx) => (
+                      <MenuItem key={idx} item={item} />
+                    ))}
+                </div>
               </div>
 
               {user?.role === "SELLER" && (
-                <>
+                <div className="space-y-3">
                   <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                     {t("sellerSection") || "Для продавцов"}
                   </p>
-                  <button
-                    onClick={() => router.push("/seller/dashboard")}
-                    className="flex w-full items-center justify-between rounded-3xl bg-[#1B4D91] p-5 text-white shadow-lg shadow-[#1B4D91]/20 hover:bg-[#163d73] active:scale-[0.98] transition-all"
+                  <Link
+                    href="/seller/dashboard"
+                    className="flex w-full items-center justify-between rounded-3xl bg-navbar-gradient p-5 text-white shadow-lg shadow-[#1B4D91]/20 hover:shadow-xl hover:shadow-[#1B4D91]/30 active:scale-[0.98] transition-all select-none touch-manipulation"
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex size-10 items-center justify-center rounded-2xl bg-white/10">
@@ -253,35 +291,39 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <ChevronRight className="size-5 opacity-50" />
-                  </button>
-                </>
+                  </Link>
+                </div>
               )}
 
-              <div className="md:hidden rounded-3xl border border-slate-100 bg-white overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-[15px]">
-                  <div className="flex items-center gap-4">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91]/6 text-[#1B4D91]">
-                      <Globe className="size-[18px]" />
+              {/* Settings Section (Mobile Only) */}
+              <div className="md:hidden space-y-3">
+                <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {t("generalSettings") || "Общие настройки"}
+                </p>
+                <div className="rounded-3xl border border-slate-100 bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-[15px]">
+                    <div className="flex items-center gap-4">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91]/6 text-[#1B4D91]">
+                        <Globe className="size-[18px]" />
+                      </div>
+                      <span className="text-[13.5px] font-semibold text-slate-700">
+                        {t("language") || "Язык"}
+                      </span>
                     </div>
-                    <span className="text-[13.5px] font-semibold text-slate-700">
-                      {t("language") || "Язык"}
-                    </span>
+                    <LanguageSwitcher variant="dark" />
                   </div>
-                  <LanguageSwitcher />
                 </div>
               </div>
 
               {isAuthenticated && (
                 <button
                   onClick={handleLogout}
-                  className="md:hidden flex w-full items-center justify-center gap-2.5 h-14 rounded-2xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] active:bg-[#E31E24]/10 transition-colors"
+                  className="md:hidden flex w-full items-center justify-center gap-2.5 h-14 rounded-3xl border border-[#E31E24]/15 bg-[#E31E24]/5 text-[13px] font-bold text-[#E31E24] active:bg-[#E31E24]/10 transition-colors select-none touch-manipulation"
                 >
                   <LogOut className="size-4" />
                   {t("logout") || "Выйти из аккаунта"}
                 </button>
               )}
-
-              <div className="h-2" />
             </div>
           </div>
 

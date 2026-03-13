@@ -292,7 +292,7 @@ export default function ProductDetailPage() {
                 <button
                   disabled={product.stock === 0 || !canBuy}
                   onClick={handleAddToCart}
-                  className="flex h-14 w-full md:w-auto md:px-12 items-center justify-center gap-2 rounded-2xl bg-[#E31E24] hover:bg-[#C91A20] hover:shadow-lg hover:shadow-[#E31E24]/30 text-[14px] font-black text-white active:scale-95 transition-all disabled:opacity-40"
+                  className="flex h-14 w-full md:w-auto md:px-12 items-center justify-center gap-2 rounded-2xl bg-navbar-gradient hover:shadow-lg hover:shadow-[#1B4D91]/30 text-[14px] font-black text-white active:scale-95 transition-all disabled:opacity-40"
                 >
                   <ShoppingCart className="size-5" />
                   {product.stock === 0 ? t("outOfStock") : canBuy ? t("addToCart") : t("onlyCustomersCanBuy")}
@@ -409,7 +409,7 @@ export default function ProductDetailPage() {
               <button
                 disabled={product.stock === 0 || !canBuy}
                 onClick={handleAddToCart}
-                className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[#E31E24] text-[13px] font-black text-white shadow-lg shadow-[#E31E24]/20 active:scale-[0.97] transition-transform disabled:opacity-40"
+                className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-navbar-gradient text-[13px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.97] transition-transform disabled:opacity-40"
               >
                 <ShoppingCart className="size-4.5" />
                 {product.stock === 0 ? t("outOfStock") : canBuy ? t("addToCart") : t("onlyCustomersCanBuy")}

@@ -88,18 +88,23 @@ export class ProductsService {
     }
 
     if (q?.trim()) {
-      const trimmed = q.trim()
-      const numeric = Number(trimmed)
+      const terms = q.trim().split(/\s+/).filter(Boolean);
+      const orConditions: Prisma.ProductWhereInput[] = [];
 
-      whereCondition.OR = [
-        { name: { contains: trimmed, mode: 'insensitive' } },
-        { description: { contains: trimmed, mode: 'insensitive' } },
-        { sku: { contains: trimmed, mode: 'insensitive' } },
-      ]
+      terms.forEach(term => {
+        orConditions.push(
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { sku: { contains: term, mode: 'insensitive' } }
+        );
 
-      if (Number.isInteger(numeric) && numeric > 0) {
-        whereCondition.OR.push({ articleNumber: numeric })
-      }
+        const numeric = Number(term);
+        if (Number.isInteger(numeric) && numeric > 0) {
+          orConditions.push({ articleNumber: numeric });
+        }
+      });
+
+      whereCondition.OR = orConditions;
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {

@@ -1,5 +1,5 @@
-"use client";
 
+import { memo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import Image from "next/image";
 
-export default function ProductCard({ product }: { product: Product }) {
+const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem, increment, decrement, getQuantity } = useCart();
   const { user } = useAuth();
@@ -95,6 +95,7 @@ export default function ProductCard({ product }: { product: Product }) {
               src={resolveImageUrl(product.imageUrl)}
               alt={product.name}
               fill
+              unoptimized
               sizes="(max-width: 768px) 50vw, 25vw"
               className="h-full w-full object-contain p-2 mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
             />
@@ -149,7 +150,7 @@ export default function ProductCard({ product }: { product: Product }) {
           ) : (
             <button
               onClick={handleAddToCart}
-              className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-[#1B4D91] text-[11px] font-black uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1B4D91]/90 hover:shadow-md hover:shadow-[#1B4D91]/20 active:scale-[0.98]"
+              className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-navbar-gradient text-[11px] font-black uppercase tracking-wider text-white transition-all duration-200 hover:shadow-md hover:shadow-[#1B4D91]/20 active:scale-[0.98]"
             >
               {t("addToCart")}
               <ShoppingCart className="size-4" />
@@ -159,4 +160,6 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
     </article>
   );
-}
+});
+
+export default ProductCard;

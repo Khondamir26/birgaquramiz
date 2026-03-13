@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { resolveImageUrl } from "@/lib/image";
 import { ShoppingBag, Trash2, Minus, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import EmptyState from "@/components/ui/EmptyState";
 
 // -- Brand colours -------------------------------------------------------------
 // Primary Blue #1B4D91 | Accent Red #E31E24
@@ -22,21 +23,13 @@ export default function CartPage() {
   /* -- Empty State -- */
   if (items.length === 0) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-8 text-center pt-12 md:pt-0">
-        <div className="relative mb-8 md:mb-10">
-          <div className="flex size-28 md:size-40 items-center justify-center rounded-full bg-[#1B4D91]/5">
-            <ShoppingBag className="size-14 md:size-20 text-[#1B4D91]/15" />
-          </div>
-        </div>
-        <h1 className="text-2xl md:text-3xl font-black text-[#1B4D91]">{t("emptyTitle")}</h1>
-        <p className="mt-2 md:mt-3 max-w-[220px] md:max-w-xs text-[13px] md:text-[15px] font-medium text-slate-400">{t("emptyText")}</p>
-        <button
-          onClick={() => router.push("/catalog")}
-          className="mt-10 h-13 md:h-14 w-full max-w-xs md:max-w-sm rounded-2xl bg-[#1B4D91] hover:bg-[#143d75] text-[14px] md:text-[15px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.97] transition-all"
-        >
-          {t("goMarketplace")}
-        </button>
-      </div>
+      <EmptyState
+        icon={ShoppingBag}
+        title={t("emptyTitle")}
+        description={t("emptyText")}
+        buttonText={t("goMarketplace")}
+        buttonHref="/catalog"
+      />
     );
   }
 
@@ -154,7 +147,7 @@ export default function CartPage() {
 
             <button
               onClick={() => router.push("/checkout")}
-              className="flex w-full items-center justify-center gap-2 h-14 rounded-full bg-gradient-to-r from-[#E31E24] to-[#C91A20] hover:-translate-y-0.5 text-[15px] font-black text-white shadow-xl shadow-[#E31E24]/20 active:scale-95 transition-all duration-300 mb-4"
+              className="flex w-full items-center justify-center gap-2 h-14 rounded-full bg-navbar-gradient hover:-translate-y-0.5 text-[15px] font-black text-white shadow-xl shadow-[#1B4D91]/25 active:scale-95 transition-all duration-300 mb-4"
             >
               {t("proceed")} <ArrowRight className="size-5" />
             </button>
@@ -177,7 +170,7 @@ export default function CartPage() {
           </div>
           <button
             onClick={() => router.push("/checkout")}
-            className="flex flex-[1.1] items-center justify-center gap-2 h-13 rounded-2xl bg-gradient-to-r from-[#E31E24] to-[#C91A20] text-[13px] font-black text-white shadow-lg shadow-[#E31E24]/20 active:scale-[0.97] transition-all"
+            className="flex flex-[1.1] items-center justify-center gap-2 h-13 rounded-2xl bg-navbar-gradient text-[13px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.97] transition-all"
           >
             {t("proceed")} <ArrowRight className="size-4" />
           </button>

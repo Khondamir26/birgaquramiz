@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -97,7 +97,7 @@ export function SignupForm({
               <Field>
                 <Button
                   type="submit"
-                  className="w-full bg-[#1B4D91] hover:bg-[#163d73] text-white rounded-2xl h-12 font-black transition-all shadow-lg shadow-[#1B4D91]/20 hover:scale-[1.02] active:scale-95"
+                  className="w-full bg-navbar-gradient text-white rounded-2xl h-12 font-black transition-all shadow-lg shadow-[#1B4D91]/20 hover:scale-[1.02] active:scale-95"
                   disabled={loading}
                 >
                   {loading ? t('registering') : t('createAccount')}

@@ -34,7 +34,9 @@
         "myProducts": "Мои товары",
         "adminDashboard": "Админ-панель",
         "users": "Пользователи",
-        "adminProducts": "Товары"
+        "adminProducts": "Товары",
+        "city": "Ташкент",
+        "search": "Искать"
     },
     "Footer": {
         "description": "Маркетплейс строительных материалов с прозрачными ценами, вариантами доставки и экосистемой продавцов.",
@@ -103,13 +105,19 @@
         "next": "Далее",
         "pageOf": "Страница {page} из {totalPages}"
     },
+    "Category": {
+        "notFound": "Категория не найдена",
+        "parentCategory": "Родительская категория: {name}",
+        "emptyProducts": "В этой категории пока нет товаров.",
+        "backToCatalog": "Назад в каталог"
+    },
     "Cart": {
         "title": "Корзина",
         "restrictedTitle": "Покупка доступна только для клиентских аккаунтов",
         "restrictedText": "Ваша текущая роль: {role}. Используйте панель для вашей роли.",
         "openDashboard": "Открыть панель",
         "emptyTitle": "Корзина пуста",
-        "emptyText": "Добавьте товары из маркетплейса и перейдите к оформлению.",
+        "emptyText": "Добавьте товары из маркетплейса.",
         "goMarketplace": "Перейти в маркетплейс",
         "each": "за штуку",
         "remove": "Удалить",
@@ -201,6 +209,8 @@
     },
     "Profile": {
         "title": "Профиль",
+        "services": "Сервисы",
+        "information": "Информация",
         "notAuthenticated": "Вы не авторизованы.",
         "signIn": "Войти",
         "name": "Имя",
@@ -214,6 +224,9 @@
         "becomeSeller": "Стать партнёром",
         "faq": "FAQ",
         "support": "Служба поддержки",
+        "delivery": "Доставка",
+        "payment": "Оплата",
+        "returns": "Возврат",
         "pickupPoints": "Адреса ПВЗ",
         "notifications": "Уведомления",
         "myOrders": "Заказы",

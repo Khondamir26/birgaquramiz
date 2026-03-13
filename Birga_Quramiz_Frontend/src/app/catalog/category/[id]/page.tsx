@@ -11,6 +11,7 @@ import ProductCard from "@/components/product/ProductCard";
 export default function CatalogCategoryPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const t = useTranslations("Category");
   const tNav = useTranslations("Navbar");
 
   const categoryId = String(id ?? "");
@@ -30,7 +31,7 @@ export default function CatalogCategoryPage() {
   if (!categoryId) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-12 text-center">
-        <p className="text-base font-bold text-slate-500">Category not found</p>
+        <p className="text-base font-bold text-slate-500">{t("notFound")}</p>
       </div>
     );
   }
@@ -53,13 +54,13 @@ export default function CatalogCategoryPage() {
     return (
       <div className="mx-auto max-w-5xl px-4 py-12 text-center">
         <p className="text-base font-bold text-slate-500">
-          {categoryError?.toLowerCase().includes("not found") ? "Category not found" : categoryError}
+          {categoryError?.toLowerCase().includes("not found") ? t("notFound") : categoryError}
         </p>
         <button
           onClick={() => router.push("/catalog")}
           className="mt-4 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700"
         >
-          {tNav("catalog")}
+          {t("backToCatalog")}
         </button>
       </div>
     );
@@ -82,7 +83,7 @@ export default function CatalogCategoryPage() {
         <div className="mt-4 md:mt-6 mb-4 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-black text-[#1B4D91]">{category.name}</h1>
           {category.parent ? (
-            <p className="mt-1 text-sm font-medium text-slate-500">Parent category: {category.parent.name}</p>
+            <p className="mt-1 text-sm font-medium text-slate-500">{t("parentCategory", { name: category.parent.name })}</p>
           ) : null}
         </div>
 
@@ -98,7 +99,7 @@ export default function CatalogCategoryPage() {
           </div>
         ) : products.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-10 text-center">
-            <p className="text-sm font-bold text-slate-600">No products in this category yet.</p>
+            <p className="text-sm font-bold text-slate-600">{t("emptyProducts")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">

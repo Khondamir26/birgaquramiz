@@ -85,7 +85,7 @@ export default function BottomNavigation() {
                                 className={cn(
                                     "flex items-center justify-center rounded-2xl transition-all duration-300",
                                     isActive
-                                        ? "bg-[#1B4D91] px-5 py-2 shadow-md shadow-[#1B4D91]/25"
+                                        ? "bg-navbar-gradient px-5 py-2 shadow-navbar"
                                         : "px-3 py-2 group-active:bg-[#1B4D91]/8"
                                 )}
                             >

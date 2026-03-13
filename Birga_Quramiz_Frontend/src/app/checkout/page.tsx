@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -198,7 +198,7 @@ export default function CheckoutPage() {
           <div className="flex flex-col sm:flex-row w-full max-w-sm gap-4">
             <Link
               href="/catalog"
-              className="flex-1 h-14 flex items-center justify-center rounded-full bg-[#E31E24] text-[15px] font-bold text-white hover:bg-[#C91A20] transition-colors shadow-lg shadow-[#E31E24]/20"
+              className="flex-1 h-14 flex items-center justify-center rounded-full bg-navbar-gradient text-[15px] font-bold text-white hover:shadow-lg hover:shadow-[#1B4D91]/25 transition-all shadow-[#1B4D91]/20"
             >
               {t("success.backMarketplace")}
             </Link>
@@ -230,7 +230,7 @@ export default function CheckoutPage() {
             <ShoppingBag className="size-16 text-[#1B4D91]/15" />
           </div>
           <p className="text-[16px] font-medium text-slate-500">{t("emptyCart")}</p>
-          <Link href="/catalog" className="mt-6 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#1B4D91] to-[#143d75] px-8 text-[15px] font-black text-white hover:-translate-y-0.5 shadow-xl shadow-[#1B4D91]/20 transition-all duration-300">{t("goMarketplace")}</Link>
+          <Link href="/catalog" className="mt-6 inline-flex h-14 items-center justify-center rounded-full bg-navbar-gradient px-8 text-[15px] font-black text-white hover:-translate-y-0.5 shadow-xl shadow-[#1B4D91]/25 transition-all duration-300">{t("goMarketplace")}</Link>
         </section>
       ) : (
         <section className="grid gap-6 md:gap-12 lg:grid-cols-[1.2fr,0.85fr] items-start">
@@ -355,7 +355,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="w-full rounded-full bg-gradient-to-r from-[#1B4D91] to-[#143d75] h-14 text-[16px] font-black text-white hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-[#1B4D91]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 shadow-xl shadow-[#1B4D91]/20 mt-8"
+              className="w-full rounded-full bg-navbar-gradient h-14 text-[16px] font-black text-white hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-[#1B4D91]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all duration-300 shadow-xl shadow-[#1B4D91]/25 mt-8"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">

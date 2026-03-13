@@ -1,10 +1,13 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Phone, MapPin, ExternalLink, Linkedin, Instagram, Twitter, Facebook } from "lucide-react";
+import { Mail, Phone, Linkedin, Instagram, Twitter, Facebook } from "lucide-react";
+
+const footerGradient =
+  "linear-gradient(97.26deg, #163b92 0.49%, #1a429e 14.88%, #1f4cac 29.27%, #2559bc 43.14%, #2c66cb 57.02%, #2f6fd5 70.89%, #295fbf 84.76%, #214da8 99.15%), linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08))";
 
 export default function Footer() {
   const t = useTranslations("Footer");
@@ -20,20 +23,25 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="hidden md:block mt-16 bg-[#1B4D91] text-white">
+    <footer 
+      className="hidden md:block mt-16 relative overflow-hidden text-white"
+      style={{ background: footerGradient }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_38%,rgba(0,0,0,0.08))] pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-white/20 pointer-events-none" />
+
       {/* Main footer columns */}
       <div className="mx-auto max-w-7xl px-6 py-16 grid grid-cols-4 gap-12">
 
         {/* Brand column */}
         <div className="col-span-1 flex flex-col items-start pr-4">
-          <Link href="/" className="inline-flex mb-6 hover:opacity-90 transition-opacity">
-            <Image
-              src={logoSrc}
-              alt="Birga Quramiz"
-              width={200}
-              height={52}
-              className="h-12 w-auto brightness-0 invert"
-            />
+          <Link 
+            href={user?.role === "ADMIN" ? "/admin" : user?.role === "SELLER" ? "/seller/dashboard" : "/"} 
+            className="mb-6 hover:opacity-90 transition-opacity"
+          >
+            <span className="text-[40px] font-black lowercase leading-none tracking-[-0.07em] text-white">
+              birga quramiz
+            </span>
           </Link>
           <p className="text-[14px] leading-relaxed text-white/70 mb-8">
             {t("description")}

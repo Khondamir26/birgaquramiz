@@ -34,7 +34,9 @@
         "myProducts": "My Products",
         "adminDashboard": "Admin Panel",
         "users": "Users",
-        "adminProducts": "Products"
+        "adminProducts": "Products",
+        "city": "Tashkent",
+        "search": "Search"
     },
     "Footer": {
         "description": "Construction materials marketplace with transparent pricing, delivery options and seller ecosystem.",
@@ -102,6 +104,12 @@
         "previous": "Previous",
         "next": "Next",
         "pageOf": "Page {page} of {totalPages}"
+    },
+    "Category": {
+        "notFound": "Category not found",
+        "parentCategory": "Parent category: {name}",
+        "emptyProducts": "No products in this category yet.",
+        "backToCatalog": "Back to catalog"
     },
     "Cart": {
         "title": "Cart",
@@ -201,6 +209,8 @@
     },
     "Profile": {
         "title": "Profile",
+        "services": "Services",
+        "information": "Information",
         "notAuthenticated": "You are not authenticated.",
         "signIn": "Sign in",
         "name": "Name",
@@ -214,6 +224,9 @@
         "becomeSeller": "Become a partner",
         "faq": "FAQ",
         "support": "Support center",
+        "delivery": "Delivery",
+        "payment": "Payment",
+        "returns": "Returns",
         "pickupPoints": "Pickup points",
         "notifications": "Notifications",
         "myOrders": "Orders",

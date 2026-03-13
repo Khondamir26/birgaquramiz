@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Filter, ChevronDown, Check } from "lucide-react"
+import { X, Filter, ChevronDown, Check, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SidebarFilterProps {
@@ -66,51 +66,67 @@ export default function SidebarFilter({
             )}
 
             {/* Sidebar Container */}
-            <div
+            <aside
                 className={cn(
-                    "fixed inset-y-0 right-0 z-[70] w-full max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out md:static md:w-64 md:translate-x-0 md:bg-transparent md:shadow-none md:z-0 flex flex-col pt-10 px-5 md:pt-0 pb-10 min-h-screen border-l border-slate-200 md:border-none",
+                    "fixed inset-y-0 right-0 z-[70] w-full max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out md:sticky md:top-24 md:z-0 md:w-[280px] md:translate-x-0 md:bg-white md:rounded-3xl md:shadow-sm md:border md:border-slate-200/60 md:h-fit flex flex-col pt-10 px-6 md:pt-6 md:px-6 pb-10 min-h-screen md:min-h-0",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
+                {/* Mobile Header */}
                 <div className="flex items-center justify-between mb-8 md:hidden">
                     <div className="flex items-center gap-2 text-[#1B4D91]">
                         <Filter className="size-5" />
-                        <h2 className="text-lg font-black">Filters</h2>
+                        <h2 className="text-lg font-black tracking-tight">Filters</h2>
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        className="flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
                     >
-                        <X className="size-4" />
+                        <X className="size-5" />
                     </button>
                 </div>
 
                 {/* Desktop Header */}
-                <div className="hidden items-center gap-2 text-[#1B4D91] mb-6 md:flex">
-                    <Filter className="size-5" />
-                    <h2 className="text-lg font-black">Filters</h2>
+                <div className="hidden items-center justify-between mb-6 md:flex border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2 text-[#1B4D91]">
+                        <Filter className="size-4.5" />
+                        <h2 className="text-[17px] font-black tracking-tight">Filters</h2>
+                    </div>
+                    <button 
+                        onClick={handleClear}
+                        className="group flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#E31E24] transition-colors"
+                    >
+                        <RotateCcw className="size-3 group-hover:rotate-[-45deg] transition-transform" />
+                        Reset
+                    </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-2 pb-24 md:pb-0 space-y-8">
+                <div className="flex-1 space-y-8">
                     {/* Price Range */}
                     <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-4">Price Range (UZS)</h3>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="number"
-                                placeholder="Min"
-                                value={minPrice}
-                                onChange={(e) => setMinPrice(e.target.value)}
-                                className="h-11 w-full rounded-xl border-none bg-slate-100 px-3 text-sm font-semibold text-[#1B4D91] focus:ring-2 focus:ring-[#1B4D91]/20 transition-all"
-                            />
-                            <span className="text-slate-400 font-bold">-</span>
-                            <input
-                                type="number"
-                                placeholder="Max"
-                                value={maxPrice}
-                                onChange={(e) => setMaxPrice(e.target.value)}
-                                className="h-11 w-full rounded-xl border-none bg-slate-100 px-3 text-sm font-semibold text-[#1B4D91] focus:ring-2 focus:ring-[#1B4D91]/20 transition-all"
-                            />
+                        <h3 className="text-[13px] font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            Price Range 
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-black">(UZS)</span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2 relative">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">From</span>
+                                <input
+                                    type="number"
+                                    value={minPrice}
+                                    onChange={(e) => setMinPrice(e.target.value)}
+                                    className="h-12 w-full rounded-xl border border-slate-200/60 bg-slate-50/50 pl-11 pr-3 text-[14px] font-bold text-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:border-[#1B4D91]/20 transition-all outline-none"
+                                />
+                            </div>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">To</span>
+                                <input
+                                    type="number"
+                                    value={maxPrice}
+                                    onChange={(e) => setMaxPrice(e.target.value)}
+                                    className="h-12 w-full rounded-xl border border-slate-200/60 bg-slate-50/50 pl-9 pr-3 text-[14px] font-bold text-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:border-[#1B4D91]/20 transition-all outline-none"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -118,50 +134,48 @@ export default function SidebarFilter({
                     <div className="border-t border-slate-100 pt-6">
                         <button
                             onClick={() => setIsSortOpen(!isSortOpen)}
-                            className="flex w-full items-center justify-between text-sm font-bold text-slate-700 mb-4"
+                            className="flex w-full items-center justify-between text-[13px] font-bold text-slate-800 mb-4"
                         >
                             <span>Sort By</span>
-                            <ChevronDown className={cn("size-4 transition-transform", isSortOpen && "rotate-180")} />
+                            <ChevronDown className={cn("size-4 transition-transform text-slate-400", isSortOpen && "rotate-180")} />
                         </button>
 
-                        {isSortOpen && (
-                            <div className="space-y-2">
-                                {sortOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => setSortBy(option.value)}
-                                        className={cn(
-                                            "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all",
-                                            sortBy === option.value
-                                                ? "bg-[#1B4D91]/5 font-bold text-[#1B4D91]"
-                                                : "font-semibold text-slate-500 hover:bg-slate-50"
-                                        )}
-                                    >
-                                        {option.label}
-                                        {sortBy === option.value && <Check className="size-4" />}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className={cn("space-y-1.5 transition-all duration-300", isSortOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0 overflow-hidden")}>
+                            {sortOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => setSortBy(option.value)}
+                                    className={cn(
+                                        "flex w-full items-center justify-between rounded-xl px-4 py-3 text-[13px] transition-all group",
+                                        sortBy === option.value
+                                            ? "bg-navbar-gradient font-bold text-white shadow-md shadow-[#1B4D91]/20"
+                                            : "font-semibold text-slate-600 hover:bg-slate-50 hover:text-[#1B4D91]"
+                                    )}
+                                >
+                                    {option.label}
+                                    {sortBy === option.value && <Check className="size-4" />}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-8 flex gap-3 pb-8 md:pb-0">
-                    <button
-                        onClick={handleClear}
-                        className="flex-1 rounded-xl bg-slate-100 py-3.5 text-sm font-bold text-slate-500 hover:bg-slate-200 active:scale-[0.98] transition-all"
-                    >
-                        Clear
-                    </button>
+                <div className="mt-10 flex flex-col gap-3">
                     <button
                         onClick={handleApply}
-                        className="flex-[2] rounded-xl bg-[#E31E24] py-3.5 text-sm font-bold text-white hover:bg-[#C91A20] shadow-lg shadow-[#E31E24]/20 active:scale-[0.98] transition-all"
+                        className="w-full rounded-2xl bg-navbar-gradient py-4 text-[14px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.98] transition-all"
                     >
                         Apply Filters
                     </button>
+                    <button
+                        onClick={handleClear}
+                        className="w-full rounded-2xl bg-slate-100 py-4 text-[13px] font-bold text-slate-500 hover:bg-slate-200 active:scale-[0.98] transition-all md:hidden"
+                    >
+                        Clear All
+                    </button>
                 </div>
-            </div>
+            </aside>
         </>
     )
 }

@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Navbar from '@/components/layout/Navbar';
-import MobileTopHeader from '@/components/layout/MobileTopHeader';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/sonner';
@@ -33,7 +32,6 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <MobileTopHeader />
             <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
             <Footer />
             <BottomNavigation />

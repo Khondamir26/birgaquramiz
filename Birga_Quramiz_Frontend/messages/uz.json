@@ -34,7 +34,9 @@
         "myProducts": "Mening mahsulotlarim",
         "adminDashboard": "Admin paneli",
         "users": "Foydalanuvchilar",
-        "adminProducts": "Mahsulotlar"
+        "adminProducts": "Mahsulotlar",
+        "city": "Toshkent",
+        "search": "Izlash"
     },
     "Footer": {
         "description": "Shaffof narxlar, yetkazib berish imkoniyatlari va sotuvchilar ekotizimiga ega qurilish materiallari marketplace platformasi.",
@@ -102,6 +104,12 @@
         "previous": "Oldingi",
         "next": "Keyingi",
         "pageOf": "Sahifa {page} / {totalPages}"
+    },
+    "Category": {
+        "notFound": "Kategoriya topilmadi",
+        "parentCategory": "Asosiy kategoriya: {name}",
+        "emptyProducts": "Ushbu kategoriyada hali mahsulotlar yo'q.",
+        "backToCatalog": "Katalogga qaytish"
     },
     "Cart": {
         "title": "Savat",
@@ -201,6 +209,8 @@
     },
     "Profile": {
         "title": "Profil",
+        "services": "Xizmatlar",
+        "information": "Ma'lumotlar",
         "notAuthenticated": "Siz tizimga kirmagansiz.",
         "signIn": "Kirish",
         "name": "Ism",
@@ -214,6 +224,9 @@
         "becomeSeller": "Hamkor bo'lish",
         "faq": "FAQ",
         "support": "Qo'llab-quvvatlash xizmati",
+        "delivery": "Yetkazib berish",
+        "payment": "To'lov",
+        "returns": "Qaytarish",
         "pickupPoints": "PVZ manzillari",
         "notifications": "Bildirishnomalar",
         "myOrders": "Buyurtmalar",

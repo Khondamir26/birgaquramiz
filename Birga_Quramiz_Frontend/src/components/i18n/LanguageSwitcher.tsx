@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { ChevronDown, Check } from "lucide-react";
@@ -18,7 +18,13 @@ const LANGUAGE_META: Record<AppLocale, { flag: string; short: string }> = {
   uz: { flag: "/flags/uz.png", short: "UZ" },
 };
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ 
+  compact = false,
+  variant = "light"
+}: { 
+  compact?: boolean;
+  variant?: "light" | "dark";
+}) {
   const router = useRouter();
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Languages");
@@ -42,7 +48,11 @@ export default function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[13px] font-bold text-primary shadow-sm active:bg-slate-50 transition-all tap-highlight-none"
+          className={`inline-flex items-center bg-transparent font-bold transition-all tap-highlight-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none ${
+            variant === "light" ? "text-white" : "text-slate-700"
+          } ${
+            compact ? "h-8 gap-1.5 px-1.5 text-[12px]" : "h-10 gap-2 px-1.5 text-[13px]"
+          }`}
           aria-label="Language"
         >
           <Image
@@ -50,10 +60,10 @@ export default function LanguageSwitcher() {
             alt={t(locale)}
             width={20}
             height={20}
-            className="size-5 rounded-full object-cover border border-slate-100"
+            className={`${compact ? "size-4" : "size-5"} rounded-full object-cover border border-slate-100 shadow-sm`}
           />
           <span className="font-bold">{current.short}</span>
-          <ChevronDown className="size-4 text-primary/60" />
+          <ChevronDown className={`${compact ? "size-3.5" : "size-4"} ${variant === "light" ? "text-white/80" : "text-slate-400"}`} />
         </button>
       </DropdownMenuTrigger>
 
