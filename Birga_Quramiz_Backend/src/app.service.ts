@@ -12,6 +12,7 @@ export class AppService {
 
   async getHealth() {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await this.prisma.$queryRaw(Prisma.sql`SELECT 1`);
 
       return {
@@ -28,3 +29,5 @@ export class AppService {
     }
   }
 }
+
+
