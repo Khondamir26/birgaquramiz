@@ -1,5 +1,4 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
@@ -12,7 +11,7 @@ export class AppService {
 
   async getHealth() {
     try {
-      await this.prisma.$queryRaw(Prisma.sql`SELECT 1`);
+      await this.prisma.$queryRaw`SELECT 1`;
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
