@@ -117,8 +117,8 @@ export default function ProductDetailPage() {
     const text = product.name;
     const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
-    // @ts-ignore
-    const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
     if (tg?.initData) {
       tg.openTelegramLink(telegramShareUrl);
     } else {
@@ -153,6 +153,7 @@ export default function ProductDetailPage() {
           <div className="relative bg-white md:bg-transparent md:sticky md:top-24">
             <div className="relative aspect-square w-full overflow-hidden">
               {images.length > 0 ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={images[activeImg]}
                   alt={product.name}

@@ -50,6 +50,7 @@ export default function SearchPanel({ query, results, onPick, loading }: SearchP
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#edf3ff] text-[#2154cb]">
                   {item.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={resolveImageUrl(item.image)}
                       alt={item.label}

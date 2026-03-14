@@ -4,7 +4,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useTranslations } from "next-intl";
 import ProductCard from "@/components/product/ProductCard";
 import { Heart } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import EmptyState from "@/components/ui/EmptyState";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 
@@ -12,7 +12,6 @@ export default function FavoritesPage() {
     const { items, clearFavorites } = useFavorites();
     const t = useTranslations("Favorites");
     const tNav = useTranslations("Navbar");
-    const router = useRouter();
 
     const breadcrumbItems = [
         { label: tNav("home"), href: "/" },

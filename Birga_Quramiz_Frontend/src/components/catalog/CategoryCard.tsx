@@ -12,7 +12,7 @@ interface CategoryCardProps {
   href?: string;
 }
 
-const CategoryCard = memo(function CategoryCard({ id, name, image, isHighlight, onClick, href }: CategoryCardProps) {
+const CategoryCard = memo(function CategoryCard({ name, image, isHighlight, onClick, href }: CategoryCardProps) {
   const containerProps = {
     className: cn(
       "group relative flex flex-col overflow-hidden rounded-[24px] transition-all duration-300 active:scale-[0.97] active:shadow-md text-left w-full h-[180px]",

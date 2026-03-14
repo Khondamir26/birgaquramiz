@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Sparkles } from "lucide-react";
+
 
 // Import Swiper styles
 import "swiper/css";

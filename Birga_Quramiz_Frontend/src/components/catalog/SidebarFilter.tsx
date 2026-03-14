@@ -34,9 +34,11 @@ export default function SidebarFilter({
 
     // Sync internal state if props change externally
     useEffect(() => {
-        setMinPrice(currentMinPrice?.toString() ?? "")
-        setMaxPrice(currentMaxPrice?.toString() ?? "")
-        setSortBy(currentSortBy ?? "newest")
+        Promise.resolve().then(() => {
+            setMinPrice(currentMinPrice?.toString() ?? "")
+            setMaxPrice(currentMaxPrice?.toString() ?? "")
+            setSortBy(currentSortBy ?? "newest")
+        });
     }, [currentMinPrice, currentMaxPrice, currentSortBy])
 
     const handleApply = () => {

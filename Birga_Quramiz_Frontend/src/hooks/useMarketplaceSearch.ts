@@ -22,7 +22,6 @@ type UseMarketplaceSearchResult = {
   loading: boolean;
 };
 
-const DEFAULT_IDLE_RESULTS = 5;
 const DEFAULT_FILTERED_RESULTS = 8; // More results since we include products
 
 export function useMarketplaceSearch(shortcuts: MarketplaceShortcut[], debounceMs = 250): UseMarketplaceSearchResult {
@@ -33,12 +32,14 @@ export function useMarketplaceSearch(shortcuts: MarketplaceShortcut[], debounceM
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (query.trim().length >= 2) {
-      setLoading(true);
-    } else {
-      setLoading(false);
-      setProductResults([]);
-    }
+    Promise.resolve().then(() => {
+      if (query.trim().length >= 2) {
+        setLoading(true);
+      } else {
+        setLoading(false);
+        setProductResults([]);
+      }
+    });
 
     const handle = window.setTimeout(() => {
       setDebouncedQuery(query.trim().toLowerCase());
@@ -49,11 +50,11 @@ export function useMarketplaceSearch(shortcuts: MarketplaceShortcut[], debounceM
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
-      setProductResults([]);
+      Promise.resolve().then(() => setProductResults([]));
       return;
     }
 
-    setLoading(true);
+    Promise.resolve().then(() => setLoading(true));
     const expandedQuery = expandSearchQuery(debouncedQuery);
     getProducts(1, 4, expandedQuery)
       .then((res) => {

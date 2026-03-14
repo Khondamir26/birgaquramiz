@@ -1,0 +1,84 @@
+﻿
+> birga_quramiz@0.1.0 lint
+> eslint
+
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\about\page.tsx
+   3:8   warning  'Image' is defined but never used        @typescript-eslint/no-unused-vars
+   7:5   warning  'Users' is defined but never used        @typescript-eslint/no-unused-vars
+   8:5   warning  'Target' is defined but never used       @typescript-eslint/no-unused-vars
+   9:5   warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+  10:5   warning  'Zap' is defined but never used          @typescript-eslint/no-unused-vars
+  11:5   warning  'Globe' is defined but never used        @typescript-eslint/no-unused-vars
+  12:5   warning  'Gem' is defined but never used          @typescript-eslint/no-unused-vars
+  16:5   warning  'Info' is defined but never used         @typescript-eslint/no-unused-vars
+  20:10  warning  'cn' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\admin\deletion-requests\page.tsx
+    5:8   warning  'Link' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   29:5   warning  'AlertTriangle' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   35:5   warning  'Package' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  149:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\admin\layout.tsx
+  6:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\admin\page.tsx
+   9:3   warning  'TrendingUp' is defined but never used   @typescript-eslint/no-unused-vars
+  11:11  warning  'CheckCircle' is defined but never used  @typescript-eslint/no-unused-vars
+  11:24  warning  'Clock' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\admin\products\[id]\page.tsx
+  205:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\admin\products\page.tsx
+  18:9  warning  The 'products' logical expression could make the dependencies of useMemo Hook (at line 30) change on every render. To fix this, wrap the initialization of 'products' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\catalog\page.tsx
+  20:10  warning  'query' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  35:9   warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\favorites\page.tsx
+  15:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\product\[id]\page.tsx
+  156:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\profile\page.tsx
+  12:10  warning  'Bell' is defined but never used    @typescript-eslint/no-unused-vars
+  13:34  warning  'MapPin' is defined but never used  @typescript-eslint/no-unused-vars
+  14:3   warning  'Info' is defined but never used    @typescript-eslint/no-unused-vars
+  18:10  warning  'cn' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\seller\products\[id]\page.tsx
+  215:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\app\seller\products\page.tsx
+  462:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  655:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  752:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\components\catalog\CategoryCard.tsx
+  15:51  warning  'id' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\components\home\HomeSwiper.tsx
+  8:10  warning  'Sparkles' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\components\layout\Footer.tsx
+   3:8  warning  'Image' is defined but never used             @typescript-eslint/no-unused-vars
+  15:9  warning  'logoSrc' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\components\navbar\NavbarSearch.tsx
+  2:10  warning  'LayoutGrid' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\components\navbar\SearchPanel.tsx
+  53:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\hooks\useMarketplaceSearch.ts
+  25:7  warning  'DEFAULT_IDLE_RESULTS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Windows 10\Desktop\birgaquramiz\Birga_Quramiz_Frontend\src\lib\search.ts
+  120:9  warning  'isCyrillic' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+тЬЦ 39 problems (0 errors, 39 warnings)
+

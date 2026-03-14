@@ -459,6 +459,7 @@ export default function SellerProductsPage() {
                     <div className="w-full relative shrink-0">
                       <div className="aspect-[4/3] md:aspect-[16/10] w-full rounded-xl md:rounded-[24px] bg-slate-50 border border-slate-100 overflow-hidden relative">
                         {product.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={resolveImageUrl(product.imageUrl)} alt={product.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
                           <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-slate-100 text-[10px] md:text-sm font-bold text-slate-400">{t("noPhoto")}</div>
@@ -652,6 +653,7 @@ export default function SellerProductsPage() {
 
                 {createPreview && (
                   <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm mt-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={createPreview} alt="New product preview" className="w-full aspect-[4/3] object-cover" />
                   </div>
                 )}
@@ -749,6 +751,7 @@ export default function SellerProductsPage() {
 
                   {(editingPreview || editingProduct.imageUrl) && (
                     <div className="rounded-2xl overflow-hidden border border-slate-100 aspect-[16/9] relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={editingPreview || resolveImageUrl(editingProduct.imageUrl)}
                         alt="Edit preview"

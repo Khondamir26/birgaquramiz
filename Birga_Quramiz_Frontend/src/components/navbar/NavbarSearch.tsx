@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { LayoutGrid, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import SearchPanel, { type SearchPanelItem } from "@/components/navbar/SearchPanel";
 

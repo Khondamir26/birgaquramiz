@@ -15,7 +15,7 @@ export default function AdminProductsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  const products = data ?? [];
+  const products = useMemo(() => data ?? [], [data]);
 
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();

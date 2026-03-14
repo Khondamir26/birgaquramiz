@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { useFetch } from "@/hooks/useFetch";
 import {
     getAdminDeletionRequests,
@@ -26,13 +26,11 @@ import {
     Trash2,
     Check,
     X,
-    AlertTriangle,
     ImageIcon,
     User,
     Phone,
     Building,
     Clock,
-    Package,
 } from "lucide-react";
 
 export default function AdminDeletionRequestsPage() {
@@ -146,6 +144,7 @@ export default function AdminDeletionRequestsPage() {
                                     {/* Product Image */}
                                     <div className="w-full md:w-48 h-44 md:h-auto shrink-0 bg-slate-50">
                                         {imageUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
                                             <img src={imageUrl} alt={req.product.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-slate-300">

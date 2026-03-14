@@ -9,14 +9,14 @@ import { useTranslations } from "next-intl";
 import { useCartStore } from "@/store/cartStore";
 import { useFavorites } from "@/hooks/useFavorites";
 import {
-  User2, Bell, HelpCircle, Store, Heart,
-  ChevronRight, LogOut, Package, MapPin, Users,
-  Info, Bot, Settings, ShoppingCart, Globe,
+  User2, HelpCircle, Store, Heart,
+  ChevronRight, LogOut, Package, Users,
+  Bot, Settings, ShoppingCart, Globe,
   Truck, CreditCard, RefreshCw, Phone
 } from "lucide-react";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
-import { cn } from "@/lib/utils";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MenuItem({ item }: { item: any }) {
   const Icon = item.icon;
   const isExternal = item.href.startsWith("tel:");

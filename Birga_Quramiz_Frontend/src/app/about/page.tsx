@@ -1,23 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
-    Users,
-    Target,
-    ShieldCheck,
-    Zap,
-    Globe,
-    Gem,
     Building2,
     ArrowRight,
     Sparkles,
-    Info,
     InfoIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default function AboutPage() {
     const t = useTranslations("About");

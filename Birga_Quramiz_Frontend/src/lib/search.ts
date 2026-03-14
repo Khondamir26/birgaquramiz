@@ -117,7 +117,6 @@ export function expandSearchQuery(query: string): string {
   relatedTerms.add(normalized);
 
   // 1. Universal Transliteration (Works for ANY product name)
-  const isCyrillic = /[а-яё]/.test(normalized);
   relatedTerms.add(transliterate(normalized, true)); // RU -> EN/UZ
   relatedTerms.add(transliterate(normalized, false)); // EN/UZ -> RU
 

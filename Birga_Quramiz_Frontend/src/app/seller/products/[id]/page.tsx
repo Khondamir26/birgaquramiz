@@ -212,6 +212,7 @@ export default function SellerProductDetailPage() {
                         {/* Left — Image */}
                         <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden">
                             {imageUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={imageUrl}
                                     alt={product.title}

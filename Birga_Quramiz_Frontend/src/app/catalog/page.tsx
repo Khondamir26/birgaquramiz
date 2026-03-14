@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { getProducts, getCategories } from "@/lib/api/products";
 import { expandSearchQuery } from "@/lib/search";
 import ProductCard from "@/components/product/ProductCard";
@@ -17,7 +17,6 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export default function CatalogPage() {
   const [page, setPage] = useState(1);
-  const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [data, setData] = useState<PaginatedResponse<Product> | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,14 +31,14 @@ export default function CatalogPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const searchParams = useSearchParams();
-  const router = useRouter();
   const q = searchParams.get("q");
 
   useEffect(() => {
     if (q) {
-      setQuery(q);
-      setSearch(q);
-      setPage(1);
+      Promise.resolve().then(() => {
+        setSearch(q);
+        setPage(1);
+      });
     }
   }, [q]);
 
@@ -49,7 +48,9 @@ export default function CatalogPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    Promise.resolve().then(() => {
+      if (!cancelled) setLoading(true);
+    });
 
     const expandedSearch = expandSearchQuery(search);
     getProducts(page, 12, expandedSearch, undefined, filters.minPrice, filters.maxPrice, filters.sortBy)
@@ -66,8 +67,10 @@ export default function CatalogPage() {
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
-  }, [page, search, filters.minPrice, filters.maxPrice, filters.sortBy, t]);
+    return () => {
+      cancelled = true;
+    };
+  }, [page, search, filters, t]);
 
   const products = useMemo(() => data?.data ?? [], [data]);
   
@@ -83,7 +86,6 @@ export default function CatalogPage() {
   const handleClear = useCallback(() => {
     setError("");
     setLoading(true);
-    setQuery("");
     setSearch("");
     setPage(1);
     inputRef.current?.focus();
@@ -96,7 +98,6 @@ export default function CatalogPage() {
   const handleBackToCategories = useCallback(() => {
     setIsMobileSearchActive(false);
     setSearch("");
-    setQuery("");
   }, []);
 
   return (
@@ -156,7 +157,7 @@ export default function CatalogPage() {
                   <p className="mt-1 text-xs text-red-400">{error}</p>
                   <button
                     className="mt-4 rounded-xl bg-[#E31E24] px-6 py-2.5 text-[12px] font-black text-white active:scale-95 transition-transform"
-                    onClick={() => { setError(""); setPage(1); setSearch(""); setQuery(""); }}
+                    onClick={() => { setError(""); setPage(1); setSearch(""); }}
                   >
                     Retry
                   </button>

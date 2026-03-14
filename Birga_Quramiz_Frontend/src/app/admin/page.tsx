@@ -6,9 +6,9 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
-  TrendingUp, Package, Users,
+  Package, Users,
   ClipboardList, ArrowRight,
-  Shield, CheckCircle, Clock, Info
+  Shield, Info
 } from "lucide-react";
 
 export default function AdminDashboardPage() {

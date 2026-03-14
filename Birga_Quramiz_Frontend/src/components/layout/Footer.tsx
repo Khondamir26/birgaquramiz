@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,6 @@ const footerGradient =
 export default function Footer() {
   const t = useTranslations("Footer");
   const { user } = useAuth();
-  const logoSrc = user?.role === "SELLER" ? "/sellers-panel-logo.png" : "/logo.png";
   const socialLabels = {
     linkedin: t.has("linkedin") ? t("linkedin") : "LinkedIn",
     instagram: t.has("instagram") ? t("instagram") : "Instagram",
