@@ -10,28 +10,21 @@ import { acrom } from './fonts';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Birga Quramiz — Qurilish materiallari marketplace',
+    default: 'Birga Quramiz — Qurilish materiallari onlayn bozori',
     template: '%s | Birga Quramiz'
   },
 
   description:
-    'Birga Quramiz — O‘zbekistondagi zamonaviy qurilish materiallari marketplace. Yetkazib beruvchilar va xaridorlarni birlashtiruvchi platforma. Qulay narxlar, keng assortiment va tez yetkazib berish.',
+    'Birga Quramiz — O‘zbekistondagi zamonaviy qurilish materiallari marketplace. Yetkazib beruvchilar va xaridorlarni birlashtiruvchi platforma. Qulay narxlar va tez yetkazib berish.',
 
   keywords: [
     'birga quramiz',
     'qurilish materiallari',
     'qurilish bozori',
-    'qurilish marketplace',
     'строительные материалы узбекистан',
-    'строительный маркетплейс',
     'construction materials uzbekistan',
-    'construction marketplace',
     'building materials tashkent'
   ],
-
-  authors: [{ name: 'Birga Quramiz Team' }],
-  creator: 'Birga Quramiz',
-  publisher: 'Birga Quramiz',
 
   metadataBase: new URL('https://birga-quramiz.uz'),
 
@@ -42,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Birga Quramiz — Qurilish materiallari marketplace',
     description:
-      'Find trusted construction material suppliers in Uzbekistan. Build together, grow together with Birga Quramiz.',
+      'Construction materials marketplace connecting suppliers and buyers in Uzbekistan.',
     url: '/',
     siteName: 'Birga Quramiz',
     type: 'website',
@@ -51,7 +44,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Birga Quramiz Construction Marketplace'
+        alt: 'Birga Quramiz Marketplace'
       }
     ]
   },
@@ -60,26 +53,20 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Birga Quramiz Marketplace',
     description:
-      'Online platform for buying and selling construction materials in Uzbekistan.',
+      'Online platform for buying and selling construction materials.',
     images: ['/og-image.png']
   },
 
   robots: {
     index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1
-    }
+    follow: true
   },
 
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png' }
+      { url: '/favicon.ico' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' }
     ],
-    shortcut: '/favicon.ico',
     apple: '/apple-touch-icon.png'
   }
 };
