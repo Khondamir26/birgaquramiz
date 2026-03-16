@@ -330,7 +330,7 @@ export default function SellerProductsPage() {
   }
 
   return (
-    <div className="page-shell max-w-7xl space-y-4 md:space-y-6 pb-24 md:pb-32 px-2 md:px-0">
+    <div className="page-shell max-w-[1440px] space-y-4 md:space-y-6 pb-24 md:pb-32 px-2 md:px-0">
 
       {/* Premium Header */}
       <section className="surface-card rounded-2xl md:rounded-[32px] p-4 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">

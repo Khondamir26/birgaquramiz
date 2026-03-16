@@ -38,7 +38,7 @@ export default function CatalogCategoryPage() {
 
   if (categoryLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 md:px-6 py-6 space-y-5">
+      <div className="mx-auto max-w-[1440px] px-4 md:px-6 py-6 space-y-5">
         <div className="h-5 w-64 rounded bg-slate-100 animate-pulse" />
         <div className="h-9 w-56 rounded bg-slate-100 animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -77,7 +77,7 @@ export default function CatalogCategoryPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] md:pb-12">
-      <div className="mx-auto w-full md:max-w-7xl px-4 md:px-6 pt-3 md:pt-5 pb-10">
+      <div className="mx-auto w-full md:max-w-[1440px] px-4 md:px-6 pt-3 md:pt-5 pb-10">
         <Breadcrumbs items={breadcrumbItems} />
 
         <div className="mt-4 md:mt-6 mb-4 md:mb-6">

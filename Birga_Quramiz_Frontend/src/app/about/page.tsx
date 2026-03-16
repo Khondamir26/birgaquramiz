@@ -15,7 +15,7 @@ export default function AboutPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-44 md:pb-12">
-            <div className="mx-auto w-full md:max-w-7xl">
+            <div className="mx-auto w-full md:max-w-[1440px]">
                 <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 pt-4 md:pt-6">
 
                     {/* Hero Banner - Standard Platform Style */}

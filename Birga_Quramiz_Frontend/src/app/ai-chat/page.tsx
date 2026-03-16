@@ -30,7 +30,7 @@ export default function AiChatPage() {
 
   return (
     <div className="flex flex-col pb-44 bg-[#f4f6fa] md:pb-12">
-      <div className="mx-auto w-full md:max-w-7xl">
+      <div className="mx-auto w-full md:max-w-[1440px]">
         <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
           {/* Hero */}

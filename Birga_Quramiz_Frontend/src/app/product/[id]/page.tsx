@@ -128,10 +128,10 @@ export default function ProductDetailPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-36 md:pb-16 pt-4 md:pt-8">
-      <div className="max-w-7xl mx-auto w-full px-5 md:px-8 mb-3">
+      <div className="max-w-[1440px] mx-auto w-full px-5 md:px-8 mb-3">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
-      <div className="hidden md:flex max-w-7xl mx-auto w-full px-8 mb-6 items-center justify-between">
+      <div className="hidden md:flex max-w-[1440px] mx-auto w-full px-8 mb-6 items-center justify-between">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-[14px] font-bold text-slate-500 hover:text-[#1B4D91] transition-colors">
           <ChevronLeft className="size-4" />
           {t("backToCatalog")}
@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <div className="w-full md:max-w-7xl md:mx-auto md:px-8">
+      <div className="w-full md:max-w-[1440px] md:mx-auto md:px-8">
         <div className="md:grid md:grid-cols-2 md:gap-x-12 md:items-start">
           <div className="relative bg-white md:bg-transparent md:sticky md:top-24">
             <div className="relative aspect-square w-full overflow-hidden">
@@ -380,7 +380,7 @@ export default function ProductDetailPage() {
       </div>
 
       {recommended.length > 0 && (
-        <div className="mt-8 md:mt-16 w-full md:max-w-7xl md:mx-auto px-4 md:px-8">
+        <div className="mt-8 md:mt-16 w-full md:max-w-[1440px] md:mx-auto px-4 md:px-8">
           <h2 className="text-[16px] md:text-[22px] font-black text-[#1B4D91] mb-3 md:mb-6">{t("recommended")}</h2>
           <div className="grid grid-cols-2 gap-3">
             {recommended.map((p) => (

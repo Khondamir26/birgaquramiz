@@ -30,7 +30,7 @@ export default function Footer() {
       <div className="absolute inset-x-0 top-0 h-px bg-white/20 pointer-events-none" />
 
       {/* Main footer columns */}
-      <div className="mx-auto max-w-7xl px-6 py-16 grid grid-cols-4 gap-12">
+      <div className="mx-auto max-w-[1440px] px-6 py-16 grid grid-cols-4 gap-12">
 
         {/* Brand column */}
         <div className="col-span-1 flex flex-col items-start pr-4">
@@ -162,7 +162,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10 bg-black/10">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5 text-[12px] text-white/50 font-medium tracking-wide">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-6 py-5 text-[12px] text-white/50 font-medium tracking-wide">
           <p>© {year} Birga Quramiz. {t("rights")}</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-white transition-colors">{t("privacyLink")}</Link>

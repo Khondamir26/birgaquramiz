@@ -1,165 +1,163 @@
-
-import { memo } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { useCart } from "@/hooks/useCart";
-import { useAuth } from "@/hooks/useAuth";
-import { resolveImageUrl } from "@/lib/image";
-import type { Product } from "@/types";
-import { Share2, Heart, ShoppingCart } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useFavorites } from "@/hooks/useFavorites";
-import Image from "next/image";
+import { memo } from "react"
+import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+import { useCart } from "@/hooks/useCart"
+import { useAuth } from "@/hooks/useAuth"
+import { resolveImageUrl } from "@/lib/image"
+import type { Product } from "@/types"
+import { Share2, Heart, ShoppingCart } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useFavorites } from "@/hooks/useFavorites"
+import Image from "next/image"
 
 const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
-  const router = useRouter();
-  const { addItem, increment, decrement, getQuantity } = useCart();
-  const { user } = useAuth();
-  const t = useTranslations("ProductCard");
-  const quantity = getQuantity(product.id);
-  const canAddToCart = !user || user.role === "USER";
+  const router = useRouter()
+  const { addItem, increment, decrement, getQuantity } = useCart()
+  const { user } = useAuth()
+  const t = useTranslations("ProductCard")
+  const quantity = getQuantity(product.id)
+  const canAddToCart = !user || user.role === "USER"
 
-  const { toggleFavorite, isFavorite } = useFavorites();
-  const liked = isFavorite(product.id);
+  const { toggleFavorite, isFavorite } = useFavorites()
+  const liked = isFavorite(product.id)
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
-    const target = e.target as HTMLElement;
-    if (target.closest("button") || target.closest("a")) return;
-    router.push(`/catalog/product/${product.id}`);
-  };
+    const target = e.target as HTMLElement
+    if (target.closest("button")) return
+    router.push(`/catalog/product/${product.id}`)
+  }
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
+    e.stopPropagation()
     addItem({
       id: product.id,
       sku: product.sku,
       name: product.name,
       price: product.price,
       image: resolveImageUrl(product.imageUrl),
-    });
-    toast.success(t("addedToCartToast"));
-  };
+    })
+    toast.success(t("addedToCartToast"))
+  }
 
   const handleIncrement = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    increment(product.id);
-  };
+    e.stopPropagation()
+    increment(product.id)
+  }
 
   const handleDecrement = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    decrement(product.id);
-  };
+    e.stopPropagation()
+    decrement(product.id)
+  }
 
   const handleFavorite = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    toggleFavorite(product);
-  };
+    e.stopPropagation()
+    toggleFavorite(product)
+  }
 
   return (
     <article
-      className="flex min-w-0 cursor-pointer flex-col overflow-hidden surface-card tap-highlight-none"
       onClick={handleCardClick}
-      role="button"
-      aria-label={t("openDetails")}
+      className="bg-white rounded-2xl flex flex-col overflow-hidden cursor-pointer w-full"
     >
-      <div className="flex flex-col p-3">
-        <div className="flex items-center justify-between mb-2.5">
-          <button
-            className="p-1 text-slate-300 transition-colors duration-200 active:text-[#E31E24]"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Share"
-          >
-            <Share2 className="size-[18px]" />
-          </button>
-
-          <span className="text-[10px] font-semibold text-slate-400 tracking-tight">
-            {product.sku ? `Art: ${product.sku}` : ""}
-          </span>
-
-          <button
-            className={cn(
-              "p-1 transition-colors duration-200",
-              liked ? "text-[#E31E24]" : "text-slate-300 active:text-[#E31E24]"
-            )}
-            onClick={handleFavorite}
-            aria-label={liked ? "Favorited" : "Favorite"}
-          >
-            <Heart className={cn("size-[18px] transition-all duration-200", liked && "fill-[#E31E24]")} />
-          </button>
-        </div>
-
-        <div className="relative h-[180px] w-full flex items-center justify-center mb-3 overflow-hidden rounded-xl bg-slate-50 border border-slate-100/50">
-          {product.imageUrl ? (
-            <Image
-              src={resolveImageUrl(product.imageUrl)}
-              alt={product.name}
-              fill
-              unoptimized
-              sizes="(max-width: 768px) 50vw, 25vw"
-              className="h-full w-full object-contain p-2 mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
-            />
+      {/* IMAGE AREA */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f5f5f5] rounded-2xl">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleFavorite(product)
+          }}
+          className="absolute top-2 right-2 z-10 p-1"
+        >
+          {!liked ? (
+            <svg fill="none" height="24px" width="24px" xmlns="http://www.w3.org/2000/svg">
+              <path fill="white" d="M7 5a4 4 0 0 0-4 4c0 3.552 2.218 6.296 4.621 8.22A21.5 21.5 0 0 0 12 19.91a21.6 21.6 0 0 0 4.377-2.69C18.78 15.294 21 12.551 21 9a4 4 0 0 0-4-4c-1.957 0-3.652 1.396-4.02 3.2a1 1 0 0 1-1.96 0C10.652 6.396 8.957 5 7 5"></path>
+              <path fill="black" d="M12 22c-.316-.02-.56-.147-.848-.278a23.5 23.5 0 0 1-4.781-2.942C3.777 16.705 1 13.449 1 9a6 6 0 0 1 6-6 6.18 6.18 0 0 1 5 2.568A6.18 6.18 0 0 1 17 3a6 6 0 0 1 6 6c0 4.448-2.78 7.705-5.375 9.78a23.6 23.6 0 0 1-4.78 2.942c-.543.249-.732.278-.845.278M7 5a4 4 0 0 0-4 4c0 3.552 2.218 6.296 4.621 8.22A21.5 21.5 0 0 0 12 19.91a21.6 21.6 0 0 0 4.377-2.69C18.78 15.294 21 12.551 21 9a4 4 0 0 0-4-4c-1.957 0-3.652 1.396-4.02 3.2a1 1 0 0 1-1.96 0C10.652 6.396 8.957 5 7 5"></path>
+            </svg>
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-300">
-              {t("noImage")}
-            </div>
+            <svg height="24px" width="24px" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#F8104B" fillRule="evenodd" d="M12 22c-.316-.02-.56-.147-.848-.278a23.5 23.5 0 0 1-4.781-2.942C3.777 16.705 1 13.449 1 9a6 6 0 0 1 6-6 6.18 6.18 0 0 1 5 2.568A6.18 6.18 0 0 1 17 3a6 6 0 0 1 6 6c0 4.448-2.78 7.705-5.375 9.78a23.6 23.6 0 0 1-4.78 2.942c-.543.249-.732.278-.845.278" clipRule="evenodd"></path>
+            </svg>
           )}
-        </div>
+        </button>
 
-        <div className="flex flex-col" style={{ minHeight: "86px" }}>
-          <h2 className="line-clamp-2 text-[11.5px] font-bold leading-snug text-[#1B4D91] mb-auto">
-            {product.name}
-          </h2>
-          <div className="mt-1.5">
-            <p className="text-[9px] font-medium text-slate-400">
-              {t("stock", { value: product.stock })}
-            </p>
-            <p className="text-[9px] font-medium text-slate-400 mt-0.5">
-              {t("priceLabel")}
-            </p>
-            <p className="text-[13px] font-black text-[#1B4D91] leading-tight">
-              {product.price.toLocaleString("ru-RU")} {" "}
-              <span className="text-[10px] font-semibold text-slate-400">UZS</span>
-            </p>
+        {/* IMAGE */}
+        {/* IMAGE */}
+        <Image
+          src={resolveImageUrl(product.imageUrl)}
+          alt={product.name}
+          fill
+          placeholder="empty"
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+          className="object-cover"
+        />
+      </div>
+
+      <div className="pb-2 pt-2 flex flex-col flex-grow bg-white">
+
+        {/* TITLE */}
+        <h3 className="text-[14px] text-black line-clamp-2 mb-1 h-max">
+          {product.name}
+        </h3>
+        {/* PRICE */}
+        <div className="mb-1.5 flex items-baseline gap-1">
+          <span className="text-[16px] font-bold text-black tracking-tight">
+            {product.price.toLocaleString("ru-RU")}
+          </span>
+          <span className="text-[12px] text-black">UZS</span>
+        </div>
+        {/* RATING */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-[3px] text-[13px] font-bold text-black">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFA800" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+            4.9
+          </div>
+          <div className="flex items-center gap-[4px] text-[13px] font-medium text-[#878787]">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#878787" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            240 отзывов
           </div>
         </div>
 
-        <div className="mt-3 h-10">
-          {!canAddToCart ? (
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-slate-100 text-[9.5px] font-bold uppercase tracking-widest text-slate-400">
-              {t("onlyCustomersCanBuy")}
-            </div>
-          ) : quantity > 0 ? (
-            <div className="flex items-center justify-between h-full w-full rounded-xl border-2 border-[#1B4D91] bg-white overflow-hidden shadow-sm shadow-[#1B4D91]/10">
+        {/* BUTTON */}
+        <div className="h-max w-full mt-auto ">
+          {quantity > 0 ? (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full cursor-pointer h-full rounded-2xl border-[1.5px] border-[#0b3190] bg-white flex items-center justify-between px-2"
+            >
               <button
-                className="flex h-full w-10 items-center justify-center text-lg font-black text-[#1B4D91] transition-colors duration-200 hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
                 onClick={handleDecrement}
-                aria-label={t("decrease")}
+                className="w-8 h-full cursor-pointer flex items-center justify-center text-[#0b3190] font-medium text-[20px] transition-opacity hover:opacity-70"
               >
-                -
+                <span className="leading-none pb-[2px] ">-</span>
               </button>
-              <span className="text-[14px] font-black text-[#1B4D91] tabular-nums">{quantity}</span>
+              <span className="text-[#0b3190] font-bold text-[14px] select-none ">
+                {quantity}
+              </span>
               <button
-                className="flex h-full w-10 items-center justify-center text-lg font-black text-[#1B4D91] transition-colors duration-200 hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10"
                 onClick={handleIncrement}
-                aria-label={t("increase")}
+                className="w-8 h-full cursor-pointer flex items-center justify-center text-[#0b3190] font-medium text-[20px] transition-opacity hover:opacity-70"
               >
-                +
+                <span className="leading-none pb-[2px]">+</span>
               </button>
             </div>
           ) : (
             <button
               onClick={handleAddToCart}
-              className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-navbar-gradient text-[11px] font-black uppercase tracking-wider text-white transition-all duration-200 hover:shadow-md hover:shadow-[#1B4D91]/20 active:scale-[0.98]"
+              className="w-full h-full cursor-pointer rounded-2xl bg-[#275fdb] border-[1.5px] border-[#275fdb] gap-2 text-white text-[15px] font-semibold flex items-center justify-center transition-colors hover:bg-opacity-90 active:scale-[0.98]"
             >
+              <ShoppingCart size={16}  />
               {t("addToCart")}
-              <ShoppingCart className="size-4" />
             </button>
           )}
         </div>
       </div>
     </article>
-  );
-});
+  )
+})
 
-export default ProductCard;
+export default ProductCard

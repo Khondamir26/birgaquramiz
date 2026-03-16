@@ -125,7 +125,7 @@ export default function ProfilePage() {
   if (!user && isAuthenticated) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-40 md:pb-12">
-        <div className="mx-auto w-full md:max-w-7xl">
+        <div className="mx-auto w-full md:max-w-[1440px]">
           <div className="p-4 md:px-6 md:pt-6">
             <div className="h-40 animate-pulse rounded-3xl bg-white" />
           </div>
@@ -136,7 +136,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-40 md:pb-12">
-      <div className="mx-auto w-full md:max-w-7xl">
+      <div className="mx-auto w-full md:max-w-[1440px]">
         <div className="mx-auto flex flex-col gap-0 max-w-md md:max-w-none pb-0 md:px-6 md:pt-6">
           <div className="hidden md:flex items-center gap-3 mb-8">
             <h1 className="text-2xl font-black text-[#1B4D91]">{t("title")}</h1>

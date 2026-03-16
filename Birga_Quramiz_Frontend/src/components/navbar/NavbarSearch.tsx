@@ -1,20 +1,22 @@
-import { useRef } from "react";
-import { Search, X } from "lucide-react";
+"use client"
 
-import SearchPanel, { type SearchPanelItem } from "@/components/navbar/SearchPanel";
+import { useRef } from "react"
+import { Search, X } from "lucide-react"
+
+import SearchPanel, { type SearchPanelItem } from "@/components/navbar/SearchPanel"
 
 type NavbarSearchProps = {
-  query: string;
-  setQuery: (value: string) => void;
-  isFocused: boolean;
-  setFocused: (value: boolean) => void;
-  results: SearchPanelItem[];
-  showPanel: boolean;
-  onSelectResult: (item: SearchPanelItem) => void;
-  onSearch: () => void;
-  searchLabel: string;
-  loading?: boolean;
-};
+  query: string
+  setQuery: (value: string) => void
+  isFocused: boolean
+  setFocused: (value: boolean) => void
+  results: SearchPanelItem[]
+  showPanel: boolean
+  onSelectResult: (item: SearchPanelItem) => void
+  onSearch: () => void
+  searchLabel: string
+  loading?: boolean
+}
 
 export default function NavbarSearch({
   query,
@@ -28,28 +30,37 @@ export default function NavbarSearch({
   searchLabel,
   loading,
 }: NavbarSearchProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSelect = (item: SearchPanelItem) => {
-    inputRef.current?.blur();
-    onSelectResult(item);
-  };
+    inputRef.current?.blur()
+    onSelectResult(item)
+  }
+
+  const hasQuery = query.trim().length > 0
 
   return (
     <div className="relative min-w-0 flex-1">
       <form
         onSubmit={(event) => {
-          event.preventDefault();
-          inputRef.current?.blur();
-          onSearch();
+          event.preventDefault()
+          if (!hasQuery) return
+          inputRef.current?.blur()
+          onSearch()
         }}
-        className={
-          isFocused
-            ? "flex h-[58px] items-center rounded-full border border-white/80 bg-white pl-5 pr-2 shadow-[0_16px_40px_rgba(11,36,103,0.28)] transition-all duration-200"
-            : "flex h-[58px] items-center rounded-full border border-white/25 bg-white pl-5 pr-2 shadow-[0_12px_32px_rgba(11,36,103,0.2)] transition-all duration-200"
-        }
+        className={`
+          flex h-[56px] items-center rounded-full bg-white pl-5 pr-2
+          border transition-all duration-200
+          ${isFocused
+            ? "border-white shadow-[0_18px_45px_rgba(11,36,103,0.28)]"
+            : "border-white/30 shadow-[0_12px_28px_rgba(11,36,103,0.18)]"
+          }
+        `}
       >
+        {/* LEFT ICON */}
         <Search className="mr-3 size-5 shrink-0 text-slate-400" />
+
+        {/* INPUT */}
         <input
           ref={inputRef}
           type="text"
@@ -58,32 +69,62 @@ export default function NavbarSearch({
           onFocus={() => setFocused(true)}
           onBlur={() => window.setTimeout(() => setFocused(false), 120)}
           placeholder={searchLabel + "..."}
-          className="h-full min-w-0 flex-1 bg-transparent text-[16px] font-bold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+          className="
+            h-full min-w-0 flex-1 bg-transparent
+            text-[15px] font-semibold text-slate-700
+            outline-none
+            placeholder:text-slate-400 placeholder:font-medium
+          "
         />
 
-        <div className="flex items-center gap-2">
-          {query && (
+        {/* RIGHT ACTIONS */}
+        <div className="flex items-center gap-1">
+
+          {/* CLEAR */}
+          {hasQuery && (
             <button
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => setQuery("")}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="
+                inline-flex h-9 w-9 items-center justify-center
+                rounded-full text-slate-400
+                transition
+                hover:text-slate-600
+              "
               aria-label="Clear search"
             >
               <X className="size-5" />
             </button>
           )}
 
-          <button
-            type="submit"
-            className="flex h-[46px] items-center rounded-full bg-navbar-gradient px-7 text-[13px] font-black uppercase tracking-wider text-white transition-all hover:shadow-lg hover:shadow-[#1B4D91]/30 active:scale-95 shadow-[0_8px_20px_rgba(27,77,145,0.25)]"
-          >
-            {searchLabel}
-          </button>
+          {/* SEARCH BUTTON (APPEARS ONLY WHEN TYPING) */}
+          {/* {hasQuery && (
+            <button
+              type="submit"
+              className="
+                flex h-10 w-10 items-center justify-center
+                rounded-2xl
+                text-black
+                transition
+              "
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+          )} */}
+
         </div>
       </form>
 
-      {showPanel ? <SearchPanel query={query} results={results} onPick={handleSelect} loading={loading} /> : null}
+      {showPanel && (
+        <SearchPanel
+          query={query}
+          results={results}
+          onPick={handleSelect}
+          loading={loading}
+        />
+      )}
     </div>
-  );
+  )
 }

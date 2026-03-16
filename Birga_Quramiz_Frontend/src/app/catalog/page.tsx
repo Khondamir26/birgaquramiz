@@ -102,7 +102,7 @@ export default function CatalogPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] md:pb-12">
-      <div className="mx-auto w-full md:max-w-7xl">
+      <div className="mx-auto w-full md:max-w-[1440px]">
         <div className="hidden md:block px-4 md:px-6 pt-3 md:pt-5">
           <Breadcrumbs items={breadcrumbItems} />
         </div>
@@ -180,7 +180,7 @@ export default function CatalogPage() {
                     <CategoryCard
                       id="all"
                       name="Все товары"
-                      image="/images/categories/tools.png"
+                      image="/images/categories/tools.avif"
                       onClick={handleCategoryClick}
                     />
                     {categories.map((cat) => (

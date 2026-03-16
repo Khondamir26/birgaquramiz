@@ -28,8 +28,22 @@ export const acrom = localFont({
             weight: "700",
             style: "normal",
         },
+            
     ],
     variable: "--font-acrom",
     display: "swap",
     preload: true,
 });
+
+export const onest = localFont({
+  src: [
+    {
+      path: "../../public/fonts/onest.woff2",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-onest",
+  display: "swap",
+  preload: false,
+})

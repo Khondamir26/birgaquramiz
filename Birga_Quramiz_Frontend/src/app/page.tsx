@@ -7,7 +7,12 @@ import { useTranslations } from 'next-intl';
 import { getProducts } from "@/lib/api/products";
 import type { Product } from "@/types";
 import ProductCard from "@/components/product/ProductCard";
-import HomeSwiper from "@/components/home/HomeSwiper";
+import dynamic from "next/dynamic"
+
+const HomeSwiper = dynamic(
+  () => import("@/components/home/HomeSwiper"),
+  { ssr: false }
+);
 
 export default function HomePage() {
   const t = useTranslations('Home');
@@ -18,7 +23,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await getProducts(1, 40);
+        const res = await getProducts(1, 15);
         setProducts(res.data);
       } catch {
         setLoadFailed(true);
@@ -38,14 +43,14 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col pb-44 bg-[#f8f9fb]">
-      <div className="mx-auto w-full md:max-w-7xl">
+      <div className="mx-auto w-full md:max-w-[1440px]">
         <div className="mx-auto flex flex-col gap-8 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
-          
+
           {/* Hero Swiper Section */}
           <HomeSwiper />
 
           {/* Product Sections */}
-          <div className="flex flex-col gap-12">
+          <div className="flex flex-col gap-6 md:gap-8">
             {isLoading ? (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 mt-2">
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -61,7 +66,10 @@ export default function HomePage() {
                 if (section.items.length === 0) return null;
 
                 return (
-                  <section key={section.id} className="flex flex-col gap-5">
+                  <section
+                    key={section.id}
+                    className="flex flex-col gap-5 bg-white rounded-3xl p-4 md:p-6 shadow-sm"
+                  >
                     <div className="flex items-center justify-between px-1">
                       <div className="flex flex-col gap-1">
                         <h2 className="text-[20px] md:text-[24px] font-black text-[#1B4D91] leading-none">{section.title}</h2>
@@ -75,8 +83,8 @@ export default function HomePage() {
                       </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                      {section.items.slice(0, 4).map((product) => (
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 ">
+                      {section.items.slice(0, 5).map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
                     </div>

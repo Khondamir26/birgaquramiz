@@ -3,10 +3,8 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Navbar from '@/components/layout/Navbar';
-import BottomNavigation from '@/components/layout/BottomNavigation';
-import Footer from '@/components/layout/Footer';
-import { Toaster } from '@/components/ui/sonner';
-import { acrom } from './fonts';
+import { acrom, onest } from './fonts';
+import ClientLayout from "@/components/layout/ClientLayout"
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +39,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Birga Quramiz Marketplace'
@@ -54,7 +52,7 @@ export const metadata: Metadata = {
     title: 'Birga Quramiz Marketplace',
     description:
       'Online platform for buying and selling construction materials.',
-    images: ['/og-image.png']
+    images: ['/og-image.jpg']
   },
 
   robots: {
@@ -64,10 +62,12 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/icon.png', sizes: '192x192', type: 'image/png' }
+      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" }
     ],
-    apple: '/apple-touch-icon.png'
+    apple: "/icons/apple-touch-icon.png"
   }
 };
 
@@ -84,16 +84,17 @@ export default async function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+        <link rel="preconnect" href="https://api.birga-quramiz.uz" />
         <script src="https://telegram.org/js/telegram-web-app.js" async={true}></script>
       </head>
-      <body className={`${acrom.className} font-sans antialiased tap-highlight-none text-foreground bg-background`}>
+      <body className={`${acrom.className} ${onest.variable} antialiased tap-highlight-none text-foreground bg-background`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex min-h-screen flex-col">
             <Navbar />
+            <ClientLayout>
             <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
-            <Footer />
-            <BottomNavigation />
-            <Toaster />
+            </ClientLayout>
+            {/* <Toaster /> */}
           </div>
         </NextIntlClientProvider>
       </body>

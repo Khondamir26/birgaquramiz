@@ -218,7 +218,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="page-shell max-w-7xl space-y-6 md:space-y-8 pb-32">
+    <div className="page-shell max-w-[1440px] space-y-6 md:space-y-8 pb-32">
       <section className="surface-card rounded-[32px] p-6 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100">
         <h1 className="text-2xl md:text-3xl font-black text-[#1B4D91]">{t("title")}</h1>
         <p className="mt-2 text-[14px] md:text-[15px] text-slate-500 font-medium">{t("subtitle")}</p>

@@ -104,7 +104,7 @@ export default function SellerProductDetailPage() {
     if (!id) {
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-7xl">
+                <div className="mx-auto w-full md:max-w-[1440px]">
                     <div className="mx-auto flex flex-col gap-4 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
                         <button
                             onClick={() => router.push("/seller/products")}
@@ -127,7 +127,7 @@ export default function SellerProductDetailPage() {
     if (loading) {
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-7xl">
+                <div className="mx-auto w-full md:max-w-[1440px]">
                     <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
                         <div className="h-10 w-40 animate-pulse rounded-2xl bg-white" />
                         <div className="grid gap-6 md:grid-cols-2">
@@ -151,7 +151,7 @@ export default function SellerProductDetailPage() {
 
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-7xl">
+                <div className="mx-auto w-full md:max-w-[1440px]">
                     <div className="mx-auto flex flex-col gap-4 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
                         <button
                             onClick={() => router.push("/seller/products")}
@@ -182,7 +182,7 @@ export default function SellerProductDetailPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-            <div className="mx-auto w-full md:max-w-7xl">
+            <div className="mx-auto w-full md:max-w-[1440px]">
                 <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
                     {/* ── Back ── */}

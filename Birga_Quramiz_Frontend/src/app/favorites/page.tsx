@@ -34,7 +34,7 @@ export default function FavoritesPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-40 relative">
-            <div className="mx-auto w-full md:max-w-7xl flex flex-col">
+            <div className="mx-auto w-full md:max-w-[1440px] flex flex-col">
                 {/* Desktop Breadcrumbs */}
                 <div className="hidden md:block px-4 md:px-6 pt-3 md:pt-5">
                     <Breadcrumbs items={breadcrumbItems} />
@@ -43,7 +43,7 @@ export default function FavoritesPage() {
                 <div className="flex flex-col md:gap-6 pb-24 md:pb-0 md:pt-6">
                     {/* Header: Full width on mobile, centered/padded on desktop */}
                     <div className="sticky top-0 z-30 bg-white px-4 pt-6 pb-4 md:static md:shadow-none md:bg-transparent md:pt-0 md:px-6">
-                        <div className="flex items-center justify-between md:items-start max-w-7xl mx-auto w-full">
+                        <div className="flex items-center justify-between md:items-start max-w-[1440px] mx-auto w-full">
                             <div className="md:space-y-1">
                                 <h1 className="text-xl md:text-4xl font-black text-[#1B4D91] tracking-tight">
                                     {t("title") || "Избранное"}
