@@ -3,7 +3,6 @@ import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const isProduction = process.env.NODE_ENV === 'production'
-const devImageSources = ['http://localhost:5000', 'http://127.0.0.1:5000']
 
 const contentSecurityPolicy = [
   "default-src 'self'",

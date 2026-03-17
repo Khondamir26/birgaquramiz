@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { getBrands } from "@/lib/api/brands"
 import type { Brand } from "@/types"
 import { useTranslations } from "next-intl"
@@ -78,20 +78,12 @@ export default function BrandsPage() {
                 >
                   {brand.logoUrl ? (
                     <div className="relative w-full h-16 flex items-center justify-center overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-300">
-                      {brand.logoUrl.startsWith('http') ? (
-                        <img 
-                          src={brand.logoUrl} 
-                          alt={brand.name} 
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      ) : (
-                        <Image 
-                          src={brand.logoUrl} 
-                          alt={brand.name} 
-                          fill
-                          className="object-contain"
-                        />
-                      )}
+                      <BrandLogo 
+                        src={brand.logoUrl} 
+                        alt={brand.name} 
+                        fill
+                        className="object-contain"
+                      />
                     </div>
                   ) : (
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-[#1B4D91] font-black text-xl group-hover:bg-[#1B4D91]/10 transition-colors">

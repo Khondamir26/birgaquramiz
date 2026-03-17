@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { Pencil, Trash2, Plus, X } from "lucide-react"
 import { getBrands, createBrand, updateBrand, deleteBrand, type BrandInput } from "@/lib/api/brands"
 import type { Brand } from "@/types"
-import Image from "next/image"
+import BrandLogo from "@/components/brand/BrandLogo"
 
 export default function AdminBrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([])
@@ -185,20 +185,12 @@ export default function AdminBrandsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {brand.logoUrl ? (
                           <div className="w-12 h-12 relative bg-white border border-slate-100 shrink-0 p-1 rounded-lg flex items-center justify-center">
-                            {brand.logoUrl.startsWith('http') ? (
-                              <img 
-                                src={brand.logoUrl} 
-                                alt={brand.name} 
-                                className="max-w-full max-h-full object-contain" 
-                              />
-                            ) : (
-                              <Image 
-                                src={brand.logoUrl} 
-                                alt={brand.name} 
-                                fill 
-                                className="object-contain" 
-                              />
-                            )}
+                            <BrandLogo 
+                              src={brand.logoUrl} 
+                              alt={brand.name} 
+                              fill
+                              className="object-contain" 
+                            />
                           </div>
                         ) : (
                           <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-400">
@@ -314,20 +306,12 @@ export default function AdminBrandsPage() {
                      />
                       {formData.logoUrl && (
                         <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl shrink-0 p-1 relative flex items-center justify-center overflow-hidden">
-                          {formData.logoUrl.startsWith('http') ? (
-                            <img 
-                              src={formData.logoUrl} 
-                              alt="Preview" 
-                              className="max-w-full max-h-full object-contain" 
-                            />
-                          ) : (
-                            <Image 
-                              src={formData.logoUrl} 
-                              alt="Preview" 
-                              fill 
-                              className="object-contain" 
-                            />
-                          )}
+                          <BrandLogo 
+                            src={formData.logoUrl} 
+                            alt="Preview" 
+                            fill
+                            className="object-contain" 
+                          />
                         </div>
                       )}
                   </div>

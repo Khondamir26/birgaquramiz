@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useParams } from "next/navigation"
-import Image from "next/image"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { getBrandBySlug } from "@/lib/api/brands"
 import { getProducts } from "@/lib/api/products"
 import type { Brand, PaginatedResponse, Product } from "@/types"
@@ -120,20 +120,12 @@ export default function BrandDetailPage() {
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
             {brand.logoUrl ? (
               <div className="w-32 h-32 md:w-48 md:h-48 relative shrink-0 bg-white border border-slate-100 p-4 rounded-2xl flex items-center justify-center overflow-hidden">
-                {brand.logoUrl.startsWith('http') ? (
-                  <img 
-                    src={brand.logoUrl} 
-                    alt={brand.name} 
-                    className="max-w-full max-h-full object-contain"
-                  />
-                ) : (
-                  <Image 
-                     src={brand.logoUrl} 
-                     alt={brand.name} 
-                     fill
-                     className="object-contain"
-                  />
-                )}
+                <BrandLogo 
+                  src={brand.logoUrl} 
+                  alt={brand.name} 
+                  fill
+                  className="object-contain"
+                />
               </div>
             ) : (
               <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl bg-gradient-to-br from-[#1B4D91] to-[#123668] flex items-center justify-center text-white font-black text-6xl shadow-inner shrink-0">
