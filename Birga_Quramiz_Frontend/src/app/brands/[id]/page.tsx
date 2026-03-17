@@ -18,6 +18,13 @@ export default function BrandDetailPage() {
   const [data, setData] = useState<PaginatedResponse<Product> | null>(null)
   const [loadingBrand, setLoadingBrand] = useState(true)
   const [loadingProducts, setLoadingProducts] = useState(true)
+
+  const [prevSlug, setPrevSlug] = useState(slug)
+  if (slug !== prevSlug) {
+    setPrevSlug(slug)
+    setLoadingBrand(true)
+    setLoadingProducts(true)
+  }
   const [errorBrand, setErrorBrand] = useState("")
   const [errorProducts, setErrorProducts] = useState("")
 
@@ -26,7 +33,6 @@ export default function BrandDetailPage() {
   useEffect(() => {
     if (!slug) return
     let cancelled = false
-    setLoadingBrand(true)
     getBrandBySlug(slug)
       .then((data) => {
         if (!cancelled) {
@@ -49,7 +55,6 @@ export default function BrandDetailPage() {
   useEffect(() => {
     if (!slug) return
     let cancelled = false
-    setLoadingProducts(true)
     getProducts(1, 100, undefined, undefined, undefined, undefined, undefined, slug)
       .then((res) => {
         if (!cancelled) {

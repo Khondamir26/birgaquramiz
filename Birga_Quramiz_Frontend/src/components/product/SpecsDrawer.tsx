@@ -1,7 +1,6 @@
 "use client";
 
 import type { Product } from "@/types";
-import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,8 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ChevronRight, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 
 type SpecsDrawerProps = {
   open: boolean;
@@ -40,7 +38,7 @@ export default function SpecsDrawer({
   canBuy,
   t
 }: SpecsDrawerProps) {
-  const router = useRouter();
+
   const price = product.price;
 
   // Render specifications from data or fallback to defaults

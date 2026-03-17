@@ -1,7 +1,6 @@
 "use client";
 
 import type { Product } from "@/types";
-import { Star } from "lucide-react";
 import CategoryCard from "./CategoryCard";
 
 type ProductInfoProps = {

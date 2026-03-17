@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
-import { Pencil, Trash2, Plus, X, Upload } from "lucide-react"
+
+import { Pencil, Trash2, Plus, X } from "lucide-react"
 import { getBrands, createBrand, updateBrand, deleteBrand, type BrandInput } from "@/lib/api/brands"
 import type { Brand } from "@/types"
 import Image from "next/image"
@@ -24,7 +24,7 @@ export default function AdminBrandsPage() {
     featured: false
   })
   
-  const t = useTranslations("Admin")
+
 
   const loadBrands = () => {
     setLoading(true)
@@ -38,7 +38,13 @@ export default function AdminBrandsPage() {
   }
 
   useEffect(() => {
-    loadBrands()
+    getBrands()
+      .then((data) => {
+        setBrands(data)
+        setError("")
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
   const handleOpenModal = (brand?: Brand) => {
@@ -97,8 +103,8 @@ export default function AdminBrandsPage() {
       }
       handleCloseModal()
       loadBrands()
-    } catch (err: any) {
-      alert(err.message || "Ошибка при сохранении")
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Ошибка при сохранении")
     }
   }
 
@@ -107,8 +113,8 @@ export default function AdminBrandsPage() {
     try {
       await deleteBrand(id)
       loadBrands()
-    } catch (err: any) {
-      alert(err.message || "Ошибка при удалении")
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Ошибка при удалении")
     }
   }
 

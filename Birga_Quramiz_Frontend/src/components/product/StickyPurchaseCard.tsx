@@ -1,10 +1,8 @@
 "use client";
 
 import type { Product } from "@/types";
-import { Star, ChevronRight, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ChevronRight, Loader2, Star } from "lucide-react";
+
 
 type StickyPurchaseCardProps = {
   product: Product;
@@ -27,10 +25,9 @@ export default function StickyPurchaseCard({
   handleBuyNow,
   handleGoToCart,
   isBuying,
-  canBuy,
-  t
+  canBuy
 }: StickyPurchaseCardProps) {
-  const router = useRouter();
+
   const price = product.price;
 
   return (

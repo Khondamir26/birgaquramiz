@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function CartPage() {
   const router = useRouter();
@@ -109,9 +110,11 @@ export default function CartPage() {
                         <div className="shrink-0 relative">
                           <Link href={`/catalog/product/${item.id}`}>
                             <div className="size-20 md:size-24 flex items-center justify-center p-1 mt-1">
-                              <img 
+                            <Image 
                                 src={resolveImageUrl(item.image)} 
                                 alt={item.name} 
+                                width={100}
+                                height={100}
                                 className="h-full w-full object-contain" 
                               />
                             </div>

@@ -3,10 +3,10 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useFetch } from "@/hooks/useFetch";
-import { getProductById, getProducts } from "@/lib/api/products";
-import type { Product } from "@/types";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import ProductDetailsPage from "@/components/product/ProductDetailsPage";
+import { Product } from "@/types";
+import { getProductById } from "@/lib/api/products";
 
 export default function ProductDetailRoute() {
   const { id } = useParams<{ id: string }>();
