@@ -182,12 +182,25 @@ export default function AdminBrandsPage() {
               ) : (
                 brands.map((brand) => (
                   <tr key={brand.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                       {brand.logoUrl ? (
-                          <div className="w-12 h-12 relative bg-white border border-slate-100 shrink-0 p-1 rounded-lg">
-                             <Image src={brand.logoUrl} alt={brand.name} fill className="object-contain" />
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {brand.logoUrl ? (
+                          <div className="w-12 h-12 relative bg-white border border-slate-100 shrink-0 p-1 rounded-lg flex items-center justify-center">
+                            {brand.logoUrl.startsWith('http') ? (
+                              <img 
+                                src={brand.logoUrl} 
+                                alt={brand.name} 
+                                className="max-w-full max-h-full object-contain" 
+                              />
+                            ) : (
+                              <Image 
+                                src={brand.logoUrl} 
+                                alt={brand.name} 
+                                fill 
+                                className="object-contain" 
+                              />
+                            )}
                           </div>
-                       ) : (
+                        ) : (
                           <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-400">
                              {brand.name.charAt(0)}
                           </div>
@@ -299,11 +312,24 @@ export default function AdminBrandsPage() {
                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all"
                        placeholder="https://example.com/logo.png"
                      />
-                     {formData.logoUrl && (
-                        <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl shrink-0 p-1 relative">
-                           <Image src={formData.logoUrl} alt="Preview" fill className="object-contain" />
+                      {formData.logoUrl && (
+                        <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl shrink-0 p-1 relative flex items-center justify-center overflow-hidden">
+                          {formData.logoUrl.startsWith('http') ? (
+                            <img 
+                              src={formData.logoUrl} 
+                              alt="Preview" 
+                              className="max-w-full max-h-full object-contain" 
+                            />
+                          ) : (
+                            <Image 
+                              src={formData.logoUrl} 
+                              alt="Preview" 
+                              fill 
+                              className="object-contain" 
+                            />
+                          )}
                         </div>
-                     )}
+                      )}
                   </div>
                 </div>
 

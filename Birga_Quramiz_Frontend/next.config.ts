@@ -9,7 +9,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://www.google-analytics.com https:${isProduction ? '' : ` ${devImageSources.join(' ')}`}`,
+  `img-src 'self' data: blob: https: http:`,
   "font-src 'self' data:",
   "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
