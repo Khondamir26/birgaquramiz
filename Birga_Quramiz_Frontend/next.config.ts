@@ -7,11 +7,11 @@ const devImageSources = ['http://localhost:5000', 'http://127.0.0.1:5000']
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https:${isProduction ? '' : ` ${devImageSources.join(' ')}`}`,
+  `img-src 'self' data: blob: https://www.google-analytics.com https:${isProduction ? '' : ` ${devImageSources.join(' ')}`}`,
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz",
+  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
   "base-uri 'self'",
   "form-action 'self'",
