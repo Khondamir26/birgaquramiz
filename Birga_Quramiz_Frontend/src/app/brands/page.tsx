@@ -77,13 +77,21 @@ export default function BrandsPage() {
                   className="bg-white rounded-2xl p-6 flex items-center justify-center flex-col gap-4 shadow-sm hover:shadow-md transition-shadow active:scale-95 duration-200 border border-transparent hover:border-[#1B4D91]/10 aspect-square text-center group"
                 >
                   {brand.logoUrl ? (
-                    <div className="relative w-full h-16 object-contain overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-300">
-                       <Image 
+                    <div className="relative w-full h-16 flex items-center justify-center overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-300">
+                      {brand.logoUrl.startsWith('http') ? (
+                        <img 
+                          src={brand.logoUrl} 
+                          alt={brand.name} 
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      ) : (
+                        <Image 
                           src={brand.logoUrl} 
                           alt={brand.name} 
                           fill
                           className="object-contain"
-                       />
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-[#1B4D91] font-black text-xl group-hover:bg-[#1B4D91]/10 transition-colors">
