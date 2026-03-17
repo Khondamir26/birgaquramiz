@@ -5,6 +5,9 @@ export type CartItem = {
   price: number
   image: string
   quantity: number
+  brandName?: string | null
+  sellerCompany?: string | null
+  stock?: number | null
 }
 
 export type CartProductInput = {
@@ -13,6 +16,9 @@ export type CartProductInput = {
   name: string
   price: number
   image: string
+  brandName?: string | null
+  sellerCompany?: string | null
+  stock?: number | null
 }
 
 export function addOrIncrementItem(items: CartItem[], product: CartProductInput): CartItem[] {

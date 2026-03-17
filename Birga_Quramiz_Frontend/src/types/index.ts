@@ -32,6 +32,7 @@ export type Product = {
   sku?: string | null
   sellerId: string
   categoryId?: string | null
+  brandId?: string | null
   name: string
   description: string
   imageUrl: string
@@ -41,6 +42,25 @@ export type Product = {
   createdAt: string
   seller?: Seller & { user?: User }
   category?: Category | null
+  brand?: Brand | null
+  reviews?: Review[]
+  rating?: number
+  reviewsCount?: number
+  specifications?: Record<string, string> | null
+}
+
+export type Review = {
+  id: string
+  productId: string
+  userId: string
+  rating: number
+  pros?: string | null
+  cons?: string | null
+  comment?: string | null
+  images: string[]
+  likes: number
+  createdAt: string
+  user?: User
 }
 
 export type OrderItem = {
@@ -122,4 +142,16 @@ export type AdminProductDetail = {
     createdAt: string
     productsCount: number
   }
+}
+
+export type Brand = {
+  id: string
+  name: string
+  slug: string
+  logoUrl: string
+  website?: string | null
+  description?: string | null
+  featured: boolean
+  createdAt: string
+  products?: Product[]
 }

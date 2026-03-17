@@ -10,6 +10,8 @@ import { SellerModule } from './seller/seller.module';
 import { OrdersModule } from './orders/orders.module';
 import { CategoriesModule } from './categories/categories.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { BrandsModule } from './brands/brands.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { PaymentsModule } from './payments/payments.module';
     UploadModule,
     CategoriesModule,
     PaymentsModule,
+    ReviewsModule,
+    BrandsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

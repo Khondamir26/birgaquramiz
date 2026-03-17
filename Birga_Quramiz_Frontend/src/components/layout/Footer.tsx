@@ -23,7 +23,7 @@ export default function Footer() {
 
   return (
     <footer 
-      className="hidden md:block mt-16 relative overflow-hidden text-white"
+      className="hidden md:block relative overflow-hidden text-white"
       style={{ background: footerGradient }}
     >
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_38%,rgba(0,0,0,0.08))] pointer-events-none" />
@@ -86,6 +86,7 @@ export default function Footer() {
           </p>
           <ul className="space-y-4">
             {[
+              { href: "/brands", label: t("brands") },
               { href: "/seller-register", label: t("becomeSellerLink") },
               { href: "/about", label: t("about") },
             ].map(({ href, label }) => (
@@ -138,13 +139,13 @@ export default function Footer() {
           </p>
           <div className="space-y-3">
             <a
-              href="tel:+998900000000"
+              href="tel:+998903212761"
               className="flex items-center gap-4 rounded-3xl bg-white/5 p-3 pr-6 hover:bg-white/10 transition-all group border border-white/5"
             >
               <div className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white/90 group-hover:bg-[#1B4D91] group-hover:text-white transition-all shadow-sm">
                 <Phone className="size-[18px]" />
               </div>
-              <span className="text-[14px] font-bold tracking-tight text-white/90">+998 90 000 00 00</span>
+              <span className="text-[14px] font-bold tracking-tight text-white/90">+998 90 321 27 61 </span>
             </a>
 
             <a

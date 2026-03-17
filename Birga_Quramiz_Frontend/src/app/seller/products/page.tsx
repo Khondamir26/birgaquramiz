@@ -9,8 +9,9 @@ import {
   updateMySellerProduct,
   getCategories,
 } from "@/lib/api/products";
+import { getBrands } from "@/lib/api/brands";
 import { useAuth } from "@/hooks/useAuth";
-import type { Category } from "@/types";
+import type { Category, Brand } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { resolveImageUrl } from "@/lib/image";
@@ -31,6 +32,8 @@ type ProductFormState = {
   price: string;
   stock: string;
   categoryId: string | null;
+  brandId: string | null;
+  specifications: { key: string; value: string }[];
 };
 
 const initialForm: ProductFormState = {
@@ -39,6 +42,21 @@ const initialForm: ProductFormState = {
   price: "",
   stock: "",
   categoryId: null,
+  brandId: null,
+  specifications: [{ key: "", value: "" }],
+};
+
+const CATEGORY_SPEC_TEMPLATES: Record<string, string[]> = {
+  CEM: ["Вес", "Тип", "Расход", "Адгезия", "Толщина слоя", "Срок годности", "Время высыхания", "Температура применения"],
+  BRK: ["Марка прочности", "Морозостойкость", "Водопоглощение", "Размер", "Вес", "Количество в поддоне"],
+  ELC: ["Мощность", "Напряжение", "Степень защиты", "Материал", "Длина"],
+  PNT: ["Объем", "Степень глянца", "Расход", "Время высыхания", "Назначение"],
+  TIL: ["Размер", "Толщина", "Назначение", "Поверхность", "Страна"],
+  MTL: ["Толщина", "Ширина", "Длина", "Марка стали", "Вес"],
+  PIP: ["Диаметр", "Толщина стенки", "Длина", "Давление", "Материал"],
+  WOD: ["Порода дерева", "Влажность", "Сорт", "Размер"],
+  TOL: ["Тип инструмента", "Вес", "Питание", "Гарантия"],
+  GEN: ["Вес", "Размер", "Материал"],
 };
 
 const createProductSchema = z.object({
@@ -47,6 +65,7 @@ const createProductSchema = z.object({
   price: z.coerce.number().min(0, "Price must be 0 or higher"),
   stock: z.coerce.number().int().min(0, "Stock must be 0 or higher"),
   categoryId: z.string().min(1, "Category is required"),
+  brandId: z.string().optional().nullable(),
 });
 
 export default function SellerProductsPage() {
@@ -68,6 +87,7 @@ export default function SellerProductsPage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
 
   // Filtering and Sorting States
   const [searchQuery, setSearchQuery] = useState("");
@@ -154,6 +174,7 @@ export default function SellerProductsPage() {
 
     void loadProducts();
     getCategories().then(setCategories).catch(() => { });
+    getBrands().then(setBrands).catch(() => { });
   }, [user, isAuthenticated, isInitialized, router]);
 
   const handleCreateImage = (file: File | null) => {
@@ -194,6 +215,7 @@ export default function SellerProductsPage() {
       price: form.price,
       stock: form.stock,
       categoryId: form.categoryId ?? "",
+      brandId: form.brandId ?? null,
     });
 
     if (!parsed.success) {
@@ -209,7 +231,14 @@ export default function SellerProductsPage() {
         price: Number(form.price),
         stock: Number(form.stock),
         categoryId: parsed.data.categoryId,
+        brandId: parsed.data.brandId ?? undefined,
         image: createImageFile,
+        specifications: form.specifications.reduce((acc, curr) => {
+          if (curr.key.trim() && curr.value.trim()) {
+            acc[curr.key.trim()] = curr.value.trim();
+          }
+          return acc;
+        }, {} as Record<string, string>),
       });
 
       setSuccess(t("submitting")); // A bit of a hack to show submitting text, though success isn't exactly the right state, but preserving logic
@@ -242,6 +271,10 @@ export default function SellerProductsPage() {
         price: String(product.price),
         stock: String(product.stock),
         categoryId: product.categoryId ?? null,
+        brandId: product.brandId ?? null,
+        specifications: product.specifications 
+          ? Object.entries(product.specifications).map(([key, value]) => ({ key, value }))
+          : [{ key: "", value: "" }],
       });
   };
 
@@ -259,7 +292,14 @@ export default function SellerProductsPage() {
         description: editingForm.description,
         price: Number(editingForm.price),
         stock: Number(editingForm.stock),
+        brandId: editingForm.brandId ?? undefined,
         image: editingImageFile ?? undefined,
+        specifications: editingForm.specifications.reduce((acc, curr) => {
+          if (curr.key.trim() && curr.value.trim()) {
+            acc[curr.key.trim()] = curr.value.trim();
+          }
+          return acc;
+        }, {} as Record<string, string>),
       });
 
       setSuccess(t("saving")); // Also using the saving string
@@ -328,6 +368,52 @@ export default function SellerProductsPage() {
   if (!isAuthenticated || user?.role !== "SELLER") {
     return null;
   }
+
+  const addSpecRow = (isEditing: boolean) => {
+    if (isEditing) {
+      setEditingForm(prev => ({
+        ...prev,
+        specifications: [...prev.specifications, { key: "", value: "" }]
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        specifications: [...prev.specifications, { key: "", value: "" }]
+      }));
+    }
+  };
+
+  const removeSpecRow = (index: number, isEditing: boolean) => {
+    if (isEditing) {
+      setEditingForm(prev => ({
+        ...prev,
+        specifications: prev.specifications.filter((_, i) => i !== index)
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        specifications: prev.specifications.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const updateSpecRow = (index: number, field: 'key' | 'value', value: string, isEditing: boolean) => {
+    if (isEditing) {
+      setEditingForm(prev => ({
+        ...prev,
+        specifications: prev.specifications.map((spec, i) => 
+          i === index ? { ...spec, [field]: value } : spec
+        )
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        specifications: prev.specifications.map((spec, i) => 
+          i === index ? { ...spec, [field]: value } : spec
+        )
+      }));
+    }
+  };
 
   return (
     <div className="page-shell max-w-[1440px] space-y-4 md:space-y-6 pb-24 md:pb-32 px-2 md:px-0">
@@ -543,236 +629,466 @@ export default function SellerProductsPage() {
       </section >
 
       {/* CREATE PRODUCT MODAL */}
-      {
-        isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200 overflow-y-auto">
-            <form onSubmit={handleCreate} className="surface-card w-full max-w-lg rounded-[32px] p-6 md:p-8 shadow-[0_20px_60px_rgb(0,0,0,0.15)] border-0 relative my-auto animate-in zoom-in-95 duration-200 mt-20 mb-10">
+      {isCreateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 lg:p-6 animate-in fade-in duration-300"
+          onMouseDown={(e) => { if(e.target === e.currentTarget) setIsCreateModalOpen(false); }}
+        >
+          <form
+            onSubmit={handleCreate}
+            className="w-full max-w-[1400px] max-h-[98vh] rounded-[40px] shadow-[0_40px_120px_rgb(0,0,0,0.3)] flex flex-col relative animate-in zoom-in-95 duration-300 overflow-hidden bg-white text-left"
+          >
+            {/* Modal Header (Sticky) */}
+            <div className="shrink-0 p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white relative z-20">
+              <h2 className="text-2xl font-black text-[#1B4D91] flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full bg-[#1B4D91]/10 text-[#1B4D91] flex items-center justify-center text-[22px] font-normal">+</span>
+                {t("newProductTitle")}
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="absolute top-6 right-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
-                aria-label="Close"
+                className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-all border border-slate-100"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
+            </div>
 
-              <h2 className="text-2xl font-black text-[#1B4D91] mb-6 pr-12 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-[#1B4D91]/10 text-[#1B4D91] flex items-center justify-center text-[18px]">+</span>
-                {t("newProductTitle")}
-              </h2>
+            {/* Modal Body (Scrollable) */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 hide-scrollbar bg-slate-50/20">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("productName")}</label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    required
-                    className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10"
-                    placeholder={t("productNamePlaceholder")}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("description")}</label>
-                  <textarea
-                    name="description"
-                    value={form.description}
-                    onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-                    required
-                    rows={4}
-                    className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-slate-50/50 p-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10"
-                    placeholder={t("descriptionPlaceholder")}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("price")}</label>
+                {/* Left Column: Basic Info */}
+                <div className="lg:col-span-6 space-y-8">
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("productName")}</label>
                     <input
-                      name="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.price}
-                      onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
+                      name="name"
+                      value={form.name}
+                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                       required
-                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10"
-                      placeholder={t("pricePlaceholder")}
+                      className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
+                      placeholder="Например, Гипсокартон 12.5мм"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("stockAmount")}</label>
-                    <input
-                      name="stock"
-                      type="number"
-                      min="0"
-                      value={form.stock}
-                      onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
+
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("description")}</label>
+                    <textarea
+                      name="description"
+                      value={form.description}
+                      onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                       required
-                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10"
-                      placeholder={t("stockPlaceholder")}
+                      rows={6}
+                      className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-white p-6 text-[16px] font-medium transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
+                      placeholder="Подробное описание товара..."
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Category</label>
-                  <select
-                    value={form.categoryId ?? ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setForm((p) => ({ ...p, categoryId: value || null }));
-                    }}
-                    required
-                    className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none focus:ring-4 focus:ring-[#1B4D91]/10 appearance-none"
-                  >
-                    <option value="">Select category...</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name} ({cat.code})</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("price")}</label>
+                      <input
+                        name="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={form.price}
+                        onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
+                        required
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[18px] font-black transition-all focus:border-[#E31E24] focus:ring-4 focus:ring-[#E31E24]/5 focus:outline-none shadow-sm text-[#E31E24]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("stockAmount")}</label>
+                      <input
+                        name="stock"
+                        type="number"
+                        min="0"
+                        value={form.stock}
+                        onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
+                        required
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("photo")}</label>
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleCreateImage(e.target.files?.[0] || null)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      required
-                    />
-                    <div className={`h-14 w-full rounded-2xl border-2 border-dashed flex items-center justify-center text-[15px] font-medium transition-colors ${createImageFile ? 'border-[#1B4D91] bg-[#1B4D91]/5 text-[#1B4D91]' : 'border-slate-300 bg-slate-50/50 text-slate-500 hover:bg-slate-100'}`}>
-                      {createImageFile ? createImageFile.name : t("chooseFile")}
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Категория</label>
+                    <div className="relative">
+                      <select
+                        value={form.categoryId ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const category = categories.find(c => c.id === val);
+                          const template = category ? CATEGORY_SPEC_TEMPLATES[category.code] : null;
+                          setForm((p) => ({
+                            ...p,
+                            categoryId: val || null,
+                            specifications: template && p.specifications.every(s => !s.value.trim())
+                              ? template.map(k => ({ key: k, value: "" }))
+                              : p.specifications
+                          }));
+                        }}
+                        required
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
+                      >
+                        <option value="">Выберите категорию...</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Бренд (опционально)</label>
+                    <div className="relative">
+                      <select
+                        value={form.brandId ?? ""}
+                        onChange={(e) => setForm((p) => ({ ...p, brandId: e.target.value || null }))}
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
+                      >
+                        <option value="">Без бренда</option>
+                        {brands.map((brand) => (
+                          <option key={brand.id} value={brand.id}>{brand.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {createPreview && (
-                  <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm mt-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={createPreview} alt="New product preview" className="w-full aspect-[4/3] object-cover" />
+                {/* Right Column: Photos & Specs */}
+                <div className="lg:col-span-6 space-y-10">
+                  {/* Photo Upload */}
+                  <div className="space-y-4">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("photo")}</label>
+                    <div className="relative group/photo">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleCreateImage(e.target.files?.[0] || null)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        required={!createPreview}
+                      />
+                      <div className={`aspect-video w-full rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-4 text-center overflow-hidden bg-white shadow-sm ${createPreview ? 'border-[#1B4D91] ring-2 ring-[#1B4D91]/5' : 'border-slate-200 group-hover/photo:border-[#1B4D91] group-hover/photo:bg-slate-50'}`}>
+                        {createPreview ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={createPreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover animate-in fade-in duration-300" />
+                        ) : (
+                          <>
+                            <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 text-slate-400 group-hover/photo:text-[#1B4D91] group-hover/photo:bg-[#1B4D91]/10 transition-colors">
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </div>
+                            <p className="text-[15px] font-black text-slate-600 group-hover/photo:text-[#1B4D91] transition-colors uppercase tracking-widest">{t("chooseFile")}</p>
+                            <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest">JPG, PNG до 5MB</p>
+                          </>
+                        )}
+                        {createPreview && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                            <p className="text-white text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                              Сменить фото
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
 
+                  {/* Specifications section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Характеристики</label>
+                      <button
+                        type="button"
+                        onClick={() => addSpecRow(false)}
+                        className="text-xs font-black text-[#1B4D91] hover:text-[#E31E24] transition-colors flex items-center gap-1 uppercase tracking-widest"
+                      >
+                        <span className="text-xl leading-none">+</span> Добавить
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      {form.specifications.map((spec, idx) => (
+                        <div key={idx} className="flex gap-3 animate-in slide-in-from-top-1 duration-200">
+                          <input
+                            placeholder="Напр. Вес"
+                            value={spec.key}
+                            onChange={(e) => updateSpecRow(idx, 'key', e.target.value, false)}
+                            className="min-w-0 flex-[2] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-bold transition-all focus:border-[#1B4D91] focus:outline-none"
+                          />
+                          <input
+                            placeholder="Значение"
+                            value={spec.value}
+                            onChange={(e) => updateSpecRow(idx, 'value', e.target.value, false)}
+                            className="min-w-0 flex-[3] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-medium transition-all focus:border-[#1B4D91] focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSpecRow(idx, false)}
+                            className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer (Sticky) */}
+            <div className="shrink-0 p-8 md:p-10 border-t border-slate-100 bg-white flex flex-col sm:flex-row gap-6 relative z-20">
+              <button
+                type="button"
+                onClick={() => {
+                  if(confirm("Очистить черновик?")) {
+                    setForm(initialForm);
+                    setCreateImageFile(null);
+                    setCreatePreview("");
+                  }
+                }}
+                className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
+              >
+                Очистить
+              </button>
               <button
                 type="submit"
                 disabled={loading || !createImageFile}
-                className="h-14 w-full rounded-full bg-[#E31E24] text-white font-bold text-[16px] shadow-lg shadow-[#E31E24]/20 hover:bg-[#C91A20] transition-colors disabled:opacity-50 mt-8"
+                className="h-16 w-full rounded-full bg-[#E31E24] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(227,30,36,0.3)] hover:bg-[#C91A20] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
               >
-                {loading ? t("submitting") : t("addProduct")}
+                {loading ? "Загрузка..." : t("addProduct")}
               </button>
-            </form>
-          </div>
-        )
-      }
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* FIXED OVERLAY MODAL FOR EDITING */}
-      {
-        editingProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
-            <form onSubmit={handleSaveEdit} className="surface-card w-full max-w-lg rounded-[32px] p-6 md:p-8 shadow-[0_20px_60px_rgb(0,0,0,0.15)] border-0 relative my-auto">
-
+      {editingProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 lg:p-6"
+          onMouseDown={(e) => { if(e.target === e.currentTarget) setEditingId(null); }}
+        >
+          <form
+            onSubmit={handleSaveEdit}
+            className="w-full max-w-[1400px] max-h-[98vh] rounded-[40px] shadow-[0_40px_120px_rgb(0,0,0,0.3)] flex flex-col relative animate-in zoom-in-95 duration-300 overflow-hidden bg-white text-left"
+          >
+            {/* Header */}
+            <div className="shrink-0 p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white z-20">
+              <h2 className="text-2xl font-black text-[#1B4D91] flex items-center gap-3">
+                <svg className="w-8 h-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                {t("editProductTitle")}
+              </h2>
               <button
                 type="button"
                 onClick={() => setEditingId(null)}
-                className="absolute top-6 right-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
+                className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all border border-slate-100"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
+            </div>
 
-              <h2 className="text-2xl font-black text-[#1B4D91] mb-6 pr-12">{t("editProductTitle")}</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("productName")}</label>
-                  <input
-                    value={editingForm.name}
-                    onChange={(e) => setEditingForm((p) => ({ ...p, name: e.target.value }))}
-                    className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("description")}</label>
-                  <textarea
-                    value={editingForm.description}
-                    onChange={(e) => setEditingForm((p) => ({ ...p, description: e.target.value }))}
-                    rows={3}
-                    className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-slate-50/50 p-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("price")}</label>
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 hide-scrollbar bg-slate-50/20">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                {/* Left Column */}
+                <div className="lg:col-span-6 space-y-8">
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("productName")}</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={editingForm.price}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, price: e.target.value }))}
-                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none"
+                      value={editingForm.name}
+                      onChange={(e) => setEditingForm((p) => ({ ...p, name: e.target.value }))}
+                      className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("stockAmount")}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={editingForm.stock}
-                      onChange={(e) => setEditingForm((p) => ({ ...p, stock: e.target.value }))}
-                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 text-[15px] font-medium transition-colors focus:bg-white focus:border-[#1B4D91] focus:outline-none"
+
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("description")}</label>
+                    <textarea
+                      value={editingForm.description}
+                      onChange={(e) => setEditingForm((p) => ({ ...p, description: e.target.value }))}
+                      rows={6}
+                      className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-white p-6 text-[16px] font-medium transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
                       required
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">{t("newPhotoOptional")}</label>
-                  <div className="relative mb-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleEditImage(e.target.files?.[0] || null)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    <div className={`h-14 w-full rounded-2xl border-2 border-dashed flex items-center justify-center text-[15px] font-medium transition-colors ${editingImageFile ? 'border-[#1B4D91] bg-[#1B4D91]/5 text-[#1B4D91]' : 'border-slate-300 bg-slate-50/50 text-slate-500 hover:bg-slate-100'}`}>
-                      {editingImageFile ? editingImageFile.name : t("chooseNewPhoto")}
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Категория</label>
+                    <div className="relative">
+                      <select
+                        value={editingForm.categoryId ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const category = categories.find(c => c.id === val);
+                          const template = category ? CATEGORY_SPEC_TEMPLATES[category.code] : null;
+                          setEditingForm((p) => ({
+                            ...p,
+                            categoryId: val || null,
+                            specifications: template && p.specifications.every(s => !s.value.trim())
+                              ? template.map(k => ({ key: k, value: "" }))
+                              : p.specifications
+                          }));
+                        }}
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
+                        required
+                      >
+                        <option value="">Выберите категорию...</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </div>
                     </div>
                   </div>
 
-                  {(editingPreview || editingProduct.imageUrl) && (
-                    <div className="rounded-2xl overflow-hidden border border-slate-100 aspect-[16/9] relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={editingPreview || resolveImageUrl(editingProduct.imageUrl)}
-                        alt="Edit preview"
-                        className="absolute inset-0 w-full h-full object-cover"
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("price")}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editingForm.price}
+                        onChange={(e) => setEditingForm((p) => ({ ...p, price: e.target.value }))}
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[18px] font-black transition-all focus:border-[#E31E24] text-[#E31E24] shadow-sm"
+                        required
                       />
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("stockAmount")}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingForm.stock}
+                        onChange={(e) => setEditingForm((p) => ({ ...p, stock: e.target.value }))}
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] shadow-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Бренд (опционально)</label>
+                    <div className="relative">
+                      <select
+                        value={editingForm.brandId ?? ""}
+                        onChange={(e) => setEditingForm((p) => ({ ...p, brandId: e.target.value || null }))}
+                        className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
+                      >
+                        <option value="">Без бренда</option>
+                        {brands.map((brand) => (
+                          <option key={brand.id} value={brand.id}>{brand.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="lg:col-span-6 space-y-10">
+                  {/* Photo Edit */}
+                  <div className="space-y-4">
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("photo")}</label>
+                    <div className="relative group/photo">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleEditImage(e.target.files?.[0] || null)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="aspect-video w-full rounded-3xl border-2 border-slate-100 bg-white shadow-sm overflow-hidden relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={editingPreview || resolveImageUrl(editingProduct.imageUrl)}
+                          alt="Edit preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                          <p className="text-white text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {t("chooseNewPhoto")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Specs Edit */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Характеристики</label>
+                      <button
+                        type="button"
+                        onClick={() => addSpecRow(true)}
+                        className="text-xs font-black text-[#1B4D91] hover:text-[#E31E24] transition-colors flex items-center gap-1 uppercase tracking-widest"
+                      >
+                        <span className="text-xl leading-none">+</span> Добавить
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      {editingForm.specifications.map((spec, idx) => (
+                        <div key={idx} className="flex gap-3 animate-in slide-in-from-top-1 duration-200">
+                          <input
+                            placeholder="Напр. Вес"
+                            value={spec.key}
+                            onChange={(e) => updateSpecRow(idx, 'key', e.target.value, true)}
+                            className="min-w-0 flex-[2] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-bold transition-all focus:border-[#1B4D91] focus:outline-none"
+                          />
+                          <input
+                            placeholder="Значение"
+                            value={spec.value}
+                            onChange={(e) => updateSpecRow(idx, 'value', e.target.value, true)}
+                            className="min-w-0 flex-[3] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-medium transition-all focus:border-[#1B4D91] focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSpecRow(idx, true)}
+                            className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
+            </div>
 
+            {/* Footer */}
+            <div className="shrink-0 p-8 md:p-10 border-t border-slate-100 bg-white flex justify-end gap-6 relative z-20">
+              <button
+                type="button"
+                onClick={() => setEditingId(null)}
+                className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
+              >
+                Отмена
+              </button>
               <button
                 type="submit"
                 disabled={editingLoading}
-                className="h-14 w-full rounded-full bg-[#1B4D91] text-white font-bold text-[16px] shadow-lg shadow-[#1B4D91]/20 hover:bg-[#153a70] transition-colors disabled:opacity-50 mt-8"
+                className="h-16 px-12 rounded-full bg-[#1B4D91] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(27,77,145,0.3)] hover:bg-[#153a70] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
               >
-                {editingLoading ? t("saving") : t("saveChanges")}
+                {editingLoading ? "Сохранение..." : t("saveChanges")}
               </button>
-            </form>
-          </div>
-        )
-      }
-    </div >
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
   );
 }

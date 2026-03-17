@@ -212,7 +212,7 @@ export default function Navbar() {
             rightSlot={<LanguageSwitcher compact />}
           />
 
-          <div className="relative mx-auto flex w-full max-w-[1440px] items-center gap-5 px-6 py-4">
+          <div className="relative mx-auto flex w-full max-w-[1440px] items-center gap-5 px-6 py-2">
             <div className="flex shrink-0 items-center gap-4">
               <Link href={user?.role === "ADMIN" ? "/admin" : user?.role === "SELLER" ? "/seller/dashboard" : "/"} className="group min-w-0">
                 <span className="text-[43px] font-black lowercase leading-none tracking-[-0.07em] text-white">birga quramiz</span>

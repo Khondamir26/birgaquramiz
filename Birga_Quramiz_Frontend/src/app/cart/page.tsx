@@ -4,23 +4,44 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { useTranslations } from "next-intl";
 import { resolveImageUrl } from "@/lib/image";
-import { ShoppingBag, Trash2, Minus, Plus, ArrowRight } from "lucide-react";
+import { 
+  ShoppingBag, 
+  Trash2, 
+  Minus, 
+  Plus, 
+  Heart,
+  Info,
+  Check,
+  ChevronRight
+} from "lucide-react";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
-
-// -- Brand colours -------------------------------------------------------------
-// Primary Blue #1B4D91 | Accent Red #E31E24
-// -----------------------------------------------------------------------------
+import { useState } from "react";
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, removeItem, increment, decrement } = useCartStore();
+  const { items, removeItem, increment, decrement, clearCart } = useCartStore();
   const t = useTranslations("Cart");
+
+  const [selectedItems, setSelectedItems] = useState<string[]>(items.map(i => i.id));
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  /* -- Empty State -- */
+  const toggleSelectAll = () => {
+    if (selectedItems.length === items.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(items.map(i => i.id));
+    }
+  };
+
+  const toggleItemSelection = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   if (items.length === 0) {
     return (
       <EmptyState
@@ -34,146 +55,241 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-48 md:pb-16 md:page-shell w-full relative">
+    <div className="min-h-screen bg-[#F0F2F5] pb-32 md:pb-20 pt-6 md:pt-10">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-10">
+        <h1 className="text-[24px] md:text-[32px] font-bold text-black mb-6 md:mb-8 flex items-baseline gap-2">
+          Cart
+          <span className="text-slate-400 text-[18px] md:text-[20px] font-normal">{itemCount}</span>
+        </h1>
 
-      {/* -- Top Header -- */}
-      <div className="sticky top-0 z-30 bg-white md:bg-transparent px-5 pt-6 pb-4 shadow-sm md:static md:shadow-none md:px-0 md:pt-10 w-full max-w-4xl mx-auto md:flex md:items-center md:justify-between">
-        <div className="flex md:flex-col items-end md:items-start justify-between md:justify-start w-full md:w-auto">
-          <div>
-            <h1 className="text-xl md:text-3xl font-black text-[#1B4D91]">{t("title")}</h1>
-            <p className="text-[12px] md:text-[14px] font-medium text-slate-400 mt-0.5 md:mt-1">
-              {itemCount} {t("items").toLowerCase()}
-            </p>
-          </div>
-          <button
-            onClick={() => useCartStore.getState().clearCart()}
-            className="md:hidden rounded-xl border border-[#E31E24]/20 px-4 py-2 text-[11px] font-black uppercase tracking-wide text-[#E31E24] active:bg-[#E31E24]/5 transition-colors"
-          >
-            {t("clearCart")}
-          </button>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-6 md:gap-8 items-start">
+          {/* --- Left Column: Items --- */}
+          <div className="flex flex-col gap-4">
+            {/* Select All Card */}
+            <div className="bg-white rounded-[24px] md:rounded-[24px] p-3 md:p-3 flex items-center justify-between shadow-sm border border-slate-100">
+               <div className="flex items-center gap-3">
+                  <label className="relative flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="peer sr-only"
+                      checked={selectedItems.length === items.length}
+                      onChange={toggleSelectAll}
+                    />
+                    <div className="size-5 rounded-md border-2 border-slate-200 peer-checked:bg-[#275fdb] peer-checked:border-[#275fdb] transition-all flex items-center justify-center">
+                      <Check className="size-3 text-white" strokeWidth={3} />
+                    </div>
+                    <span className="ml-2 md:ml-2.5 text-[14px] md:text-[16px] font-semibold text-slate-900">Select all</span>
+                  </label>
+               </div>
+               <button 
+                onClick={clearCart}
+                className="size-8 md:size-9 flex items-center justify-center rounded-lg md:rounded-xl  text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+               >
+                 <Trash2 className="size-4" />
+               </button>
+            </div>
 
-        {/* Desktop Clear Button */}
-        <button
-          onClick={() => useCartStore.getState().clearCart()}
-          className="hidden md:flex rounded-full border border-[#E31E24]/30 px-6 py-2.5 text-[12px] font-black uppercase tracking-wider text-[#E31E24] hover:bg-[#E31E24]/5 transition-colors"
-        >
-          {t("clearCart")}
-        </button>
-      </div>
-
-      {/* -- Layout -- */}
-      <div className="px-4 pt-4 md:px-0 md:w-full md:max-w-4xl md:mx-auto flex flex-col gap-6 md:mt-4">
-
-        {/* Items list */}
-        <section className="flex flex-col gap-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-start md:items-center gap-4 md:gap-8 rounded-3xl md:rounded-[32px] bg-white p-4 md:p-6 md:pl-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-100 transition-all duration-300 hover:bg-slate-50/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5"
-            >
-              {/* Image */}
-              <Link href={`/catalog/product/${item.id}`} className="shrink-0">
-                <div className="size-24 md:size-[140px] overflow-hidden rounded-2xl md:rounded-[24px] bg-slate-50 border border-slate-100/60 flex items-center justify-center p-2">
-                  {item.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={resolveImageUrl(item.image)} alt={item.name} className="h-full w-full object-contain p-1" />
-                  ) : (
-                    <ShoppingBag className="size-8 text-slate-200" />
-                  )}
-                </div>
-              </Link>
-
-              {/* Info */}
-              <div className="flex flex-1 flex-col gap-2 min-w-0 self-stretch justify-center py-1 md:py-4">
-                <div>
-                  <p className="line-clamp-2 text-[14px] md:text-[18px] font-bold leading-snug text-[#1B4D91] hover:underline md:mb-1">{item.name}</p>
-                  <p className="text-[15px] md:text-[22px] font-black text-[#1B4D91]">
-                    {(item.price * item.quantity).toLocaleString("ru-RU")}{" "}
-                    <span className="text-[12px] md:text-[14px] font-semibold text-slate-400">UZS</span>
-                  </p>
+            {/* List Container Card */}
+            <div className="bg-white rounded-[24px] overflow-hidden shadow-sm border border-slate-100">
+              <div className="p-4 flex flex-col gap-4">
+                {/* Header Section */}
+                <div className="bg-[#F2F4F7] px-5 py-3 rounded-[16px]">
+                  <h2 className="text-[16px] md:text-[17px] font-bold text-black">Available for order</h2>
                 </div>
 
-                {/* Qty + delete row */}
-                <div className="flex items-center gap-4 mt-2 md:mt-4">
-                  <div className="flex items-center h-10 md:h-[48px] md:w-[140px] rounded-xl md:rounded-full border-2 md:border border-[#1B4D91]/15 md:border-slate-200 md:bg-white bg-[#f4f6fa] overflow-hidden">
-                    <button
-                      onClick={() => decrement(item.id)}
-                      className="flex size-10 md:h-full md:flex-1 items-center justify-center text-[#1B4D91] font-black hover:bg-[#1B4D91]/5 transition-colors text-lg"
+                {/* Items List */}
+                <div className="flex flex-col gap-2">
+                  {items.map((item, index) => (
+                    <div 
+                      key={item.id}
+                      className={`flex flex-col md:flex-row md:items-center gap-4 md:gap-6 p-4 md:p-6 ${index !== items.length - 1 ? 'border-b border-slate-50' : ''}`}
                     >
-                      <Minus className="size-3.5 md:size-4" />
-                    </button>
-                    <span className="min-w-[32px] md:w-12 text-center text-[14px] md:text-[16px] font-black text-[#1B4D91] tabular-nums">{item.quantity}</span>
-                    <button
-                      onClick={() => increment(item.id)}
-                      className="flex size-10 md:h-full md:flex-1 items-center justify-center text-[#1B4D91] font-black hover:bg-[#1B4D91]/5 transition-colors text-lg"
-                    >
-                      <Plus className="size-4" />
-                    </button>
-                  </div>
+                      <div className="flex items-center gap-6 flex-1">
+                        {/* Image with Checkbox Overlay (Top-Left) */}
+                        <div className="shrink-0 relative">
+                          <Link href={`/catalog/product/${item.id}`}>
+                            <div className="size-20 md:size-24 flex items-center justify-center p-1 mt-1">
+                              <img 
+                                src={resolveImageUrl(item.image)} 
+                                alt={item.name} 
+                                className="h-full w-full object-contain" 
+                              />
+                            </div>
+                          </Link>
+                          
+                          <label className="absolute -top-1 -left-1 flex items-center cursor-pointer z-10">
+                            <input 
+                              type="checkbox" 
+                              className="peer sr-only"
+                              checked={selectedItems.includes(item.id)}
+                              onChange={() => toggleItemSelection(item.id)}
+                            />
+                            <div className="size-5 rounded-md border-2 border-slate-100 bg-white peer-checked:bg-[#275fdb] peer-checked:border-[#275fdb] transition-all flex items-center justify-center shadow-sm">
+                              <Check className="size-3 text-white" strokeWidth={5} />
+                            </div>
+                          </label>
+                        </div>
 
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="flex size-10 items-center justify-center rounded-xl md:rounded-full text-slate-300 hover:text-[#E31E24] hover:bg-red-50 transition-colors md:ml-2"
-                  >
-                    <Trash2 className="size-4 md:size-[18px]" />
-                  </button>
+                        {/* Details Area */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                          <Link href={`/catalog/product/${item.id}`}>
+                            <h3 className="text-[16px] md:text-[18px] font-bold text-black leading-tight line-clamp-2 md:line-clamp-1">
+                              {item.name}
+                            </h3>
+                          </Link>
+                          
+                          {item.stock !== undefined && (
+                            <div className="inline-flex px-3 py-1 rounded-[8px] bg-[#FFF7ED] w-fit">
+                              <p className="text-[12px] font-bold text-[#ff8a00]">
+                                {item.stock} pieces left
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <button className="size-10 flex items-center justify-center rounded-[12px] bg-[#F8FAFC] text-slate-400 hover:text-[#275fdb] hover:bg-slate-50 transition-all">
+                              <Heart className="size-5" />
+                            </button>
+                            <button 
+                              onClick={() => removeItem(item.id)}
+                              className="size-10 flex items-center justify-center rounded-[12px] bg-[#F8FAFC] text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-all"
+                            >
+                              <Trash2 className="size-5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Price Area */}
+                        <div className="hidden md:flex flex-col items-center justify-center min-w-[200px]">
+                          <p className="text-[20px] font-bold text-black tracking-tight">
+                            {item.price.toLocaleString("ru-RU")} UZS
+                          </p>
+                        </div>
+
+                        {/* Qty Selector (Far Right) */}
+                        <div className="hidden md:block shrink-0 px-2 pl-4">
+                          <div className="flex items-center bg-[#F1F5F9]/70 rounded-[14px] p-1 border border-slate-100">
+                            <button
+                              disabled={item.quantity <= 1}
+                              onClick={() => item.quantity > 1 && decrement(item.id)}
+                              className={`size-9 flex items-center justify-center rounded-[10px] transition-all ${
+                                item.quantity <= 1 
+                                  ? "text-slate-300 opacity-50" 
+                                  : "text-slate-400 hover:text-[#275fdb]"
+                              }`}
+                            >
+                              <Minus className="size-4" strokeWidth={3} />
+                            </button>
+                            <span className="w-10 text-center text-[16px] font-black text-black tabular-nums">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => increment(item.id)}
+                              className="size-9 flex items-center justify-center rounded-[10px] text-slate-400 hover:text-[#275fdb] transition-all"
+                            >
+                              <Plus className="size-4" strokeWidth={3} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Layout Adjustment */}
+                      <div className="md:hidden flex items-center justify-between gap-4 pt-1 ml-9">
+                        <p className="text-[18px] font-black text-black">
+                          {item.price.toLocaleString("ru-RU")} <span className="text-[12px] text-slate-300">UZS</span>
+                        </p>
+                        <div className="flex items-center bg-[#F1F5F9]/70 rounded-[12px] p-1 border border-slate-100">
+                            <button
+                              disabled={item.quantity <= 1}
+                              onClick={() => item.quantity > 1 && decrement(item.id)}
+                              className={`size-8 flex items-center justify-center rounded-lg transition-all ${
+                                item.quantity <= 1 
+                                  ? "text-slate-300 cursor-not-allowed opacity-50" 
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              <Minus className="size-4" strokeWidth={3} />
+                            </button>
+                            <span className="w-8 text-center text-[15px] font-black text-black">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => increment(item.id)}
+                              className="size-8 flex items-center justify-center rounded-lg text-slate-400"
+                            >
+                              <Plus className="size-4" strokeWidth={3} />
+                            </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          ))}
-        </section>
-
-        {/* -- Desktop order summary -- */}
-        <aside className="hidden md:flex flex-col rounded-[32px] bg-gradient-to-br from-white to-slate-50/50 border border-slate-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.04)] p-8 md:p-10 space-y-6 w-full">
-          <h2 className="text-[22px] font-black text-[#1B4D91]">{t("summary")}</h2>
-
-          <div className="space-y-4 text-[14px] font-semibold text-slate-500 w-full mb-4">
-            <div className="flex justify-between w-full">
-              <span>{t("items")}</span>
-              <span className="text-[#1B4D91] font-bold">{itemCount}</span>
-            </div>
-            <div className="flex justify-between w-full">
-              <span>{t("delivery")}</span>
-              <span className="text-[#1B4D91] font-bold">{t("deliveryAtCheckout")}</span>
-            </div>
           </div>
 
-          <div className="w-full">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">{t("total")}</p>
-            <p className="text-[36px] font-black text-[#E31E24] leading-none mb-6">
-              {total.toLocaleString("ru-RU")} <span className="text-[18px] text-[#1B4D91] ml-2">UZS</span>
-            </p>
+          {/* --- Right Column: Summary --- */}
+          <aside className="hidden lg:block sticky top-10">
+            <div className="bg-white rounded-[24px] p-8 shadow-sm border border-slate-100">
+              {/* Primary Action at the Top */}
+              <button
+                onClick={() => router.push("/checkout")}
+                className="w-full flex items-center justify-center h-16 rounded-full bg-[#275fdb] hover:bg-[#1B4D91] text-[16px] font-bold text-white shadow-xl shadow-[#275fdb]/20 transition-all mb-6 group"
+              >
+                <span>Proceed to checkout</span>
+                <ChevronRight className="size-5 ml-1 group-hover:translate-x-1 transition-transform" />
+              </button>
 
-            <button
-              onClick={() => router.push("/checkout")}
-              className="flex w-full items-center justify-center gap-2 h-14 rounded-full bg-navbar-gradient hover:-translate-y-0.5 text-[15px] font-black text-white shadow-xl shadow-[#1B4D91]/25 active:scale-95 transition-all duration-300 mb-4"
-            >
-              {t("proceed")} <ArrowRight className="size-5" />
-            </button>
-            <Link
-              href="/catalog"
-              className="flex w-full items-center justify-center h-14 rounded-full border border-slate-200 hover:bg-slate-50 text-[14px] font-bold text-[#1B4D91] transition-colors"
-            >
-              {t("continueShopping")}
-            </Link>
-          </div>
-        </aside>
+              <p className="text-[12px] font-medium text-slate-400 leading-relaxed mb-8">
+                Available delivery methods and time can be selected at checkout
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <h3 className="text-[18px] font-black text-black">Your cart</h3>
+                    <span className="text-[13px] text-slate-400 font-semibold">{itemCount} products</span>
+                  </div>
+                  <div className="flex justify-between items-baseline text-[14px]">
+                    <span className="font-semibold text-slate-400">Products ({itemCount})</span>
+                    <span className="font-black text-black">{total.toLocaleString("ru-RU")} UZS</span>
+                  </div>
+                </div>
+
+                <div className="h-px bg-slate-100 w-full" />
+
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[18px] font-black text-black">Total cost</span>
+                    <Info className="size-4 text-slate-300" />
+                  </div>
+                  <p className="text-[22px] font-black text-black">
+                    {total.toLocaleString("ru-RU")} UZS
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
-      {/* -- Mobile sticky checkout bar -- */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-40 border-t border-slate-100 bg-white/96 backdrop-blur-md px-5 py-4 md:hidden shadow-[0_-4px_20px_rgba(27,77,145,0.06)]">
-        <div className="flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t("summary")}</p>
-            <p className="text-[18px] font-black text-[#1B4D91] truncate">{total.toLocaleString("ru-RU")} UZS</p>
-          </div>
-          <button
-            onClick={() => router.push("/checkout")}
-            className="flex flex-[1.1] items-center justify-center gap-2 h-13 rounded-2xl bg-navbar-gradient text-[13px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.97] transition-all"
-          >
-            {t("proceed")} <ArrowRight className="size-4" />
-          </button>
+      {/* --- Optimized Mobile Floating Bottom Bar --- */}
+      <div className="fixed bottom-[72px] left-0 right-0 z-40 lg:hidden">
+        <div className="mx-4 mb-4 rounded-[32px] bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_12px_48px_rgba(0,0,0,0.18)] px-5 py-4 flex items-center justify-between">
+            <div className="flex flex-col">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#275fdb] mb-0.5">Total cost</p>
+              <p className="text-[20px] font-black text-black leading-none">
+                {total.toLocaleString("ru-RU")}
+                <span className="text-[12px] ml-1 text-slate-300 uppercase">UZS</span>
+              </p>
+            </div>
+            <button
+              onClick={() => router.push("/checkout")}
+              className="h-14 px-8 rounded-full bg-[#275fdb] flex items-center justify-center gap-2 text-[15px] font-black text-white shadow-lg shadow-[#275fdb]/25 active:scale-95 transition-all"
+            >
+              <span>Checkout</span>
+              <ChevronRight className="size-4" strokeWidth={3} />
+            </button>
         </div>
       </div>
     </div>

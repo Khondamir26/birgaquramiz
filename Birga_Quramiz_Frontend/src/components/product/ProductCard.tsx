@@ -3,21 +3,17 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { useCart } from "@/hooks/useCart"
-import { useAuth } from "@/hooks/useAuth"
 import { resolveImageUrl } from "@/lib/image"
 import type { Product } from "@/types"
-import { Share2, Heart, ShoppingCart } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { ShoppingCart } from "lucide-react"
 import { useFavorites } from "@/hooks/useFavorites"
 import Image from "next/image"
 
 const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const router = useRouter()
   const { addItem, increment, decrement, getQuantity } = useCart()
-  const { user } = useAuth()
   const t = useTranslations("ProductCard")
   const quantity = getQuantity(product.id)
-  const canAddToCart = !user || user.role === "USER"
 
   const { toggleFavorite, isFavorite } = useFavorites()
   const liked = isFavorite(product.id)
@@ -36,6 +32,9 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
       name: product.name,
       price: product.price,
       image: resolveImageUrl(product.imageUrl),
+      brandName: product.brand?.name,
+      sellerCompany: product.seller?.company,
+      stock: product.stock,
     })
     toast.success(t("addedToCartToast"))
   }
@@ -48,11 +47,6 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   const handleDecrement = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
     decrement(product.id)
-  }
-
-  const handleFavorite = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    toggleFavorite(product)
   }
 
   return (
@@ -87,6 +81,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
           src={resolveImageUrl(product.imageUrl)}
           alt={product.name}
           fill
+          unoptimized
           placeholder="empty"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
           className="object-cover"
@@ -108,17 +103,19 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
         </div>
         {/* RATING */}
         <div className="flex items-center gap-2 mb-2">
-          <div className="flex items-center gap-[3px] text-[13px] font-bold text-black">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFA800" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            4.9
-          </div>
+          {product.rating && product.rating > 0 ? (
+            <div className="flex items-center gap-[3px] text-[13px] font-bold text-black">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFA800" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              {product.rating.toFixed(1)}
+            </div>
+          ) : null}
           <div className="flex items-center gap-[4px] text-[13px] font-medium text-[#878787]">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="#878787" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
             </svg>
-            240 отзывов
+            {product.reviewsCount && product.reviewsCount > 0 ? `${product.reviewsCount} отзывов` : "Нет отзывов"}
           </div>
         </div>
 

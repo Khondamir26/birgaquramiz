@@ -49,7 +49,7 @@ export default function NavbarActions({
   const UserIcon = navbarIconMap.user2;
 
   return (
-    <div className="flex shrink-0 items-stretch gap-1">
+    <div className="ml-auto -mr-3 flex shrink-0 items-stretch gap-2 lg:gap-4">
       {actions.map((item) => {
         const Icon = navbarIconMap[item.iconKey];
         const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -60,8 +60,8 @@ export default function NavbarActions({
             href={item.href}
             className={
               isActive
-                ? "group relative flex min-w-[88px] flex-col items-center justify-center gap-1 rounded-[20px] bg-white/16 px-3 py-2 text-center text-white transition-all duration-200"
-                : "group relative flex min-w-[88px] flex-col items-center justify-center gap-1 rounded-[20px] px-3 py-2 text-center text-white/88 transition-all duration-200 hover:bg-white/12 hover:text-white"
+                ? "group relative flex flex-col items-center justify-center gap-1.5 px-3 py-2 text-center text-white transition-all duration-200"
+                : "group relative flex flex-col items-center justify-center gap-1.5 px-3 py-2 text-center text-white/60 transition-all duration-200 hover:text-white"
             }
           >
             <span className="relative flex h-8 items-center justify-center">
@@ -80,7 +80,7 @@ export default function NavbarActions({
       {isAuthenticated && userName ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="group flex min-w-[92px] flex-col items-center justify-center gap-1 rounded-[20px] px-3 py-2 text-center text-white/88 transition-all duration-200 hover:bg-white/12 hover:text-white">
+            <button className="group flex flex-col items-center justify-center gap-1.5 px-3 py-2 text-center text-white/60 transition-all duration-200 hover:text-white">
               <span className="flex h-8 items-center justify-center">
                 <UserIcon className="size-5" />
               </span>
@@ -118,7 +118,7 @@ export default function NavbarActions({
       ) : (
         <Link
           href="/login"
-          className="group flex min-w-[92px] flex-col items-center justify-center gap-1 rounded-[20px] px-3 py-2 text-center text-white/88 transition-all duration-200 hover:bg-white/12 hover:text-white"
+          className="group flex flex-col items-center justify-center gap-1.5 px-3 py-2 text-center text-white/60 transition-all duration-200 hover:text-white"
         >
           <span className="flex h-8 items-center justify-center">
             <UserIcon className="size-5" />

@@ -8,7 +8,8 @@ export function getProducts(
   categoryId?: string,
   minPrice?: number,
   maxPrice?: number,
-  sortBy?: string
+  sortBy?: string,
+  brand?: string
 ) {
   const query = new URLSearchParams()
   query.set('page', String(page))
@@ -18,6 +19,7 @@ export function getProducts(
   if (minPrice !== undefined) query.set('minPrice', String(minPrice))
   if (maxPrice !== undefined) query.set('maxPrice', String(maxPrice))
   if (sortBy?.trim()) query.set('sortBy', sortBy.trim())
+  if (brand?.trim()) query.set('brand', brand.trim())
 
   return apiFetch<PaginatedResponse<Product>>(`/products?${query.toString()}`)
 }
@@ -26,13 +28,15 @@ export function getProductById(id: string) {
   return apiFetch<Product>(`/products/${id}`)
 }
 
-type ProductInput = {
+export type ProductInput = {
   name: string
   description: string
   price: number
-  stock: number
-  categoryId: string
-  image?: File
+  stock: number;
+  categoryId: string;
+  brandId?: string;
+  image?: File | null;
+  specifications?: Record<string, string>;
 }
 
 function toFormData(data: ProductInput) {
@@ -42,8 +46,14 @@ function toFormData(data: ProductInput) {
   formData.append('price', String(data.price))
   formData.append('stock', String(data.stock))
   formData.append('categoryId', String(data.categoryId))
+  if (data.brandId) {
+    formData.append('brandId', data.brandId)
+  }
   if (data.image) {
     formData.append('image', data.image)
+  }
+  if (data.specifications) {
+    formData.append('specifications', JSON.stringify(data.specifications))
   }
   return formData
 }
@@ -72,18 +82,13 @@ export function getMySellerProduct(id: string) {
     rejectionReason?: string | null
     createdAt: string
     category?: Category | null
+    specifications?: Record<string, string> | null
   }>(`/products/seller/my/${id}`)
 }
 
 export function updateMySellerProduct(
   id: string,
-  data: Partial<{
-    name: string
-    description: string
-    price: number
-    stock: number
-    image: File
-  }>,
+  data: Partial<ProductInput & { image: File }>,
 ) {
   const formData = new FormData()
 
@@ -91,7 +96,9 @@ export function updateMySellerProduct(
   if (data.description !== undefined) formData.append('description', data.description)
   if (data.price !== undefined) formData.append('price', String(data.price))
   if (data.stock !== undefined) formData.append('stock', String(data.stock))
+  if (data.brandId !== undefined) formData.append('brandId', data.brandId)
   if (data.image) formData.append('image', data.image)
+  if (data.specifications) formData.append('specifications', JSON.stringify(data.specifications))
 
   return apiFetch<Product>(`/products/seller/my/${id}`, {
     method: 'PATCH',

@@ -80,6 +80,7 @@ export class ProductsController {
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('brand') brand?: string,
   ) {
     return this.productsService.getApproved(
       Number(page),
@@ -88,7 +89,8 @@ export class ProductsController {
       categoryId,
       minPrice ? Number(minPrice) : undefined,
       maxPrice ? Number(maxPrice) : undefined,
-      sortBy
+      sortBy,
+      brand,
     )
   }
 

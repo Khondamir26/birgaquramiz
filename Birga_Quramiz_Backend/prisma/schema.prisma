@@ -61,6 +61,7 @@ model User {
   authSessions AuthSession[]
   orders       Order[]
   seller       Seller?
+  reviews      Review[]
 }
 
 model AuthSession {
@@ -117,14 +118,20 @@ model Product {
   imageUrl        String        @default("")
   rejectionReason String?
   categoryId      String?
+  brandId         String?
   sku             String?       @unique
   articleNumber   Int           @unique @default(autoincrement())
 
+  brand            Brand?            @relation(fields: [brandId], references: [id])
   category         Category?         @relation(fields: [categoryId], references: [id])
   deletionRequests DeletionRequest[]
   moderationLogs   ModerationLog[]
   orderItems       OrderItem[]
+  reviews          Review[]
+  rating           Float             @default(0)
+  reviewsCount     Int               @default(0)
   seller           Seller            @relation(fields: [sellerId], references: [id])
+  specifications   Json?
 }
 
 model ModerationLog {
@@ -176,4 +183,33 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  rating    Int
+  pros      String?
+  cons      String?
+  comment   String?
+  images    String[] @default([])
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Brand {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  logoUrl     String   @default("")
+  website     String?
+  description String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  products    Product[]
 }

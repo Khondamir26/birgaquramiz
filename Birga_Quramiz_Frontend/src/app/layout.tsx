@@ -1,10 +1,11 @@
-﻿import './globals.css';
+import './globals.css';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Navbar from '@/components/layout/Navbar';
 import { acrom, onest } from './fonts';
-import ClientLayout from "@/components/layout/ClientLayout"
+import ClientLayout from "@/components/layout/ClientLayout";
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: {
@@ -67,7 +68,14 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" }
     ],
-    apple: "/icons/apple-touch-icon.png"
+    shortcut: "/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
+    other: [
+      {
+        rel: "apple-touch-icon-precomposed",
+        url: "/icons/apple-touch-icon.png",
+      },
+    ],
   }
 };
 
@@ -82,6 +90,21 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-T853TX7K3C"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-T853TX7K3C');
+          `}
+        </Script>
+
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
         <link rel="preconnect" href="https://api.birga-quramiz.uz" />
@@ -92,7 +115,7 @@ export default async function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <ClientLayout>
-            <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
+              <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
             </ClientLayout>
             {/* <Toaster /> */}
           </div>

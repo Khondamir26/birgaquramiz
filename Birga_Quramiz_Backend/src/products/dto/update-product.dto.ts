@@ -13,6 +13,9 @@ export class UpdateProductDto {
   readonly description?: string
 
   @IsOptional()
+  readonly specifications?: any
+
+  @IsOptional()
   @IsString()
   @MaxLength(2048)
   readonly imageUrl?: string
@@ -28,4 +31,8 @@ export class UpdateProductDto {
   @Min(0)
   @Type(() => Number)
   readonly stock?: number
+
+  @IsOptional()
+  @IsString()
+  readonly brandId?: string
 }

@@ -57,9 +57,12 @@ export class ProductsService {
           stock: data.stock,
           sellerId: seller.id,
           categoryId: category.id,
+          brandId: data.brandId,
           sku,
+          specifications: data.specifications ? (typeof data.specifications === 'string' ? JSON.parse(data.specifications) : data.specifications) : undefined,
         },
         include: {
+          brand: true,
           category: {
             select: {
               id: true,
@@ -74,7 +77,7 @@ export class ProductsService {
     })
   }
 
-  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string, minPrice?: number, maxPrice?: number, sortBy?: string) {
+  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string, minPrice?: number, maxPrice?: number, sortBy?: string, brand?: string) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
@@ -107,6 +110,10 @@ export class ProductsService {
       whereCondition.OR = orConditions;
     }
 
+    if (brand?.trim()) {
+      whereCondition.brand = { slug: brand.trim() }
+    }
+
     if (minPrice !== undefined || maxPrice !== undefined) {
       whereCondition.price = {}
       if (minPrice !== undefined) whereCondition.price.gte = minPrice
@@ -128,6 +135,7 @@ export class ProductsService {
         where: whereCondition,
         include: {
           seller: true,
+          brand: true,
           category: {
             select: {
               id: true,
@@ -162,6 +170,7 @@ export class ProductsService {
     return this.prisma.product.findMany({
       where: { sellerId: seller.id },
       include: {
+        brand: true,
         category: {
           select: {
             id: true,
@@ -182,6 +191,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
+        brand: true,
         category: {
           select: {
             id: true,
@@ -208,6 +218,7 @@ export class ProductsService {
       rejectionReason: product.rejectionReason,
       createdAt: product.createdAt.toISOString(),
       category: product.category,
+      brand: product.brand,
     }
   }
 
@@ -225,7 +236,7 @@ export class ProductsService {
 
     const updateData = { ...data }
 
-    const hasAnyField = ['name', 'description', 'imageUrl', 'price', 'stock'].some(
+    const hasAnyField = ['name', 'description', 'imageUrl', 'price', 'stock', 'specifications', 'brandId'].some(
       (key) => updateData[key as keyof typeof updateData] !== undefined,
     )
 
@@ -237,9 +248,11 @@ export class ProductsService {
       where: { id },
       data: {
         ...updateData,
+        specifications: updateData.specifications ? (typeof updateData.specifications === 'string' ? JSON.parse(updateData.specifications) : updateData.specifications) : undefined,
         status: 'PENDING',
       },
       include: {
+        brand: true,
         category: {
           select: {
             id: true,
@@ -339,6 +352,7 @@ export class ProductsService {
       },
       include: {
         seller: true,
+        brand: true,
         category: {
           select: {
             id: true,
@@ -347,6 +361,12 @@ export class ProductsService {
             parentId: true,
             parent: { select: { id: true, name: true } },
           },
+        },
+        reviews: {
+          include: {
+            user: { select: { id: true, name: true } }
+          },
+          orderBy: { createdAt: 'desc' }
         },
       },
     })
@@ -361,6 +381,7 @@ export class ProductsService {
       where: { status: 'PENDING' },
       include: {
         seller: true,
+        brand: true,
         category: {
           select: {
             id: true,

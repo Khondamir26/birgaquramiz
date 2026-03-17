@@ -30,4 +30,11 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   readonly categoryId: string
+
+  @IsOptional()
+  @IsString()
+  readonly brandId?: string
+
+  @IsOptional()
+  readonly specifications?: any
 }
