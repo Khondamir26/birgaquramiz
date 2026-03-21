@@ -182,11 +182,7 @@ jobs:
             EFFECTIVE_BCRYPT_ROUNDS="${BCRYPT_SALT_ROUNDS:-12}"
 
             ############################################
-            # Create .env file for Docker Compose
-            ############################################
-
-            ############################################
-            # Save tag & unset shell env vars
+            # Save tag & write .env for Docker Compose
             # (prevents docker compose from preferring
             #  raw shell values over the .env file)
             ############################################
