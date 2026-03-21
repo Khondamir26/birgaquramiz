@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
           totalBrands:
             brandsRes.status === "fulfilled" ? brandsRes.value.length : 0,
           pendingModeration:
-            pendingRes.status === "fulfilled" ? pendingRes.value.length : 0,
+            pendingRes.status === "fulfilled" ? (pendingRes.value.meta?.total ?? pendingRes.value.data?.length ?? 0) : 0,
           pendingDeletion:
             deletionRes.status === "fulfilled"
               ? deletionRes.value.filter((r) => r.status === "PENDING").length

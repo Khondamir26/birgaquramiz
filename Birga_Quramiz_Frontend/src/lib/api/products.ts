@@ -137,7 +137,7 @@ export function requestProductDeletion(id: string, reason: string) {
 }
 
 export function getPendingProducts() {
-  return apiFetch<Product[]>('/products/admin/pending')
+  return apiFetch<PaginatedResponse<Product>>('/products/admin/pending')
 }
 
 export function approveProduct(id: string) {
