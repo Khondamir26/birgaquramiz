@@ -13,7 +13,8 @@ export type IconKey =
   | "clipboardList"
   | "heart"
   | "shoppingCart"
-  | "user2";
+  | "user2"
+  | "tag";
 
 export type NavLabelKey =
   | "home"
@@ -23,6 +24,7 @@ export type NavLabelKey =
   | "aiConsultant"
   | "adminDashboard"
   | "adminProducts"
+  | "adminBrands"
   | "users"
   | "orders"
   | "sellerDashboard"
@@ -60,6 +62,7 @@ export function getNavLinks(role: RoleLike): NavLink[] {
       { id: "admin-products", href: "/admin/products", labelKey: "adminProducts", iconKey: "package" },
       { id: "admin-users", href: "/admin/users", labelKey: "users", iconKey: "users" },
       { id: "admin-orders", href: "/admin/orders", labelKey: "orders", iconKey: "clipboardList" },
+      { id: "admin-brands", href: "/admin/brands", labelKey: "adminBrands", iconKey: "tag" },
     ];
   }
 

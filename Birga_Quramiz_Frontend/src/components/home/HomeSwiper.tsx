@@ -19,19 +19,19 @@ export default function HomeSwiper() {
   const banners = [
     {
       id: 1,
-      image: "/images/banners/construction_bg.avif",
-      title: t("bannerTitle") || "Welcome to Birga Quramiz!",
-      subtitle: t("bannerSubtitle") || "Your trusted construction materials marketplace.",
+      image: "/images/banners/bq.avif",
+      // title: t("bannerTitle") || "Welcome to Birga Quramiz!",
+      // subtitle: t("bannerSubtitle") || "Your trusted construction materials marketplace.",
     },
     {
       id: 2,
-      image: "/images/banners/materials_bg.avif",
+      image: "/images/banners/helmet.avif",
       title: t("factoryPrices") || "Factory Prices",
       subtitle: t("factoryText") || "Direct offers from verified sellers with transparent stock.",
     },
     {
       id: 3,
-      image: "/images/banners/tools_bg.avif",
+      image: "/images/banners/trust.avif",
       title: t("trustedProcess") || "Trusted Process",
       subtitle: t("trustedText") || "Moderated products and role-based workflow for platform quality.",
     },
@@ -84,7 +84,7 @@ export default function HomeSwiper() {
                 priority={index === 0}
                 loading={index === 0 ? "eager" : "lazy"}
                 sizes="100vw"
-                className="object-cover opacity-90 transition-opacity duration-1000"
+                className="object-cover transition-opacity duration-1000"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-[#0B2141]/90 via-[#0B2141]/50 sm:via-[#1B4D91]/40 to-transparent" />
             </div>

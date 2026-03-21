@@ -10,10 +10,12 @@ export type User = {
   phone: string
   role: Role
   createdAt: string
+  seller?: { id: string; company: string; verified: boolean } | null
 }
 
 export type Seller = {
   id: string
+  articleNumber?: number
   userId: string
   company: string
   verified: boolean
@@ -22,20 +24,25 @@ export type Seller = {
 export type Category = {
   id: string
   name: string
+  nameEn?: string | null
+  nameUz?: string | null
   code: string
+  slug?: string | null
   parentId?: string | null
-  parent?: { id: string; name: string } | null
+  parent?: { id: string; name: string; nameEn?: string | null; nameUz?: string | null; slug?: string | null } | null
 }
 
 export type Product = {
   id: string
   sku?: string | null
+  slug?: string | null
   sellerId: string
   categoryId?: string | null
   brandId?: string | null
   name: string
   description: string
   imageUrl: string
+  images?: string[]
   price: number
   stock: number
   status: ProductStatus
@@ -154,4 +161,15 @@ export type Brand = {
   featured: boolean
   createdAt: string
   products?: Product[]
+}
+
+export type SellerPublicProfile = {
+  id: string;
+  articleNumber: number;
+  company: string;
+  verified: boolean;
+  memberSince: string;
+  totalProducts: number;
+  totalSold: number;
+  products: Product[];
 }

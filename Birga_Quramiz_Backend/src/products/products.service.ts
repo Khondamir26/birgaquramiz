@@ -4,8 +4,9 @@ import { PrismaService } from '../prisma/prisma.service'
 import type { UpdateProductDto } from './dto/update-product.dto'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { AuthUser } from '../auth/auth.types'
+import { generateProductSlug } from './slug.util'
 
-type CreateProductInput = CreateProductDto & { imageUrl: string }
+type CreateProductInput = CreateProductDto & { imageUrls: string[] }
 
 @Injectable()
 export class ProductsService {
@@ -47,18 +48,21 @@ export class ProductsService {
 
       const padded = String(updatedCategory.lastSkuNumber).padStart(6, '0')
       const sku = `${updatedCategory.code}-${padded}`
+      const slug = generateProductSlug(data.name, sku)
 
       return tx.product.create({
         data: {
           name: data.name,
           description: data.description,
-          imageUrl: data.imageUrl,
+          imageUrl: data.imageUrls[0] ?? '',
+          images: data.imageUrls,
           price: data.price,
           stock: data.stock,
           sellerId: seller.id,
           categoryId: category.id,
           brandId: data.brandId,
           sku,
+          slug,
           specifications: data.specifications ? (typeof data.specifications === 'string' ? JSON.parse(data.specifications) : data.specifications) : undefined,
         },
         include: {
@@ -67,9 +71,12 @@ export class ProductsService {
             select: {
               id: true,
               name: true,
+              nameEn: true,
+              nameUz: true,
               code: true,
+              slug: true,
               parentId: true,
-              parent: { select: { id: true, name: true } },
+              parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
             },
           },
         },
@@ -77,7 +84,7 @@ export class ProductsService {
     })
   }
 
-  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string, minPrice?: number, maxPrice?: number, sortBy?: string, brand?: string) {
+  async getApproved(page = 1, limit = 10, q?: string, categoryId?: string, minPrice?: number, maxPrice?: number, sortBy?: string, brand?: string, parentCategoryId?: string) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
@@ -86,7 +93,9 @@ export class ProductsService {
       status: 'APPROVED',
     }
 
-    if (categoryId?.trim()) {
+    if (parentCategoryId?.trim()) {
+      whereCondition.category = { parentId: parentCategoryId.trim() }
+    } else if (categoryId?.trim()) {
       whereCondition.categoryId = categoryId.trim()
     }
 
@@ -140,9 +149,12 @@ export class ProductsService {
             select: {
               id: true,
               name: true,
+              nameEn: true,
+              nameUz: true,
               code: true,
+              slug: true,
               parentId: true,
-              parent: { select: { id: true, name: true } },
+              parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
             },
           },
         },
@@ -175,9 +187,12 @@ export class ProductsService {
           select: {
             id: true,
             name: true,
+            nameEn: true,
+            nameUz: true,
             code: true,
+            slug: true,
             parentId: true,
-            parent: { select: { id: true, name: true } },
+            parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
           },
         },
       },
@@ -196,15 +211,22 @@ export class ProductsService {
           select: {
             id: true,
             name: true,
+            nameEn: true,
+            nameUz: true,
             code: true,
+            slug: true,
             parentId: true,
-            parent: { select: { id: true, name: true } },
+            parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
           },
         },
       },
     })
     if (!product) throw new NotFoundException('Product not found')
     if (product.sellerId !== seller.id) throw new ForbiddenException('Access denied')
+
+    const images = product.images && product.images.length > 0
+      ? product.images
+      : product.imageUrl ? [product.imageUrl] : []
 
     return {
       id: product.id,
@@ -213,7 +235,7 @@ export class ProductsService {
       description: product.description,
       price: product.price,
       stock: product.stock,
-      images: product.imageUrl ? [product.imageUrl] : [],
+      images,
       status: product.status,
       rejectionReason: product.rejectionReason,
       createdAt: product.createdAt.toISOString(),
@@ -222,7 +244,7 @@ export class ProductsService {
     }
   }
 
-  async updateMyProduct(id: string, data: UpdateProductDto, user: AuthUser) {
+  async updateMyProduct(id: string, data: UpdateProductDto, user: AuthUser, newImageUrls?: string[]) {
     const seller = await this.ensureSellerProfile(user)
 
     const product = await this.prisma.product.findFirst({
@@ -234,20 +256,90 @@ export class ProductsService {
 
     if (!product) throw new NotFoundException('Product not found')
 
-    const updateData = { ...data }
+    const { keepImages: keepImagesRaw, ...updateData } = data
 
-    const hasAnyField = ['name', 'description', 'imageUrl', 'price', 'stock', 'specifications', 'brandId'].some(
+    // Resolve final image list
+    const keepImages: string[] = keepImagesRaw ? JSON.parse(keepImagesRaw) : (product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []))
+    const finalImages = [...keepImages, ...(newImageUrls ?? [])].slice(0, 5)
+    if (finalImages.length === 0) throw new BadRequestException('At least one product image is required')
+
+    const imageFields = {
+      imageUrl: finalImages[0],
+      images: finalImages,
+    }
+
+    const hasAnyField = ['name', 'description', 'price', 'stock', 'specifications', 'brandId', 'categoryId'].some(
       (key) => updateData[key as keyof typeof updateData] !== undefined,
-    )
+    ) || newImageUrls !== undefined || keepImagesRaw !== undefined
 
     if (!hasAnyField) {
       throw new BadRequestException('No fields to update')
     }
 
+    const categoryChanging = updateData.categoryId !== undefined && updateData.categoryId !== product.categoryId
+
+    if (categoryChanging) {
+      return this.prisma.$transaction(async (tx) => {
+        const newCategory = await tx.category.findUnique({
+          where: { id: updateData.categoryId },
+          select: { id: true, code: true, lastSkuNumber: true },
+        })
+
+        if (!newCategory) throw new BadRequestException('Invalid category')
+
+        const updatedCategory = await tx.category.update({
+          where: { id: newCategory.id },
+          data: { lastSkuNumber: { increment: 1 } },
+          select: { id: true, code: true, lastSkuNumber: true },
+        })
+
+        const padded = String(updatedCategory.lastSkuNumber).padStart(6, '0')
+        const newSku = `${updatedCategory.code}-${padded}`
+        const newName = updateData.name ?? product.name
+        const newSlug = generateProductSlug(newName, newSku)
+
+        const { categoryId, ...rest } = updateData
+
+        return tx.product.update({
+          where: { id },
+          data: {
+            ...rest,
+            ...imageFields,
+            categoryId,
+            sku: newSku,
+            slug: newSlug,
+            specifications: rest.specifications ? (typeof rest.specifications === 'string' ? JSON.parse(rest.specifications) : rest.specifications) : undefined,
+            status: 'PENDING',
+          },
+          include: {
+            brand: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                nameEn: true,
+                nameUz: true,
+                code: true,
+                slug: true,
+                parentId: true,
+                parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
+              },
+            },
+          },
+        })
+      })
+    }
+
+    const nameForSlug = updateData.name ?? product.name
+    const skuForSlug = product.sku ?? ''
+    const updatedSlug = skuForSlug ? generateProductSlug(nameForSlug, skuForSlug) : undefined
+
     return this.prisma.product.update({
       where: { id },
       data: {
         ...updateData,
+        ...imageFields,
+        ...(updatedSlug ? { slug: updatedSlug } : {}),
         specifications: updateData.specifications ? (typeof updateData.specifications === 'string' ? JSON.parse(updateData.specifications) : updateData.specifications) : undefined,
         status: 'PENDING',
       },
@@ -257,9 +349,12 @@ export class ProductsService {
           select: {
             id: true,
             name: true,
+            nameEn: true,
+            nameUz: true,
             code: true,
+            slug: true,
             parentId: true,
-            parent: { select: { id: true, name: true } },
+            parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
           },
         },
       },
@@ -344,6 +439,35 @@ export class ProductsService {
     return { message: 'Deletion request submitted. Admin will review it.', requestId: request.id }
   }
 
+  async getBySlug(slug: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { slug, status: 'APPROVED' },
+      include: {
+        seller: true,
+        brand: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            nameEn: true,
+            nameUz: true,
+            code: true,
+            slug: true,
+            parentId: true,
+            parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
+          },
+        },
+        reviews: {
+          include: { user: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
+      },
+    })
+    if (!product) throw new NotFoundException('Product not found')
+    return product
+  }
+
   async getById(id: string) {
     const product = await this.prisma.product.findFirst({
       where: {
@@ -357,16 +481,20 @@ export class ProductsService {
           select: {
             id: true,
             name: true,
+            nameEn: true,
+            nameUz: true,
             code: true,
+            slug: true,
             parentId: true,
-            parent: { select: { id: true, name: true } },
+            parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
           },
         },
         reviews: {
           include: {
             user: { select: { id: true, name: true } }
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          take: 20,
         },
       },
     })
@@ -376,23 +504,46 @@ export class ProductsService {
     return product
   }
 
-  async getPending() {
-    return this.prisma.product.findMany({
-      where: { status: 'PENDING' },
-      include: {
-        seller: true,
-        brand: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            parentId: true,
-            parent: { select: { id: true, name: true } },
+  async getPending(page = 1, limit = 50) {
+    const safePage = page < 1 ? 1 : page
+    const safeLimit = limit > 100 ? 100 : limit
+    const skip = (safePage - 1) * safeLimit
+
+    const [products, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where: { status: 'PENDING' },
+        include: {
+          seller: true,
+          brand: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              nameEn: true,
+              nameUz: true,
+              code: true,
+              slug: true,
+              parentId: true,
+              parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
+            },
           },
         },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.product.count({ where: { status: 'PENDING' } }),
+    ])
+
+    return {
+      data: products,
+      meta: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
       },
-    })
+    }
   }
 
   async approve(productId: string) {

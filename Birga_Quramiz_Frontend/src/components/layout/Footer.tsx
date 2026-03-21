@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/authStore";
 import { Mail, Phone, Linkedin, Instagram, Twitter, Facebook } from "lucide-react";
 
 const footerGradient =
@@ -11,7 +11,7 @@ const footerGradient =
 
 export default function Footer() {
   const t = useTranslations("Footer");
-  const { user } = useAuth();
+  const userRole = useAuthStore((state) => state.user?.role);
   const socialLabels = {
     linkedin: t.has("linkedin") ? t("linkedin") : "LinkedIn",
     instagram: t.has("instagram") ? t("instagram") : "Instagram",
@@ -35,7 +35,7 @@ export default function Footer() {
         {/* Brand column */}
         <div className="col-span-1 flex flex-col items-start pr-4">
           <Link 
-            href={user?.role === "ADMIN" ? "/admin" : user?.role === "SELLER" ? "/seller/dashboard" : "/"} 
+            href={userRole === "ADMIN" ? "/admin" : userRole === "SELLER" ? "/seller/dashboard" : "/"}
             className="mb-6 hover:opacity-90 transition-opacity"
           >
             <span className="text-[40px] font-black lowercase leading-none tracking-[-0.07em] text-white">

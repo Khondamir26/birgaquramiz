@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUserRole } from "@/lib/api/admin";
 import type { PaginatedResponse, Role, User } from "@/types";
 import { useTranslations } from "next-intl";
-import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store } from "lucide-react";
+import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store, BadgeCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
@@ -161,45 +161,64 @@ export default function AdminUsersPage() {
               <p className="text-sm font-bold text-slate-600">No users found.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {users.map((u) => {
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+              {users.map((u, idx) => {
                 const roleBadge = getRoleBadge(u.role);
                 const RoleIcon = roleBadge.icon;
                 return (
-                  <article key={u.id} className="group flex flex-col justify-between rounded-3xl bg-white border border-slate-100 p-5 shadow-sm transition-all hover:shadow-md hover:border-[#1B4D91]/20 relative overflow-hidden">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 pr-2">
-                        <p className="text-[16px] font-black text-[#1B4D91] truncate">{u.name}</p>
-                        <p className="text-[13px] font-bold text-slate-500 mt-0.5">{u.phone}</p>
-                      </div>
-                      <div className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1", roleBadge.bg, roleBadge.text)}>
-                        <RoleIcon className="size-3.5" />
-                        <span className="text-[10px] uppercase tracking-wider font-bold">{roleBadge.label}</span>
-                      </div>
+                  <div
+                    key={u.id}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors",
+                      idx !== 0 && "border-t border-slate-50"
+                    )}
+                  >
+                    {/* Avatar */}
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1B4D91]/8 text-[#1B4D91] font-black text-[12px]">
+                      {u.name.charAt(0).toUpperCase()}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                      <p className="text-[11px] font-semibold text-slate-400">ID: {u.id.substring(0, 8)}</p>
-                      <p className="text-[11px] font-bold text-slate-500">
-                        {t("colCreated")}: {new Date(u.createdAt).toLocaleDateString()}
-                      </p>
+                    {/* Name + phone */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[13px] font-bold text-slate-800 truncate">{u.name}</p>
+                        <div className={cn("flex items-center gap-1 rounded-full px-2 py-0.5 shrink-0", roleBadge.bg, roleBadge.text)}>
+                          <RoleIcon className="size-2.5" />
+                          <span className="text-[9px] uppercase tracking-wider font-black">{roleBadge.label}</span>
+                        </div>
+                        {u.role === "SELLER" && u.seller && (
+                          u.seller.verified ? (
+                            <div className="flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 shrink-0">
+                              <BadgeCheck className="size-2.5" /> Verified
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5 shrink-0">
+                              <Clock className="size-2.5" /> Pending
+                            </div>
+                          )
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">{u.phone}</p>
                     </div>
 
-                    <div className="mt-3">
-                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">{t("colRole")}</p>
-                      <select
-                        value={u.role}
-                        onChange={(e) => handleRoleChange(u, e.target.value as Role)}
-                        disabled={updatingUserId === u.id}
-                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-[#1B4D91] outline-none transition-all focus:border-[#1B4D91]/40 focus:ring-2 focus:ring-[#1B4D91]/20 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <option value="USER">{t("roleUser")}</option>
-                        <option value="SELLER">{t("roleSeller")}</option>
-                        <option value="ADMIN">{t("roleAdmin")}</option>
-                      </select>
-                    </div>
-                  </article>
-                )
+                    {/* Date */}
+                    <p className="hidden md:block text-[11px] text-slate-400 shrink-0 font-medium">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </p>
+
+                    {/* Role select */}
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u, e.target.value as Role)}
+                      disabled={updatingUserId === u.id}
+                      className="h-8 w-32 shrink-0 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#1B4D91] outline-none focus:border-[#1B4D91]/40 focus:ring-2 focus:ring-[#1B4D91]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="USER">{t("roleUser")}</option>
+                      <option value="SELLER">{t("roleSeller")}</option>
+                      <option value="ADMIN">{t("roleAdmin")}</option>
+                    </select>
+                  </div>
+                );
               })}
             </div>
           )}

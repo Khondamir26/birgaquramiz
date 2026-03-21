@@ -1,19 +1,23 @@
 "use client";
 
+import { useTranslations, useLocale } from "next-intl";
 import type { Product } from "@/types";
 import Link from "next/link";
+import { getCategoryName } from "@/lib/categoryName";
 
 type CategoryCardProps = {
   product: Product;
 };
 
 export default function CategoryCard({ product }: CategoryCardProps) {
+  const t = useTranslations("ProductDetail");
+  const locale = useLocale();
   const category = product.category;
   if (!category) return null;
 
   return (
     <Link 
-      href={`/catalog/category/${category.id}`}
+      href={`/catalog/category/${category.slug ?? category.id}`}
       className="flex items-center gap-4 group w-full"
     >
       <div className="flex size-[48px] items-center justify-center rounded-xl bg-[#F6F6F9] group-hover:bg-[#EEF0F3] transition-colors shadow-sm overflow-hidden text-[#a0a0a0]">
@@ -22,10 +26,10 @@ export default function CategoryCard({ product }: CategoryCardProps) {
       
       <div className="flex flex-col">
         <span className="text-[15px] font-bold text-[#242424] transition-colors">
-          {category.name}
+          {getCategoryName(category, locale)}
         </span>
         <span className="text-[14px] text-[#a0a0a0] font-medium">
-          Все товары категории
+          {t("allCategoryProducts")}
         </span>
       </div>
     </Link>

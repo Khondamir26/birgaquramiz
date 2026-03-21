@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { getCategoryName } from "@/lib/categoryName";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -29,6 +30,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
   const { toggleFavorite, isFavorite } = useFavorites();
   const t = useTranslations("ProductDetail");
   const tNav = useTranslations("Navbar");
+  const locale = useLocale();
   
   const [specsOpen, setSpecsOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
@@ -36,7 +38,9 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
   const canBuy = !isAuthenticated || user?.role === "USER";
   const quantity = getQuantity(product.id);
   const liked = isFavorite(product.id);
-  const images = product.imageUrl ? [resolveImageUrl(product.imageUrl)] : [];
+  const images = product.images && product.images.length > 0
+    ? product.images.map((img) => resolveImageUrl(img))
+    : product.imageUrl ? [resolveImageUrl(product.imageUrl)] : [];
 
   const handleBuyNow = async () => {
     setIsBuying(true);
@@ -55,9 +59,8 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
 
   const breadcrumbItems = [
     { label: tNav("home"), href: "/" },
-    { label: tNav("catalog"), href: "/catalog" },
-    ...(product.category?.parent ? [{ label: product.category.parent.name, href: `/catalog/category/${product.category.parent.id}` }] : []),
-    ...(product.category ? [{ label: product.category.name, href: `/catalog/category/${product.category.id}` }] : []),
+    ...(product.category?.parent ? [{ label: getCategoryName(product.category.parent, locale), href: `/catalog/category/${product.category.parent.slug ?? product.category.parent.id}` }] : []),
+    ...(product.category ? [{ label: getCategoryName(product.category, locale), href: `/catalog/category/${product.category.slug ?? product.category.id}` }] : []),
     { label: product.name },
   ];
 

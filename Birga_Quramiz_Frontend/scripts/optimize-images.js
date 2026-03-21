@@ -41,18 +41,17 @@ async function processTask(task) {
   await fs.promises.mkdir(task.output, { recursive: true })
 
   for (const file of files) {
-    if (!file.toLowerCase().endsWith(".png")) continue
+    if (!/\.(png|jpg|jpeg|webp)$/i.test(file)) continue
 
     const input = path.join(task.input, file)
     const output = path.join(
       task.output,
-      file.replace(/\.png$/i, ".avif")
+      file.replace(/\.(png|jpg|jpeg|webp)$/i, ".avif")
     )
 
     await sharp(input)
       .resize(task.width, task.height, {
         fit: "cover",
-        withoutEnlargement: true,
       })
       .avif({ quality: task.quality })
       .toFile(output)

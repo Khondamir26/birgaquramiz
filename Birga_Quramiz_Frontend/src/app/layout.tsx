@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar';
 import { acrom, onest } from './fonts';
 import ClientLayout from "@/components/layout/ClientLayout";
 import Script from 'next/script';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: {
@@ -90,6 +91,11 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Telegram WebApp SDK */}
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="afterInteractive"
+        />
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-T853TX7K3C"
@@ -106,9 +112,8 @@ export default async function RootLayout({
         </Script>
 
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://api.birga-quramiz.uz" />
-        <script src="https://telegram.org/js/telegram-web-app.js" async={true}></script>
       </head>
       <body className={`${acrom.className} ${onest.variable} antialiased tap-highlight-none text-foreground bg-background`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
@@ -117,7 +122,7 @@ export default async function RootLayout({
             <ClientLayout>
               <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
             </ClientLayout>
-            {/* <Toaster /> */}
+            <Toaster position="bottom-center" richColors />
           </div>
         </NextIntlClientProvider>
       </body>

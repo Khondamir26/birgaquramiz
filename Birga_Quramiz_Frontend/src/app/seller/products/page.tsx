@@ -15,7 +15,9 @@ import type { Category, Brand } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { resolveImageUrl } from "@/lib/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { getCategoryName } from "@/lib/categoryName";
+import { toast } from "sonner";
 import type { Product } from "@/types";
 import {
   Select,
@@ -24,6 +26,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { z } from "zod";
 
 type ProductFormState = {
@@ -47,15 +58,29 @@ const initialForm: ProductFormState = {
 };
 
 const CATEGORY_SPEC_TEMPLATES: Record<string, string[]> = {
-  CEM: ["Вес", "Тип", "Расход", "Адгезия", "Толщина слоя", "Срок годности", "Время высыхания", "Температура применения"],
-  BRK: ["Марка прочности", "Морозостойкость", "Водопоглощение", "Размер", "Вес", "Количество в поддоне"],
-  ELC: ["Мощность", "Напряжение", "Степень защиты", "Материал", "Длина"],
-  PNT: ["Объем", "Степень глянца", "Расход", "Время высыхания", "Назначение"],
-  TIL: ["Размер", "Толщина", "Назначение", "Поверхность", "Страна"],
-  MTL: ["Толщина", "Ширина", "Длина", "Марка стали", "Вес"],
-  PIP: ["Диаметр", "Толщина стенки", "Длина", "Давление", "Материал"],
-  WOD: ["Порода дерева", "Влажность", "Сорт", "Размер"],
-  TOL: ["Тип инструмента", "Вес", "Питание", "Гарантия"],
+  MIX: ["Вес (кг)", "Тип", "Расход (кг/м²)", "Толщина слоя (мм)", "Время схватывания (ч)", "Температура применения (°C)", "Срок годности"],
+  BLK: ["Марка прочности", "Морозостойкость", "Водопоглощение (%)", "Размер (мм)", "Вес (кг)", "Количество в поддоне"],
+  ROF: ["Тип", "Ширина (мм)", "Длина рулона (м)", "Вес (кг/м²)", "Срок службы (лет)"],
+  INS: ["Толщина (мм)", "Плотность (кг/м³)", "Размер листа (мм)", "Теплопроводность (Вт/м·К)"],
+  DRW: ["Тип", "Толщина (мм)", "Размер листа (мм)", "Влагостойкость"],
+  PNT: ["Объём (л)", "Степень глянца", "Расход (г/м²)", "Время высыхания (ч)", "Назначение"],
+  MTL: ["Толщина (мм)", "Ширина (мм)", "Длина (м)", "Марка стали", "Вес (кг)"],
+  FAS: ["Материал", "Размер", "Покрытие", "Количество в упаковке (шт)"],
+  TOL: ["Тип инструмента", "Вес (кг)", "Питание", "Гарантия (мес)"],
+  PLM: ["Диаметр (мм)", "Длина (м)", "Давление (бар)", "Материал", "Рабочая температура (°C)"],
+  ELC: ["Мощность (Вт)", "Напряжение (В)", "Степень защиты (IP)", "Материал", "Длина (м)"],
+  FLR: ["Размер (мм)", "Толщина (мм)", "Назначение", "Поверхность", "Страна производитель"],
+  WOD: ["Порода дерева", "Влажность (%)", "Сорт", "Размер (мм)"],
+  VNT: ["Производительность (м³/ч)", "Диаметр (мм)", "Мощность (Вт)", "Уровень шума (дБ)"],
+  DOR: ["Материал", "Размер (мм)", "Цвет", "Открывание", "Замок"],
+  RPR: ["Объём/Вес", "Расход", "Время высыхания (ч)", "Назначение"],
+  MSH: ["Ячейка (мм)", "Диаметр проволоки (мм)", "Ширина рулона (м)", "Длина (м)"],
+  HTG: ["Тип", "Мощность (кВт)", "Объём теплоносителя (л)", "КПД (%)", "Топливо"],
+  FPR: ["Расход (г/м²)", "Группа огнезащиты", "Разбавитель", "Время высыхания (ч)"],
+  PMP: ["Мощность (Вт)", "Напор (м)", "Производительность (л/ч)", "Диаметр патрубка (мм)"],
+  FIN: ["Размер (мм)", "Толщина (мм)", "Поверхность", "Страна", "Цвет"],
+  MCH: ["Мощность (Вт)", "Обороты (об/мин)", "Напряжение (В)", "Вес (кг)", "Гарантия (мес)"],
+  DRN: ["Диаметр (мм)", "Длина (м)", "Материал", "Давление (бар)"],
   GEN: ["Вес", "Размер", "Материал"],
 };
 
@@ -70,15 +95,14 @@ const createProductSchema = z.object({
 
 export default function SellerProductsPage() {
   const t = useTranslations("SellerProducts");
+  const locale = useLocale();
   const { user, isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
 
   const [form, setForm] = useState<ProductFormState>(initialForm);
-  const [createImageFile, setCreateImageFile] = useState<File | null>(null);
-  const [createPreview, setCreatePreview] = useState("");
+  const [createImageFiles, setCreateImageFiles] = useState<File[]>([]);
+  const [createPreviews, setCreatePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -86,6 +110,7 @@ export default function SellerProductsPage() {
   const [actionProductId, setActionProductId] = useState<string | null>(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalError, setModalError] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
 
@@ -96,14 +121,25 @@ export default function SellerProductsPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingForm, setEditingForm] = useState<ProductFormState>(initialForm);
-  const [editingImageFile, setEditingImageFile] = useState<File | null>(null);
-  const [editingPreview, setEditingPreview] = useState("");
+  const [editingKeepImages, setEditingKeepImages] = useState<string[]>([]);
+  const [editingNewImages, setEditingNewImages] = useState<File[]>([]);
+  const [editingNewPreviews, setEditingNewPreviews] = useState<string[]>([]);
   const [editingLoading, setEditingLoading] = useState(false);
+
+  const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<Product | null>(null);
 
   const editingProduct = useMemo(
     () => products.find((p) => p.id === editingId) || null,
     [products, editingId],
   );
+
+  const groupedCategories = useMemo(() => {
+    const parents = categories.filter((c) => !c.parentId);
+    return parents.map((parent) => ({
+      parent,
+      children: categories.filter((c) => c.parentId === parent.id),
+    }));
+  }, [categories]);
 
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products];
@@ -177,33 +213,49 @@ export default function SellerProductsPage() {
     getBrands().then(setBrands).catch(() => { });
   }, [user, isAuthenticated, isInitialized, router]);
 
-  const handleCreateImage = (file: File | null) => {
-    if (!file) return;
-    if (createPreview) {
-      URL.revokeObjectURL(createPreview);
-    }
+  const MAX_IMAGES = 5;
 
-    setCreateImageFile(file);
-    setCreatePreview(URL.createObjectURL(file));
+  const handleAddCreateImages = (files: FileList | null) => {
+    if (!files) return;
+    const remaining = MAX_IMAGES - createImageFiles.length;
+    const newFiles = Array.from(files).slice(0, remaining);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    setCreateImageFiles((prev) => [...prev, ...newFiles]);
+    setCreatePreviews((prev) => [...prev, ...newPreviews]);
   };
 
-  const handleEditImage = (file: File | null) => {
-    if (!file) return;
-    if (editingPreview) {
-      URL.revokeObjectURL(editingPreview);
-    }
+  const handleRemoveCreateImage = (idx: number) => {
+    URL.revokeObjectURL(createPreviews[idx]);
+    setCreateImageFiles((prev) => prev.filter((_, i) => i !== idx));
+    setCreatePreviews((prev) => prev.filter((_, i) => i !== idx));
+  };
 
-    setEditingImageFile(file);
-    setEditingPreview(URL.createObjectURL(file));
+  const handleAddEditImages = (files: FileList | null) => {
+    if (!files) return;
+    const total = editingKeepImages.length + editingNewImages.length;
+    const remaining = MAX_IMAGES - total;
+    const newFiles = Array.from(files).slice(0, remaining);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    setEditingNewImages((prev) => [...prev, ...newFiles]);
+    setEditingNewPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveKeepImage = (idx: number) => {
+    setEditingKeepImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleRemoveNewEditImage = (idx: number) => {
+    URL.revokeObjectURL(editingNewPreviews[idx]);
+    setEditingNewImages((prev) => prev.filter((_, i) => i !== idx));
+    setEditingNewPreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setModalError("");
 
-    if (!createImageFile) {
-      setError("Product image is required");
+    if (createImageFiles.length === 0) {
+      setModalError(t("imageRequired"));
       return;
     }
 
@@ -219,7 +271,7 @@ export default function SellerProductsPage() {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid form data");
+      setModalError(parsed.error.issues[0]?.message ?? "Invalid form data");
       setLoading(false);
       return;
     }
@@ -232,7 +284,7 @@ export default function SellerProductsPage() {
         stock: Number(form.stock),
         categoryId: parsed.data.categoryId,
         brandId: parsed.data.brandId ?? undefined,
-        image: createImageFile,
+        images: createImageFiles,
         specifications: form.specifications.reduce((acc, curr) => {
           if (curr.key.trim() && curr.value.trim()) {
             acc[curr.key.trim()] = curr.value.trim();
@@ -241,31 +293,31 @@ export default function SellerProductsPage() {
         }, {} as Record<string, string>),
       });
 
-      setSuccess(t("submitting")); // A bit of a hack to show submitting text, though success isn't exactly the right state, but preserving logic
+      toast.success(t("productCreated"));
       setForm(initialForm);
-      setCreateImageFile(null);
-      if (createPreview) {
-        URL.revokeObjectURL(createPreview);
-        setCreatePreview("");
-      }
-      setIsCreateModalOpen(false); // Close modal on success
+      createPreviews.forEach((p) => URL.revokeObjectURL(p));
+      setCreateImageFiles([]);
+      setCreatePreviews([]);
+      setModalError("");
+      setIsCreateModalOpen(false);
       await loadProducts();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error");
+      setModalError(err instanceof Error ? err.message : "Error");
     } finally {
       setLoading(false);
     }
   };
 
   const openEdit = (product: Product) => {
-    if (editingPreview) {
-      URL.revokeObjectURL(editingPreview);
-      setEditingPreview("");
-    }
-
-    setEditingImageFile(null);
+    editingNewPreviews.forEach((p) => URL.revokeObjectURL(p));
+    setEditingNewImages([]);
+    setEditingNewPreviews([]);
+    const existingImages = product.images && product.images.length > 0
+      ? product.images
+      : product.imageUrl ? [product.imageUrl] : [];
+    setEditingKeepImages(existingImages);
     setEditingId(product.id);
-      setEditingForm({
+    setEditingForm({
         name: product.name,
         description: product.description,
         price: String(product.price),
@@ -283,17 +335,25 @@ export default function SellerProductsPage() {
     if (!editingId) return;
 
     setEditingLoading(true);
-    setError("");
-    setSuccess("");
+    setModalError("");
 
     try {
+      const totalImages = editingKeepImages.length + editingNewImages.length;
+      if (totalImages === 0) {
+        setModalError(t("imageRequired"));
+        setEditingLoading(false);
+        return;
+      }
+
       await updateMySellerProduct(editingId, {
         name: editingForm.name,
         description: editingForm.description,
         price: Number(editingForm.price),
         stock: Number(editingForm.stock),
+        categoryId: editingForm.categoryId ?? undefined,
         brandId: editingForm.brandId ?? undefined,
-        image: editingImageFile ?? undefined,
+        keepImages: editingKeepImages,
+        newImages: editingNewImages,
         specifications: editingForm.specifications.reduce((acc, curr) => {
           if (curr.key.trim() && curr.value.trim()) {
             acc[curr.key.trim()] = curr.value.trim();
@@ -302,16 +362,16 @@ export default function SellerProductsPage() {
         }, {} as Record<string, string>),
       });
 
-      setSuccess(t("saving")); // Also using the saving string
+      toast.success(t("productUpdated"));
       setEditingId(null);
-      setEditingImageFile(null);
-      if (editingPreview) {
-        URL.revokeObjectURL(editingPreview);
-        setEditingPreview("");
-      }
+      editingNewPreviews.forEach((p) => URL.revokeObjectURL(p));
+      setEditingNewImages([]);
+      setEditingNewPreviews([]);
+      setEditingKeepImages([]);
+      setModalError("");
       await loadProducts();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update product");
+      setModalError(err instanceof Error ? err.message : "Failed to update product");
     } finally {
       setEditingLoading(false);
     }
@@ -320,38 +380,34 @@ export default function SellerProductsPage() {
   const handleToggleVisibility = async (product: Product) => {
     const activeNow = product.status === "APPROVED";
     setActionProductId(product.id);
-    setError("");
-    setSuccess("");
 
     try {
       await setMySellerProductVisibility(product.id, !activeNow);
-      setSuccess(
-        activeNow
-          ? "Product deactivated."
-          : "Product sent for activation review.",
-      );
+      toast.success(activeNow ? t("deactivated") : t("activated"));
       await loadProducts();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update visibility");
+      toast.error(err instanceof Error ? err.message : "Failed to update visibility");
     } finally {
       setActionProductId(null);
     }
   };
 
-  const handleDelete = async (product: Product) => {
-    const ok = window.confirm(`Delete product "${product.name}"?`);
-    if (!ok) return;
+  const handleDelete = (product: Product) => {
+    setDeleteConfirmProduct(product);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmProduct) return;
+    const product = deleteConfirmProduct;
+    setDeleteConfirmProduct(null);
     setActionProductId(product.id);
-    setError("");
-    setSuccess("");
 
     try {
       await deleteMySellerProduct(product.id);
-      setSuccess("Product deleted.");
+      toast.success(t("productDeleted"));
       await loadProducts();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete product");
+      toast.error(err instanceof Error ? err.message : "Failed to delete product");
     } finally {
       setActionProductId(null);
     }
@@ -448,8 +504,37 @@ export default function SellerProductsPage() {
         </div>
       </section>
 
-      {error && <div className="bg-red-50 border border-red-100 text-[#E31E24] px-6 py-4 rounded-2xl text-[15px] font-bold">{error}</div>}
-      {success && <div className="bg-green-50 border border-green-100 text-green-700 px-6 py-4 rounded-2xl text-[15px] font-bold">{success}</div>}
+
+      {/* STATUS STRIP */}
+      {products.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-0.5 hide-scrollbar mt-1">
+          {([
+            { key: "ALL", label: t("statsTotal"), count: products.length, color: "#1B4D91" },
+            { key: "APPROVED", label: t("statsActive"), count: products.filter((p) => p.status === "APPROVED").length, color: "#10b981" },
+            { key: "PENDING", label: t("statsPending"), count: products.filter((p) => p.status === "PENDING").length, color: "#f59e0b" },
+            { key: "REJECTED", label: t("statsRejected"), count: products.filter((p) => p.status === "REJECTED").length, color: "#ef4444" },
+          ]).map((stat) => (
+            <button
+              key={stat.key}
+              onClick={() => setStatusFilter(stat.key)}
+              className={`flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-[12px] font-black transition-all border ${
+                statusFilter === stat.key
+                  ? "text-white shadow-sm border-transparent"
+                  : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+              }`}
+              style={statusFilter === stat.key ? { backgroundColor: stat.color, borderColor: stat.color } : {}}
+            >
+              <span
+                className="text-[16px] font-black leading-none"
+                style={{ color: statusFilter === stat.key ? "white" : stat.color }}
+              >
+                {stat.count}
+              </span>
+              {stat.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* TOOLBAR */}
       <section className="flex flex-col md:flex-row gap-3 md:gap-4 mt-4 md:mt-6">
@@ -632,7 +717,7 @@ export default function SellerProductsPage() {
       {isCreateModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 lg:p-6 animate-in fade-in duration-300"
-          onMouseDown={(e) => { if(e.target === e.currentTarget) setIsCreateModalOpen(false); }}
+          onMouseDown={(e) => { if(e.target === e.currentTarget) { setIsCreateModalOpen(false); setModalError(""); } }}
         >
           <form
             onSubmit={handleCreate}
@@ -646,7 +731,7 @@ export default function SellerProductsPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => { setIsCreateModalOpen(false); setModalError(""); }}
                 className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-all border border-slate-100"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -667,7 +752,7 @@ export default function SellerProductsPage() {
                       onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                       required
                       className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
-                      placeholder="Например, Гипсокартон 12.5мм"
+                      placeholder={t("productNamePlaceholder")}
                     />
                   </div>
 
@@ -680,7 +765,7 @@ export default function SellerProductsPage() {
                       required
                       rows={6}
                       className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-white p-6 text-[16px] font-medium transition-all focus:border-[#1B4D91] focus:ring-4 focus:ring-[#1B4D91]/5 focus:outline-none shadow-sm"
-                      placeholder="Подробное описание товара..."
+                      placeholder={t("descriptionPlaceholder")}
                     />
                   </div>
 
@@ -713,14 +798,17 @@ export default function SellerProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Категория</label>
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("category")}</label>
                     <div className="relative">
                       <select
                         value={form.categoryId ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
                           const category = categories.find(c => c.id === val);
-                          const template = category ? CATEGORY_SPEC_TEMPLATES[category.code] : null;
+                          const parentCode = category?.parentId
+                            ? categories.find(c => c.id === category.parentId)?.code
+                            : category?.code;
+                          const template = parentCode ? CATEGORY_SPEC_TEMPLATES[parentCode] : null;
                           setForm((p) => ({
                             ...p,
                             categoryId: val || null,
@@ -732,10 +820,18 @@ export default function SellerProductsPage() {
                         required
                         className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
                       >
-                        <option value="">Выберите категорию...</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
+                        <option value="">{t("categoryPlaceholder")}</option>
+                        {groupedCategories.map(({ parent, children }) =>
+                          children.length > 0 ? (
+                            <optgroup key={parent.id} label={getCategoryName(parent, locale)}>
+                              {children.map((child) => (
+                                <option key={child.id} value={child.id}>{getCategoryName(child, locale)}</option>
+                              ))}
+                            </optgroup>
+                          ) : (
+                            <option key={parent.id} value={parent.id}>{getCategoryName(parent, locale)}</option>
+                          )
+                        )}
                       </select>
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -744,14 +840,14 @@ export default function SellerProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Бренд (опционально)</label>
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("brand")}</label>
                     <div className="relative">
                       <select
                         value={form.brandId ?? ""}
                         onChange={(e) => setForm((p) => ({ ...p, brandId: e.target.value || null }))}
                         className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
                       >
-                        <option value="">Без бренда</option>
+                        <option value="">{t("brandPlaceholder")}</option>
                         {brands.map((brand) => (
                           <option key={brand.id} value={brand.id}>{brand.name}</option>
                         ))}
@@ -766,64 +862,64 @@ export default function SellerProductsPage() {
                 {/* Right Column: Photos & Specs */}
                 <div className="lg:col-span-6 space-y-10">
                   {/* Photo Upload */}
-                  <div className="space-y-4">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("photo")}</label>
-                    <div className="relative group/photo">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleCreateImage(e.target.files?.[0] || null)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        required={!createPreview}
-                      />
-                      <div className={`aspect-video w-full rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-4 text-center overflow-hidden bg-white shadow-sm ${createPreview ? 'border-[#1B4D91] ring-2 ring-[#1B4D91]/5' : 'border-slate-200 group-hover/photo:border-[#1B4D91] group-hover/photo:bg-slate-50'}`}>
-                        {createPreview ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={createPreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover animate-in fade-in duration-300" />
-                        ) : (
-                          <>
-                            <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 text-slate-400 group-hover/photo:text-[#1B4D91] group-hover/photo:bg-[#1B4D91]/10 transition-colors">
-                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            </div>
-                            <p className="text-[15px] font-black text-slate-600 group-hover/photo:text-[#1B4D91] transition-colors uppercase tracking-widest">{t("chooseFile")}</p>
-                            <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest">JPG, PNG до 5MB</p>
-                          </>
-                        )}
-                        {createPreview && (
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                            <p className="text-white text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                              Сменить фото
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest">{t("photo")}</label>
+                      <span className={`text-[12px] font-bold ${createImageFiles.length >= MAX_IMAGES ? 'text-amber-500' : 'text-slate-400'}`}>
+                        {createImageFiles.length}/{MAX_IMAGES}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 ml-1">{t("photoHint")}</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {createPreviews.map((src, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#1B4D91]/20 bg-white shadow-sm group/img">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          {idx === 0 && (
+                            <span className="absolute top-1.5 left-1.5 bg-[#1B4D91] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md">Main</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCreateImage(idx)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                      {createImageFiles.length < MAX_IMAGES && (
+                        <label className="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-white hover:border-[#1B4D91] hover:bg-[#1B4D91]/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-[#1B4D91]">
+                          <input type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleAddCreateImages(e.target.files)} />
+                          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                          <span className="text-[11px] font-bold uppercase tracking-wider">{t("chooseFile")}</span>
+                        </label>
+                      )}
                     </div>
                   </div>
 
                   {/* Specifications section */}
                   <div className="space-y-6">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Характеристики</label>
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("specifications")}</label>
                       <button
                         type="button"
                         onClick={() => addSpecRow(false)}
                         className="text-xs font-black text-[#1B4D91] hover:text-[#E31E24] transition-colors flex items-center gap-1 uppercase tracking-widest"
                       >
-                        <span className="text-xl leading-none">+</span> Добавить
+                        <span className="text-xl leading-none">+</span> {t("specAdd")}
                       </button>
                     </div>
                     <div className="space-y-4">
                       {form.specifications.map((spec, idx) => (
                         <div key={idx} className="flex gap-3 animate-in slide-in-from-top-1 duration-200">
                           <input
-                            placeholder="Напр. Вес"
+                            placeholder={t("specKeyPlaceholder")}
                             value={spec.key}
                             onChange={(e) => updateSpecRow(idx, 'key', e.target.value, false)}
                             className="min-w-0 flex-[2] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-bold transition-all focus:border-[#1B4D91] focus:outline-none"
                           />
                           <input
-                            placeholder="Значение"
+                            placeholder={t("specValuePlaceholder")}
                             value={spec.value}
                             onChange={(e) => updateSpecRow(idx, 'value', e.target.value, false)}
                             className="min-w-0 flex-[3] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-medium transition-all focus:border-[#1B4D91] focus:outline-none"
@@ -844,27 +940,34 @@ export default function SellerProductsPage() {
             </div>
 
             {/* Modal Footer (Sticky) */}
-            <div className="shrink-0 p-8 md:p-10 border-t border-slate-100 bg-white flex flex-col sm:flex-row gap-6 relative z-20">
-              <button
-                type="button"
-                onClick={() => {
-                  if(confirm("Очистить черновик?")) {
+            <div className="shrink-0 px-8 md:px-10 pt-4 pb-8 md:pb-10 border-t border-slate-100 bg-white flex flex-col gap-3 relative z-20">
+              {modalError && (
+                <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-3 text-[14px] font-bold text-[#E31E24]">
+                  {modalError}
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
                     setForm(initialForm);
-                    setCreateImageFile(null);
-                    setCreatePreview("");
-                  }
-                }}
-                className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
-              >
-                Очистить
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !createImageFile}
-                className="h-16 w-full rounded-full bg-[#E31E24] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(227,30,36,0.3)] hover:bg-[#C91A20] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
-              >
-                {loading ? "Загрузка..." : t("addProduct")}
-              </button>
+                    createPreviews.forEach((p) => URL.revokeObjectURL(p));
+                    setCreateImageFiles([]);
+                    setCreatePreviews([]);
+                    setModalError("");
+                  }}
+                  className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
+                >
+                  {t("clearDraft")}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || createImageFiles.length === 0}
+                  className="h-16 w-full rounded-full bg-[#E31E24] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(227,30,36,0.3)] hover:bg-[#C91A20] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                >
+                  {loading ? t("uploading") : t("addProduct")}
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -874,7 +977,7 @@ export default function SellerProductsPage() {
       {editingProduct && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 lg:p-6"
-          onMouseDown={(e) => { if(e.target === e.currentTarget) setEditingId(null); }}
+          onMouseDown={(e) => { if(e.target === e.currentTarget) { setEditingId(null); setModalError(""); } }}
         >
           <form
             onSubmit={handleSaveEdit}
@@ -882,13 +985,30 @@ export default function SellerProductsPage() {
           >
             {/* Header */}
             <div className="shrink-0 p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white z-20">
-              <h2 className="text-2xl font-black text-[#1B4D91] flex items-center gap-3">
-                <svg className="w-8 h-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {t("editProductTitle")}
-              </h2>
+              <div>
+                <h2 className="text-2xl font-black text-[#1B4D91] flex items-center gap-3">
+                  <svg className="w-8 h-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  {t("editProductTitle")}
+                </h2>
+                {(() => {
+                  const selectedCat = categories.find(c => c.id === editingForm.categoryId);
+                  const categoryChanged = editingForm.categoryId && editingForm.categoryId !== editingProduct.categoryId;
+                  if (categoryChanged && selectedCat) {
+                    return (
+                      <p className="text-[13px] font-semibold text-amber-500 mt-1 ml-11">
+                        SKU: {selectedCat.code}-XXXXXX <span className="font-normal text-slate-400">(будет присвоен новый артикул)</span>
+                      </p>
+                    );
+                  }
+                  if (editingProduct.sku) {
+                    return <p className="text-[13px] font-medium text-slate-400 mt-1 ml-11">SKU: {editingProduct.sku}</p>;
+                  }
+                  return null;
+                })()}
+              </div>
               <button
                 type="button"
-                onClick={() => setEditingId(null)}
+                onClick={() => { setEditingId(null); setModalError(""); }}
                 className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all border border-slate-100"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -922,14 +1042,17 @@ export default function SellerProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Категория</label>
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("category")}</label>
                     <div className="relative">
                       <select
                         value={editingForm.categoryId ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
                           const category = categories.find(c => c.id === val);
-                          const template = category ? CATEGORY_SPEC_TEMPLATES[category.code] : null;
+                          const parentCode = category?.parentId
+                            ? categories.find(c => c.id === category.parentId)?.code
+                            : category?.code;
+                          const template = parentCode ? CATEGORY_SPEC_TEMPLATES[parentCode] : null;
                           setEditingForm((p) => ({
                             ...p,
                             categoryId: val || null,
@@ -941,10 +1064,18 @@ export default function SellerProductsPage() {
                         className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
                         required
                       >
-                        <option value="">Выберите категорию...</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
+                        <option value="">{t("categoryPlaceholder")}</option>
+                        {groupedCategories.map(({ parent, children }) =>
+                          children.length > 0 ? (
+                            <optgroup key={parent.id} label={getCategoryName(parent, locale)}>
+                              {children.map((child) => (
+                                <option key={child.id} value={child.id}>{getCategoryName(child, locale)}</option>
+                              ))}
+                            </optgroup>
+                          ) : (
+                            <option key={parent.id} value={parent.id}>{getCategoryName(parent, locale)}</option>
+                          )
+                        )}
                       </select>
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -979,14 +1110,14 @@ export default function SellerProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Бренд (опционально)</label>
+                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("brand")}</label>
                     <div className="relative">
                       <select
                         value={editingForm.brandId ?? ""}
                         onChange={(e) => setEditingForm((p) => ({ ...p, brandId: e.target.value || null }))}
                         className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-white px-6 text-[16px] font-bold transition-all focus:border-[#1B4D91] appearance-none shadow-sm"
                       >
-                        <option value="">Без бренда</option>
+                        <option value="">{t("brandPlaceholder")}</option>
                         {brands.map((brand) => (
                           <option key={brand.id} value={brand.id}>{brand.name}</option>
                         ))}
@@ -1001,55 +1132,78 @@ export default function SellerProductsPage() {
                 {/* Right Column */}
                 <div className="lg:col-span-6 space-y-10">
                   {/* Photo Edit */}
-                  <div className="space-y-4">
-                    <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("photo")}</label>
-                    <div className="relative group/photo">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleEditImage(e.target.files?.[0] || null)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      <div className="aspect-video w-full rounded-3xl border-2 border-slate-100 bg-white shadow-sm overflow-hidden relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={editingPreview || resolveImageUrl(editingProduct.imageUrl)}
-                          alt="Edit preview"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                          <p className="text-white text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            {t("chooseNewPhoto")}
-                          </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest">{t("photo")}</label>
+                      <span className={`text-[12px] font-bold ${editingKeepImages.length + editingNewImages.length >= MAX_IMAGES ? 'text-amber-500' : 'text-slate-400'}`}>
+                        {editingKeepImages.length + editingNewImages.length}/{MAX_IMAGES}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 ml-1">{t("photoHint")}</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {editingKeepImages.map((url, idx) => (
+                        <div key={`keep-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#1B4D91]/20 bg-white shadow-sm group/img">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" />
+                          {idx === 0 && editingNewImages.length === 0 && (
+                            <span className="absolute top-1.5 left-1.5 bg-[#1B4D91] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md">Main</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveKeepImage(idx)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
                         </div>
-                      </div>
+                      ))}
+                      {editingNewPreviews.map((src, idx) => (
+                        <div key={`new-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-emerald-200 bg-white shadow-sm group/img">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute top-1.5 left-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md">New</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveNewEditImage(idx)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                      {editingKeepImages.length + editingNewImages.length < MAX_IMAGES && (
+                        <label className="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-white hover:border-[#1B4D91] hover:bg-[#1B4D91]/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-[#1B4D91]">
+                          <input type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleAddEditImages(e.target.files)} />
+                          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                          <span className="text-[11px] font-bold uppercase tracking-wider">{t("changePhoto")}</span>
+                        </label>
+                      )}
                     </div>
                   </div>
 
                   {/* Specs Edit */}
                   <div className="space-y-6">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">Характеристики</label>
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest ml-1">{t("specifications")}</label>
                       <button
                         type="button"
                         onClick={() => addSpecRow(true)}
                         className="text-xs font-black text-[#1B4D91] hover:text-[#E31E24] transition-colors flex items-center gap-1 uppercase tracking-widest"
                       >
-                        <span className="text-xl leading-none">+</span> Добавить
+                        <span className="text-xl leading-none">+</span> {t("specAdd")}
                       </button>
                     </div>
                     <div className="space-y-4">
                       {editingForm.specifications.map((spec, idx) => (
                         <div key={idx} className="flex gap-3 animate-in slide-in-from-top-1 duration-200">
                           <input
-                            placeholder="Напр. Вес"
+                            placeholder={t("specKeyPlaceholder")}
                             value={spec.key}
                             onChange={(e) => updateSpecRow(idx, 'key', e.target.value, true)}
                             className="min-w-0 flex-[2] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-bold transition-all focus:border-[#1B4D91] focus:outline-none"
                           />
                           <input
-                            placeholder="Значение"
+                            placeholder={t("specValuePlaceholder")}
                             value={spec.value}
                             onChange={(e) => updateSpecRow(idx, 'value', e.target.value, true)}
                             className="min-w-0 flex-[3] h-12 rounded-xl border-2 border-slate-100 bg-white px-4 text-[14px] font-medium transition-all focus:border-[#1B4D91] focus:outline-none"
@@ -1070,25 +1224,50 @@ export default function SellerProductsPage() {
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 p-8 md:p-10 border-t border-slate-100 bg-white flex justify-end gap-6 relative z-20">
-              <button
-                type="button"
-                onClick={() => setEditingId(null)}
-                className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
-              >
-                Отмена
-              </button>
-              <button
-                type="submit"
-                disabled={editingLoading}
-                className="h-16 px-12 rounded-full bg-[#1B4D91] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(27,77,145,0.3)] hover:bg-[#153a70] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
-              >
-                {editingLoading ? "Сохранение..." : t("saveChanges")}
-              </button>
+            <div className="shrink-0 px-8 md:px-10 pt-4 pb-8 md:pb-10 border-t border-slate-100 bg-white flex flex-col gap-3 relative z-20">
+              {modalError && (
+                <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-3 text-[14px] font-bold text-[#E31E24]">
+                  {modalError}
+                </div>
+              )}
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => { setEditingId(null); setModalError(""); }}
+                  className="h-16 px-10 rounded-full bg-slate-100 text-slate-500 font-black text-sm uppercase tracking-widest whitespace-nowrap hover:bg-slate-200 transition-all hover:text-slate-800"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="submit"
+                  disabled={editingLoading}
+                  className="h-16 px-12 rounded-full bg-[#1B4D91] text-white font-black text-[18px] uppercase tracking-[0.15em] shadow-[0_12px_30px_rgb(27,77,145,0.3)] hover:bg-[#153a70] hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
+                >
+                  {editingLoading ? t("saving") : t("saveChanges")}
+                </button>
+              </div>
             </div>
           </form>
         </div>
       )}
+
+      {/* DELETE CONFIRMATION DIALOG */}
+      <Dialog open={!!deleteConfirmProduct} onOpenChange={(open) => { if (!open) setDeleteConfirmProduct(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("deleteDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("deleteDialogDesc")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmProduct(null)} className="rounded-xl">
+              {t("cancel")}
+            </Button>
+            <Button variant="destructive" onClick={() => void handleConfirmDelete()} className="rounded-xl gap-1.5">
+              {t("confirmDelete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

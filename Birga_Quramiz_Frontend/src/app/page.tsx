@@ -11,7 +11,7 @@ import dynamic from "next/dynamic"
 
 const HomeSwiper = dynamic(
   () => import("@/components/home/HomeSwiper"),
-  { ssr: false }
+  { ssr: false, loading: () => <div className="w-full rounded-2xl bg-slate-100 animate-pulse" style={{ aspectRatio: "16/7", minHeight: 180 }} /> }
 );
 
 export default function HomePage() {
@@ -23,7 +23,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await getProducts(1, 15);
+        const res = await getProducts(1, 32);
         setProducts(res.data);
       } catch {
         setLoadFailed(true);
@@ -43,6 +43,8 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col pb-44 bg-[#f8f9fb]">
+      {/* Preload LCP banner image — HomeSwiper is ssr:false so the browser needs this hint */}
+      <link rel="preload" as="image" href="/images/banners/construction_bg.avif" fetchPriority="high" />
       <div className="mx-auto w-full md:max-w-[1440px]">
         <div className="mx-auto flex flex-col gap-8 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
@@ -75,7 +77,7 @@ export default function HomePage() {
                         <h2 className="text-[20px] md:text-[24px] font-black text-[#1B4D91] leading-none">{section.title}</h2>
                         <div className="h-1 w-10 bg-navbar-gradient rounded-full" />
                       </div>
-                      <Link href="/catalog" className="group flex items-center gap-1 text-[13px] font-bold text-slate-400 hover:text-[#1B4D91] transition-all">
+                      <Link href="/catalog" className="group flex items-center gap-1 text-[13px] font-bold text-slate-500 hover:text-[#1B4D91] transition-all">
                         {t('allProducts') || 'Все'}
                         <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 group-hover:bg-[#1B4D91]/10 transition-colors">
                           <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />

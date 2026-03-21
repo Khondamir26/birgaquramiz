@@ -14,31 +14,33 @@ import {
   RefreshCw, ShoppingBag
 } from "lucide-react";
 
-// ── Status config ──────────────────────────────────────────
-const STATUS_CONFIG: Record<OrderStatus, { label: string; icon: typeof CheckCircle; color: string; bg: string; border: string }> = {
-  NEW: { label: "Новый", icon: Clock, color: "#f59e0b", bg: "#fef3c7", border: "#fde68a" },
-  PAID: { label: "Оплачен", icon: AlertCircle, color: "#3b82f6", bg: "#dbeafe", border: "#bfdbfe" },
-  CONFIRMED: { label: "Подтверждён", icon: CheckCircle, color: "#8b5cf6", bg: "#ede9fe", border: "#ddd6fe" },
-  SHIPPED: { label: "Отправлен", icon: Truck, color: "#6366f1", bg: "#e0e7ff", border: "#c7d2fe" },
-  DELIVERED: { label: "Доставлен", icon: CheckCircle, color: "#10b981", bg: "#d1fae5", border: "#a7f3d0" },
-  CANCELLED: { label: "Отменён", icon: XCircle, color: "#ef4444", bg: "#fee2e2", border: "#fecaca" },
-};
-
-const DELIVERY_LABELS: Record<string, string> = {
-  PICKUP: "Самовывоз",
-  DELIVERY: "Доставка",
-};
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: "Наличные",
-  CARD: "Карта",
-  TRANSFER: "Перевод",
-};
+type StatusCfg = { label: string; icon: typeof CheckCircle; color: string; bg: string; border: string };
+type StatusConfigMap = Record<OrderStatus, StatusCfg>;
 
 export default function SellerOrdersPage() {
   const { user, isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
   const t = useTranslations("SellerOrders");
+
+  const STATUS_CONFIG: StatusConfigMap = {
+    NEW: { label: t("statusNew"), icon: Clock, color: "#f59e0b", bg: "#fef3c7", border: "#fde68a" },
+    PAID: { label: t("statusPaid"), icon: AlertCircle, color: "#3b82f6", bg: "#dbeafe", border: "#bfdbfe" },
+    CONFIRMED: { label: t("statusConfirmed"), icon: CheckCircle, color: "#8b5cf6", bg: "#ede9fe", border: "#ddd6fe" },
+    SHIPPED: { label: t("statusShipped"), icon: Truck, color: "#6366f1", bg: "#e0e7ff", border: "#c7d2fe" },
+    DELIVERED: { label: t("statusDelivered"), icon: CheckCircle, color: "#10b981", bg: "#d1fae5", border: "#a7f3d0" },
+    CANCELLED: { label: t("statusCancelled"), icon: XCircle, color: "#ef4444", bg: "#fee2e2", border: "#fecaca" },
+  };
+
+  const DELIVERY_LABELS: Record<string, string> = {
+    PICKUP: t("deliveryPickup"),
+    DELIVERY: t("deliveryHome"),
+  };
+
+  const PAYMENT_LABELS: Record<string, string> = {
+    CASH: t("paymentCash"),
+    CARD: t("paymentCard"),
+    TRANSFER: t("paymentTransfer"),
+  };
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -48,6 +50,7 @@ export default function SellerOrdersPage() {
 
   const { data, loading, error, refetch } = useFetch(() => getSellerOrders());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"ALL" | "NEED_ACTION" | "ACTIVE" | "DELIVERED" | "CANCELLED">("ALL");
 
   const doAction = async (fn: () => Promise<unknown>, key: string) => {
     setActionLoading(key);
@@ -84,7 +87,18 @@ export default function SellerOrdersPage() {
     );
   }
 
-  const orders: Order[] = data?.data ?? [];
+  const allOrders: Order[] = data?.data ?? [];
+
+  const needActionCount = allOrders.filter((o) => o.status === "NEW" || o.status === "PAID").length;
+  const activeCount = allOrders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED").length;
+  const deliveredCount = allOrders.filter((o) => o.status === "DELIVERED").length;
+  const cancelledCount = allOrders.filter((o) => o.status === "CANCELLED").length;
+
+  const orders: Order[] = activeTab === "ALL" ? allOrders
+    : activeTab === "NEED_ACTION" ? allOrders.filter((o) => o.status === "NEW" || o.status === "PAID")
+    : activeTab === "ACTIVE" ? allOrders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED")
+    : activeTab === "DELIVERED" ? allOrders.filter((o) => o.status === "DELIVERED")
+    : allOrders.filter((o) => o.status === "CANCELLED");
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
@@ -95,17 +109,51 @@ export default function SellerOrdersPage() {
           <div className="rounded-3xl bg-[#1B4D91] px-6 py-7 md:px-10 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Birga Quramiz</p>
-              <h1 className="text-xl font-black text-white md:text-2xl">{t("title") || "Заказы"}</h1>
-              <p className="mt-1 text-[13px] text-white/70">{orders.length} {t("ordersTotal") || "заказов всего"}</p>
+              <h1 className="text-xl font-black text-white md:text-2xl">{t("title")}</h1>
+              <p className="mt-1 text-[13px] text-white/70">{allOrders.length} {t("ordersTotal")}</p>
             </div>
             <button
               onClick={() => refetch()}
               className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-colors"
-              title="Обновить"
+              title={t("refresh")}
             >
               <RefreshCw className="size-5" />
             </button>
           </div>
+
+          {/* ── Status filter tabs ── */}
+          {allOrders.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-0.5 hide-scrollbar">
+              {([
+                { key: "ALL", label: t("filterAll"), count: allOrders.length },
+                { key: "NEED_ACTION", label: t("filterNeedAction"), count: needActionCount, accent: needActionCount > 0 },
+                { key: "ACTIVE", label: t("filterActive"), count: activeCount },
+                { key: "DELIVERED", label: t("filterDelivered"), count: deliveredCount },
+                { key: "CANCELLED", label: t("filterCancelled"), count: cancelledCount },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-2xl px-4 py-2.5 text-[12px] font-black transition-all ${
+                    activeTab === tab.key
+                      ? "bg-[#1B4D91] text-white shadow-sm"
+                      : "bg-white border border-slate-100 text-slate-500 hover:border-[#1B4D91]/20 hover:text-[#1B4D91]"
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${
+                    activeTab === tab.key
+                      ? "bg-white/20 text-white"
+                      : ("accent" in tab && tab.accent)
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Empty state */}
           {orders.length === 0 ? (

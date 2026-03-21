@@ -35,4 +35,12 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   readonly brandId?: string
+
+  @IsOptional()
+  @IsString()
+  readonly categoryId?: string
+
+  @IsOptional()
+  @IsString()
+  readonly keepImages?: string
 }

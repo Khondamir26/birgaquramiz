@@ -49,6 +49,25 @@ export class AdminController {
     return this.adminService.updateUserRole(id, body.role, req.user.id, body.company)
   }
 
+  @Get('sellers/pending')
+  getPendingSellers(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('q') q?: string,
+  ) {
+    return this.adminService.getPendingSellers(Number(page), Number(limit), q)
+  }
+
+  @Patch('sellers/:id/verify')
+  verifySeller(@Param('id') id: string) {
+    return this.adminService.verifySeller(id)
+  }
+
+  @Patch('sellers/:id/reject')
+  rejectSeller(@Param('id') id: string) {
+    return this.adminService.rejectSeller(id)
+  }
+
   @Get('products/:id')
   getProductById(@Param('id') id: string) {
     return this.adminService.getProductById(id)

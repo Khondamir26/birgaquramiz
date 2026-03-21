@@ -350,6 +350,16 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials')
     }
 
+    if (user.role === 'SELLER') {
+      const seller = await this.prisma.seller.findUnique({
+        where: { userId: user.id },
+        select: { verified: true },
+      })
+      if (!seller?.verified) {
+        throw new UnauthorizedException('Your seller account is pending admin verification')
+      }
+    }
+
     const safeUser: AuthUser = {
       id: user.id,
       name: user.name,

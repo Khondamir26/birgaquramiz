@@ -1,162 +1,246 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { registerSeller, login as apiLogin } from '@/lib/api/auth'
-import { useAuthStore } from '@/store/authStore'
+import { Eye, EyeOff, Phone, Lock, User, Building2, ArrowRight, Loader2, TrendingUp, BarChart3, Store } from 'lucide-react'
+import { registerSeller } from '@/lib/api/auth'
+import { formatPhone } from '@/lib/formatPhone'
+import Link from 'next/link'
 
-export function SellerSignupForm({
-    className,
-    ...props
-}: React.ComponentProps<'div'>) {
-    const router = useRouter()
-    const t = useTranslations('Auth')
-    const setUser = useAuthStore((s) => s.setUser)
-    const setInitialized = useAuthStore((s) => s.setInitialized)
+function getPasswordStrength(pw: string): 0 | 1 | 2 | 3 {
+  if (pw.length === 0) return 0
+  let score = 0
+  if (pw.length >= 8) score++
+  if (/[A-Z]/.test(pw) || /[0-9]/.test(pw)) score++
+  if (pw.length >= 12 || /[^A-Za-z0-9]/.test(pw)) score++
+  return Math.min(score, 3) as 0 | 1 | 2 | 3
+}
 
-    const [name, setName] = useState('')
-    const [phone, setPhone] = useState('')
-    const [password, setPassword] = useState('')
-    const [company, setCompany] = useState('')
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(false)
+const STRENGTH_COLORS: Record<1 | 2 | 3, string> = {
+  1: 'bg-red-400',
+  2: 'bg-amber-400',
+  3: 'bg-emerald-400',
+}
+const STRENGTH_LABELS: Record<1 | 2 | 3, string> = {
+  1: 'Слабый', 2: 'Средний', 3: 'Сильный',
+}
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError('')
-        setLoading(true)
+export function SellerSignupForm() {
+  const t = useTranslations('Auth')
+  const tProfile = useTranslations('Profile')
 
-        try {
-            await registerSeller({ name, phone, password, company })
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [company, setCompany] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
-            try {
-                const { user } = await apiLogin({ phone, password })
-                setUser(user)
-                setInitialized(true)
-                router.push('/seller/dashboard')
-            } catch {
-                router.push('/login')
-            }
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : t('registrationFailed'))
-        } finally {
-            setLoading(false)
-        }
+  const strength = useMemo(() => getPasswordStrength(password), [password])
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhone(e.target.value))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await registerSeller({ name, phone: phone.replace(/\s/g, ''), password, company })
+      setSuccess(true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('registrationFailed'))
+    } finally {
+      setLoading(false)
     }
+  }
 
+  if (success) {
     return (
-        <div className={cn('flex flex-col gap-6', className)} {...props}>
-            <Card className="overflow-hidden p-0 shadow-2xl border-[#1B4D91]/10">
-                <CardContent className="grid p-0 md:grid-cols-2">
-                    <form onSubmit={handleSubmit} className="p-6 md:p-8">
-                        <FieldGroup>
-                            <div className="flex flex-col items-center gap-2 text-center">
-                                <h1 className="text-2xl font-black text-[#1B4D91]">{t('sellerSignupTitle')}</h1>
-                                <p className="text-muted-foreground text-sm">
-                                    {t('alreadyAccount')}{' '}
-                                    <a href="/login" className="underline font-bold text-[#1B4D91]">
-                                        {t('signIn')}
-                                    </a>
-                                </p>
-                            </div>
-
-                            {error && (
-                                <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold text-center border border-red-100 italic">
-                                    {error}
-                                </div>
-                            )}
-
-                            <Field>
-                                <FieldLabel className="text-[#1B4D91]/70">{t('companyName')}</FieldLabel>
-                                <Input
-                                    value={company}
-                                    onChange={(e) => setCompany(e.target.value)}
-                                    placeholder={t('companyNamePlaceholder')}
-                                    required
-                                    className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel className="text-[#1B4D91]/70">{t('name')}</FieldLabel>
-                                <Input
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder={t('namePlaceholder')}
-                                    required
-                                    className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel className="text-[#1B4D91]/70">{t('phone')}</FieldLabel>
-                                <Input
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="+998901234567"
-                                    required
-                                    className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
-                                />
-                            </Field>
-
-                            <Field>
-                                <FieldLabel className="text-[#1B4D91]/70">{t('password')}</FieldLabel>
-                                <Input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    minLength={6}
-                                    className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
-                                />
-                            </Field>
-
-                            <Field>
-                                <Button
-                                    type="submit"
-                                    className="w-full bg-navbar-gradient text-white rounded-2xl h-12 font-black transition-all shadow-lg shadow-[#1B4D91]/20 hover:scale-[1.02] active:scale-95"
-                                    disabled={loading}
-                                >
-                                    {loading ? t('registering') : t('registerAsSeller')}
-                                </Button>
-                            </Field>
-                        </FieldGroup>
-                    </form>
-
-                    <div className="bg-gradient-to-br from-[#1B4D91] to-[#163d73] relative hidden md:flex md:items-center md:justify-center p-8 text-white overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#E31E24]/10 rounded-full -ml-32 -mb-32 blur-3xl" />
-
-                        <div className="text-center relative z-10">
-                            <h2 className="text-3xl font-black mb-4">Birga Quramiz</h2>
-                            <div className="h-1 w-12 bg-[#E31E24] mx-auto mb-6 rounded-full" />
-                            <p className="text-white/80 font-medium leading-relaxed max-w-[280px]">
-                                {t('subtitle')}
-                            </p>
-                            <div className="mt-8 flex flex-col gap-4 text-xs font-bold text-white/60">
-                                <div className="flex items-center justify-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-emerald-400" />
-                                    {t('factoryPrices')}
-                                </div>
-                                <div className="flex items-center justify-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-emerald-400" />
-                                    {t('comprehensiveAnalytics')}
-                                </div>
-                                <div className="flex items-center justify-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-emerald-400" />
-                                    {t('quickSales')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[420px] bg-white rounded-3xl shadow-lg shadow-slate-200 border border-slate-100 px-8 py-10 text-center">
+          <div className="inline-flex size-16 items-center justify-center rounded-full bg-amber-50 mb-5">
+            <Store className="size-8 text-amber-500" />
+          </div>
+          <h2 className="text-[22px] font-black text-slate-900 mb-2">{t('sellerSignupTitle')}</h2>
+          <p className="text-[13px] text-slate-500 leading-relaxed max-w-[300px] mx-auto">
+            Ваша заявка отправлена. Мы свяжемся с вами после проверки администратором.
+          </p>
+          <Link
+            href="/"
+            className="mt-7 inline-flex items-center justify-center gap-2 h-12 w-full rounded-full bg-navbar-gradient text-white font-black text-[14px] shadow-lg shadow-[#0b3190]/25 active:scale-[0.98] transition-all"
+          >
+            На главную
+          </Link>
         </div>
+      </div>
     )
+  }
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-[420px]">
+
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-lg shadow-slate-200 border border-slate-100 px-7 py-7">
+
+          {/* Header */}
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center gap-1.5 bg-[#0b3190]/8 text-[#0b3190] text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3">
+              <Store className="size-3" />
+              {t('sellerSignupTitle')}
+            </div>
+            <h1 className="text-[22px] font-black text-slate-900 leading-tight">
+              {tProfile('seller.title')}
+            </h1>
+            <p className="mt-1 text-[12px] text-slate-400">
+              {tProfile('seller.subtitle')}
+            </p>
+          </div>
+
+          {/* Benefits strip */}
+          <div className="mb-5 grid grid-cols-3 gap-2">
+            {[
+              { icon: TrendingUp, label: t('factoryPrices') },
+              { icon: BarChart3, label: t('comprehensiveAnalytics') },
+              { icon: Store, label: t('quickSales') },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex flex-col items-center gap-1 rounded-2xl bg-[#f8f9fc] px-2 py-2.5 text-center">
+                <Icon className="size-4 text-[#0b3190]/60" />
+                <span className="text-[10px] font-bold text-slate-500 leading-tight">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {error && (
+            <div className="mb-5 flex items-start gap-2.5 rounded-2xl bg-red-50 border border-red-100 px-4 py-3">
+              <div className="mt-0.5 shrink-0 size-4 rounded-full bg-red-400 flex items-center justify-center">
+                <span className="text-white text-[9px] font-black">!</span>
+              </div>
+              <p className="text-[12px] font-semibold text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+
+            {/* Company */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('companyName')}</label>
+              <div className="relative">
+                <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder={t('companyNamePlaceholder')}
+                  required
+                  className="w-full h-12 pl-10 pr-4 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('name')}</label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('namePlaceholder')}
+                  required
+                  className="w-full h-12 pl-10 pr-4 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('phone')}</label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="+998 90 123 45 67"
+                  required
+                  className="w-full h-12 pl-10 pr-4 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('password')}</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full h-12 pl-10 pr-11 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+
+              {password.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex gap-1 mb-1">
+                    {[1, 2, 3].map((lvl) => (
+                      <div
+                        key={lvl}
+                        className={`h-1 flex-1 rounded-full transition-all ${strength >= lvl ? STRENGTH_COLORS[strength as 1 | 2 | 3] : 'bg-slate-100'}`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-[11px] font-bold ${strength === 1 ? 'text-red-400' : strength === 2 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                    {STRENGTH_LABELS[strength as 1 | 2 | 3]}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 h-12 w-full rounded-full bg-navbar-gradient text-white font-black text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-[#0b3190]/25 hover:shadow-xl hover:shadow-[#0b3190]/30 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <>
+                  {t('registerAsSeller')}
+                  <ArrowRight className="size-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <p className="mt-6 text-center text-[12px] text-slate-400">
+            {t('alreadyAccount')}{' '}
+            <Link href="/login" className="font-bold text-[#0b3190] hover:underline">
+              {t('signIn')}
+            </Link>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  )
 }

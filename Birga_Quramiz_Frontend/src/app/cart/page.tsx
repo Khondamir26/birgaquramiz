@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
-import { useState } from "react";
+import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
 
 export default function CartPage() {
@@ -25,6 +25,18 @@ export default function CartPage() {
   const t = useTranslations("Cart");
 
   const [selectedItems, setSelectedItems] = useState<string[]>(items.map(i => i.id));
+
+  // Keep selectedItems in sync: add newly added items, remove deleted ones
+  useEffect(() => {
+    const itemIds = new Set(items.map(i => i.id));
+    startTransition(() => {
+      setSelectedItems(prev => {
+        const pruned = prev.filter(id => itemIds.has(id));
+        const newIds = items.map(i => i.id).filter(id => !prev.includes(id));
+        return [...pruned, ...newIds];
+      });
+    });
+  }, [items]);
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -59,7 +71,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#F0F2F5] pb-32 md:pb-20 pt-6 md:pt-10">
       <div className="max-w-[1440px] mx-auto px-4 md:px-10">
         <h1 className="text-[24px] md:text-[32px] font-bold text-black mb-6 md:mb-8 flex items-baseline gap-2">
-          Cart
+          {t("title")}
           <span className="text-slate-400 text-[18px] md:text-[20px] font-normal">{itemCount}</span>
         </h1>
 
@@ -79,7 +91,7 @@ export default function CartPage() {
                     <div className="size-5 rounded-md border-2 border-slate-200 peer-checked:bg-[#275fdb] peer-checked:border-[#275fdb] transition-all flex items-center justify-center">
                       <Check className="size-3 text-white" strokeWidth={3} />
                     </div>
-                    <span className="ml-2 md:ml-2.5 text-[14px] md:text-[16px] font-semibold text-slate-900">Select all</span>
+                    <span className="ml-2 md:ml-2.5 text-[14px] md:text-[16px] font-semibold text-slate-900">{t("selectAll")}</span>
                   </label>
                </div>
                <button 
@@ -95,7 +107,7 @@ export default function CartPage() {
               <div className="p-4 flex flex-col gap-4">
                 {/* Header Section */}
                 <div className="bg-[#F2F4F7] px-5 py-3 rounded-[16px]">
-                  <h2 className="text-[16px] md:text-[17px] font-bold text-black">Available for order</h2>
+                  <h2 className="text-[16px] md:text-[17px] font-bold text-black">{t("availableForOrder")}</h2>
                 </div>
 
                 {/* Items List */}
@@ -144,7 +156,7 @@ export default function CartPage() {
                           {item.stock !== undefined && (
                             <div className="inline-flex px-3 py-1 rounded-[8px] bg-[#FFF7ED] w-fit">
                               <p className="text-[12px] font-bold text-[#ff8a00]">
-                                {item.stock} pieces left
+                                {t("piecesLeft", { count: item.stock ?? 0 })}
                               </p>
                             </div>
                           )}
@@ -239,22 +251,22 @@ export default function CartPage() {
                 onClick={() => router.push("/checkout")}
                 className="w-full flex items-center justify-center h-16 rounded-full bg-[#275fdb] hover:bg-[#1B4D91] text-[16px] font-bold text-white shadow-xl shadow-[#275fdb]/20 transition-all mb-6 group"
               >
-                <span>Proceed to checkout</span>
+                <span>{t("proceed")}</span>
                 <ChevronRight className="size-5 ml-1 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <p className="text-[12px] font-medium text-slate-400 leading-relaxed mb-8">
-                Available delivery methods and time can be selected at checkout
+                {t("deliveryAtCheckout")}
               </p>
 
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between items-baseline mb-1">
-                    <h3 className="text-[18px] font-black text-black">Your cart</h3>
-                    <span className="text-[13px] text-slate-400 font-semibold">{itemCount} products</span>
+                    <h3 className="text-[18px] font-black text-black">{t("yourCart")}</h3>
+                    <span className="text-[13px] text-slate-400 font-semibold">{t("productsCount", { count: itemCount })}</span>
                   </div>
                   <div className="flex justify-between items-baseline text-[14px]">
-                    <span className="font-semibold text-slate-400">Products ({itemCount})</span>
+                    <span className="font-semibold text-slate-400">{t("items")} ({itemCount})</span>
                     <span className="font-black text-black">{total.toLocaleString("ru-RU")} UZS</span>
                   </div>
                 </div>
@@ -263,7 +275,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[18px] font-black text-black">Total cost</span>
+                    <span className="text-[18px] font-black text-black">{t("totalCost")}</span>
                     <Info className="size-4 text-slate-300" />
                   </div>
                   <p className="text-[22px] font-black text-black">
@@ -280,7 +292,7 @@ export default function CartPage() {
       <div className="fixed bottom-[72px] left-0 right-0 z-40 lg:hidden">
         <div className="mx-4 mb-4 rounded-[32px] bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_12px_48px_rgba(0,0,0,0.18)] px-5 py-4 flex items-center justify-between">
             <div className="flex flex-col">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#275fdb] mb-0.5">Total cost</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#275fdb] mb-0.5">{t("totalCost")}</p>
               <p className="text-[20px] font-black text-black leading-none">
                 {total.toLocaleString("ru-RU")}
                 <span className="text-[12px] ml-1 text-slate-300 uppercase">UZS</span>
@@ -290,7 +302,7 @@ export default function CartPage() {
               onClick={() => router.push("/checkout")}
               className="h-14 px-8 rounded-full bg-[#275fdb] flex items-center justify-center gap-2 text-[15px] font-black text-white shadow-lg shadow-[#275fdb]/25 active:scale-95 transition-all"
             >
-              <span>Checkout</span>
+              <span>{t("checkout")}</span>
               <ChevronRight className="size-4" strokeWidth={3} />
             </button>
         </div>

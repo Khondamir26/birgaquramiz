@@ -186,7 +186,7 @@ export default function ProfilePage() {
                 {!isAuthenticated && (
                   <Link
                     href="/login"
-                    className="shrink-0 flex h-10 items-center justify-center rounded-xl bg-navbar-gradient px-4 text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform select-none touch-manipulation"
+                    className="shrink-0 flex h-10 items-center justify-center rounded-full bg-navbar-gradient px-5 text-[12px] font-black text-white shadow-sm active:scale-95 transition-all select-none touch-manipulation"
                   >
                     {t("signIn") || "Войти"}
                   </Link>

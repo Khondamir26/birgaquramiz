@@ -84,10 +84,11 @@ model AuthSession {
 }
 
 model Seller {
-  id       String  @id @default(uuid())
-  userId   String  @unique
-  company  String
-  verified Boolean @default(false)
+  id            String  @id @default(uuid())
+  articleNumber Int     @unique @default(autoincrement())
+  userId        String  @unique
+  company       String
+  verified      Boolean @default(false)
 
   deletionRequests DeletionRequest[]
   products         Product[]
@@ -97,7 +98,10 @@ model Seller {
 model Category {
   id            String   @id @default(uuid())
   name          String   @unique
+  nameEn        String?
+  nameUz        String?
   code          String   @unique
+  slug          String?  @unique
   lastSkuNumber Int      @default(0)
   parentId      String?
 
@@ -116,10 +120,12 @@ model Product {
   status          ProductStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   imageUrl        String        @default("")
+  images          String[]      @default([])
   rejectionReason String?
   categoryId      String?
   brandId         String?
   sku             String?       @unique
+  slug            String?       @unique
   articleNumber   Int           @unique @default(autoincrement())
 
   brand            Brand?            @relation(fields: [brandId], references: [id])
@@ -132,6 +138,13 @@ model Product {
   reviewsCount     Int               @default(0)
   seller           Seller            @relation(fields: [sellerId], references: [id])
   specifications   Json?
+
+  @@index([status])
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([status, createdAt])
+  @@index([status, price])
 }
 
 model ModerationLog {
@@ -172,6 +185,10 @@ model Order {
 
   items OrderItem[]
   user  User?       @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model OrderItem {

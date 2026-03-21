@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -21,6 +21,13 @@ export default async function CatalogProductLayout({ children, params }: LayoutP
 
   if (!response.ok) {
     throw new Error("Failed to load product");
+  }
+
+  const product = await response.json();
+
+  // Permanent redirect to SEO-friendly slug URL
+  if (product.slug) {
+    redirect(`/product/${product.slug}`);
   }
 
   return children;

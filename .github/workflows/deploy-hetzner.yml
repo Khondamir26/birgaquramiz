@@ -22,13 +22,27 @@ jobs:
           node-version: 20
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
 
       - name: "Backend: Lint & Build"
         run: |
           cd Birga_Quramiz_Backend
           pnpm install --frozen-lockfile
-          npx prisma generate
+          pnpm prisma generate
           pnpm run lint
           pnpm run build
 
@@ -172,21 +186,21 @@ jobs:
             ############################################
 
             umask 077
-            cat > .env <<EOF
-            APP_IMAGE_TAG=${IMAGE_TAG}
-            DATABASE_URL=${DATABASE_URL_DOCKER}
-            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-            JWT_SECRET=${JWT_SECRET}
-            JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-            CORS_ORIGINS=${EFFECTIVE_CORS_ORIGINS}
-            COOKIE_DOMAIN=${EFFECTIVE_COOKIE_DOMAIN}
-            NEXT_PUBLIC_API_URL=${EFFECTIVE_API_URL}
-            BCRYPT_SALT_ROUNDS=${EFFECTIVE_BCRYPT_ROUNDS}
-            TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-            PAYME_MERCHANT_KEY=${PAYME_MERCHANT_KEY:-"test-payme-secret-key"}
-            CLICK_SECRET_KEY=${CLICK_SECRET_KEY:-"test-click-secret-key"}
-            CLICK_SERVICE_ID=${CLICK_SERVICE_ID:-"test-click-service-id"}
-            EOF
+            {
+              printf 'APP_IMAGE_TAG=%s\n'        "${DEPLOY_IMAGE_TAG}"
+              printf 'DATABASE_URL=%s\n'         "${DATABASE_URL_DOCKER}"
+              printf 'POSTGRES_PASSWORD=%s\n'    "${POSTGRES_PASSWORD}"
+              printf 'JWT_SECRET=%s\n'           "${JWT_SECRET}"
+              printf 'JWT_REFRESH_SECRET=%s\n'   "${JWT_REFRESH_SECRET}"
+              printf 'CORS_ORIGINS=%s\n'         "${EFFECTIVE_CORS_ORIGINS}"
+              printf 'COOKIE_DOMAIN=%s\n'        "${EFFECTIVE_COOKIE_DOMAIN}"
+              printf 'NEXT_PUBLIC_API_URL=%s\n'  "${EFFECTIVE_API_URL}"
+              printf 'BCRYPT_SALT_ROUNDS=%s\n'   "${EFFECTIVE_BCRYPT_ROUNDS}"
+              printf 'TELEGRAM_BOT_TOKEN=%s\n'   "${TELEGRAM_BOT_TOKEN}"
+              printf 'PAYME_MERCHANT_KEY=%s\n'   "${PAYME_MERCHANT_KEY:-test-payme-secret-key}"
+              printf 'CLICK_SECRET_KEY=%s\n'     "${CLICK_SECRET_KEY:-test-click-secret-key}"
+              printf 'CLICK_SERVICE_ID=%s\n'     "${CLICK_SERVICE_ID:-test-click-service-id}"
+            } > .env
 
             ############################################
             # Save tag & unset shell env vars

@@ -86,7 +86,7 @@ export default function BottomNavigation() {
                                     "flex items-center justify-center rounded-2xl transition-all duration-300",
                                     isActive
                                         ? "bg-navbar-gradient px-5 py-2 shadow-navbar"
-                                        : "px-3 py-2 group-active:bg-[#1B4D91]/8"
+                                        : "px-3 py-2 group-active:bg-[#0b3190]/8"
                                 )}
                             >
                                 <Icon
@@ -94,7 +94,7 @@ export default function BottomNavigation() {
                                         "transition-all duration-300",
                                         isActive
                                             ? "size-[22px] stroke-[2.5px] text-white"
-                                            : "size-[22px] stroke-[1.8px] text-slate-400 group-active:text-[#1B4D91]"
+                                            : "size-[22px] stroke-[1.8px] text-slate-400 group-active:text-[#0b3190]"
                                     )}
                                 />
                                 {!!badge && !isActive && (
@@ -108,7 +108,7 @@ export default function BottomNavigation() {
                             <span
                                 className={cn(
                                     "mt-0.5 text-[10px] font-semibold transition-colors duration-200 leading-none text-center",
-                                    isActive ? "text-[#1B4D91]" : "text-slate-400"
+                                    isActive ? "text-[#0b3190]" : "text-slate-400"
                                 )}
                             >
                                 {item.label}

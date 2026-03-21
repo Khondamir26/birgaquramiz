@@ -9,7 +9,8 @@ export function getProducts(
   minPrice?: number,
   maxPrice?: number,
   sortBy?: string,
-  brand?: string
+  brand?: string,
+  parentCategoryId?: string,
 ) {
   const query = new URLSearchParams()
   query.set('page', String(page))
@@ -20,12 +21,17 @@ export function getProducts(
   if (maxPrice !== undefined) query.set('maxPrice', String(maxPrice))
   if (sortBy?.trim()) query.set('sortBy', sortBy.trim())
   if (brand?.trim()) query.set('brand', brand.trim())
+  if (parentCategoryId?.trim()) query.set('parentCategoryId', parentCategoryId.trim())
 
   return apiFetch<PaginatedResponse<Product>>(`/products?${query.toString()}`)
 }
 
 export function getProductById(id: string) {
   return apiFetch<Product>(`/products/${id}`)
+}
+
+export function getProductBySlug(slug: string) {
+  return apiFetch<Product>(`/products/slug/${slug}`)
 }
 
 export type ProductInput = {
@@ -35,7 +41,7 @@ export type ProductInput = {
   stock: number;
   categoryId: string;
   brandId?: string;
-  image?: File | null;
+  images?: File[];
   specifications?: Record<string, string>;
 }
 
@@ -49,8 +55,8 @@ function toFormData(data: ProductInput) {
   if (data.brandId) {
     formData.append('brandId', data.brandId)
   }
-  if (data.image) {
-    formData.append('image', data.image)
+  if (data.images && data.images.length > 0) {
+    data.images.forEach((img) => formData.append('images', img))
   }
   if (data.specifications) {
     formData.append('specifications', JSON.stringify(data.specifications))
@@ -88,7 +94,7 @@ export function getMySellerProduct(id: string) {
 
 export function updateMySellerProduct(
   id: string,
-  data: Partial<ProductInput & { image: File }>,
+  data: Partial<ProductInput> & { newImages?: File[]; keepImages?: string[] },
 ) {
   const formData = new FormData()
 
@@ -96,9 +102,13 @@ export function updateMySellerProduct(
   if (data.description !== undefined) formData.append('description', data.description)
   if (data.price !== undefined) formData.append('price', String(data.price))
   if (data.stock !== undefined) formData.append('stock', String(data.stock))
+  if (data.categoryId !== undefined) formData.append('categoryId', data.categoryId)
   if (data.brandId !== undefined) formData.append('brandId', data.brandId)
-  if (data.image) formData.append('image', data.image)
   if (data.specifications) formData.append('specifications', JSON.stringify(data.specifications))
+  if (data.keepImages !== undefined) formData.append('keepImages', JSON.stringify(data.keepImages))
+  if (data.newImages && data.newImages.length > 0) {
+    data.newImages.forEach((img) => formData.append('images', img))
+  }
 
   return apiFetch<Product>(`/products/seller/my/${id}`, {
     method: 'PATCH',
@@ -146,6 +156,22 @@ export function getCategories() {
   return apiFetch<Category[]>('/categories')
 }
 
+export function getParentCategories() {
+  return apiFetch<Category[]>('/categories/parents')
+}
+
+export function getCategoryChildren(parentId: string) {
+  return apiFetch<Category[]>(`/categories/${parentId}/children`)
+}
+
 export function getCategoryById(id: string) {
   return apiFetch<Category>(`/categories/${id}`)
+}
+
+export function getCategoryBySlug(slug: string) {
+  return apiFetch<Category>(`/categories/slug/${slug}`)
+}
+
+export function getSellerPublicProfile(sellerId: string) {
+  return apiFetch<import('@/types').SellerPublicProfile>(`/seller/public/${sellerId}`)
 }

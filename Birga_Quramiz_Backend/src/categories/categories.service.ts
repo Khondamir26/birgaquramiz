@@ -1,66 +1,61 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 
-const DEFAULT_CATEGORIES = [
-  { name: 'Cement', code: 'CEM' },
-  { name: 'Brick', code: 'BRK' },
-  { name: 'Tile', code: 'TIL' },
-  { name: 'Paint', code: 'PNT' },
-  { name: 'Wood', code: 'WOD' },
-  { name: 'Metal', code: 'MTL' },
-  { name: 'Pipe', code: 'PIP' },
-  { name: 'Electric', code: 'ELC' },
-  { name: 'Tool', code: 'TOL' },
-  { name: 'General', code: 'GEN' },
-]
+const categorySelect = {
+  id: true,
+  name: true,
+  nameEn: true,
+  nameUz: true,
+  code: true,
+  slug: true,
+  parentId: true,
+  parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } },
+} as const
 
 @Injectable()
-export class CategoriesService implements OnModuleInit {
+export class CategoriesService {
   constructor(private prisma: PrismaService) {}
-
-  async onModuleInit() {
-    await this.seedDefaults()
-  }
-
-  private async seedDefaults() {
-    for (const cat of DEFAULT_CATEGORIES) {
-      await this.prisma.category.upsert({
-        where: { code: cat.code },
-        update: {},
-        create: cat,
-      })
-    }
-  }
 
   async findAll() {
     return this.prisma.category.findMany({
       orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        parentId: true,
-        parent: { select: { id: true, name: true } },
-      },
+      select: categorySelect,
+    })
+  }
+
+  async findParents() {
+    return this.prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { name: 'asc' },
+      select: categorySelect,
+    })
+  }
+
+  async findChildren(parentId: string) {
+    return this.prisma.category.findMany({
+      where: { parentId },
+      orderBy: { name: 'asc' },
+      select: categorySelect,
     })
   }
 
   async findById(id: string) {
     const category = await this.prisma.category.findUnique({
       where: { id },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        parentId: true,
-        parent: { select: { id: true, name: true } },
-      },
+      select: categorySelect,
     })
 
-    if (!category) {
-      throw new NotFoundException('Category not found')
-    }
+    if (!category) throw new NotFoundException('Category not found')
+    return category
+  }
 
+  async findBySlug(slug: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { slug },
+      select: categorySelect,
+    })
+
+    if (!category) throw new NotFoundException('Category not found')
     return category
   }
 }

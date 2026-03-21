@@ -21,7 +21,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement
     if (target.closest("button")) return
-    router.push(`/catalog/product/${product.id}`)
+    router.push(product.slug ? `/product/${product.slug}` : `/catalog/product/${product.id}`)
   }
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -61,6 +61,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
             e.stopPropagation()
             toggleFavorite(product)
           }}
+          aria-label={liked ? "Remove from favorites" : "Add to favorites"}
           className="absolute top-2 right-2 z-10 p-1"
         >
           {!liked ? (
@@ -75,16 +76,13 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
           )}
         </button>
 
-        {/* IMAGE */}
-        {/* IMAGE */}
         <Image
           src={resolveImageUrl(product.imageUrl)}
           alt={product.name}
           fill
-          unoptimized
-          placeholder="empty"
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           className="object-cover"
+          loading="lazy"
         />
       </div>
 
@@ -111,8 +109,8 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
               {product.rating.toFixed(1)}
             </div>
           ) : null}
-          <div className="flex items-center gap-[4px] text-[13px] font-medium text-[#878787]">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="#878787" xmlns="http://www.w3.org/2000/svg">
+          <div className="flex items-center gap-[4px] text-[13px] font-medium text-[#6b7280]">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#6b7280" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
             </svg>
             {product.reviewsCount && product.reviewsCount > 0 ? `${product.reviewsCount} отзывов` : "Нет отзывов"}

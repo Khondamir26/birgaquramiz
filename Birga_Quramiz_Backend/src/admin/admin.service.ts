@@ -31,6 +31,7 @@ export class AdminService {
           phone: true,
           role: true,
           createdAt: true,
+          seller: { select: { id: true, company: true, verified: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -244,7 +245,7 @@ export class AdminService {
         title: product.name,
         description: product.description,
         price: product.price,
-        images: product.imageUrl ? [product.imageUrl] : [],
+        images: product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []),
         stock: product.stock,
         createdAt: product.createdAt.toISOString(),
         status: product.status,
@@ -261,6 +262,73 @@ export class AdminService {
         productsCount,
       },
     }
+  }
+
+  async getPendingSellers(page = 1, limit = 20, q?: string) {
+    const safePage = page < 1 ? 1 : page
+    const safeLimit = limit > 100 ? 100 : limit
+    const skip = (safePage - 1) * safeLimit
+
+    const where: Prisma.SellerWhereInput = { verified: false }
+
+    if (q?.trim()) {
+      const query = q.trim()
+      where.OR = [
+        { company: { contains: query, mode: 'insensitive' } },
+        { user: { name: { contains: query, mode: 'insensitive' } } },
+        { user: { phone: { contains: query } } },
+      ]
+    }
+
+    const [sellers, total] = await this.prisma.$transaction([
+      this.prisma.seller.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, phone: true, createdAt: true } },
+          _count: { select: { products: true } },
+        },
+        orderBy: { user: { createdAt: 'desc' } },
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.seller.count({ where }),
+    ])
+
+    return {
+      data: sellers,
+      meta: { total, page: safePage, limit: safeLimit, totalPages: Math.ceil(total / safeLimit) },
+    }
+  }
+
+  async verifySeller(sellerId: string) {
+    const seller = await this.prisma.seller.findUnique({ where: { id: sellerId } })
+    if (!seller) throw new NotFoundException('Seller not found')
+
+    await this.prisma.seller.update({
+      where: { id: sellerId },
+      data: { verified: true },
+    })
+
+    return { message: 'Seller verified' }
+  }
+
+  async rejectSeller(sellerId: string) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { id: sellerId },
+      include: { _count: { select: { products: true } } },
+    })
+    if (!seller) throw new NotFoundException('Seller not found')
+
+    if (seller._count.products > 0) {
+      throw new BadRequestException('Cannot reject seller with existing products')
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.seller.delete({ where: { id: sellerId } })
+      await tx.user.update({ where: { id: seller.userId }, data: { role: 'USER' } })
+    })
+
+    return { message: 'Seller rejected and role reverted to USER' }
   }
 
   async approveProduct(productId: string, adminId: string) {

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import type { AuthUser } from '../auth/auth.types'
 
@@ -93,6 +93,54 @@ export class SellerService {
         DELIVERED: totalDelivered,
         CANCELLED: totalCancelled,
       },
+    }
+  }
+
+  async getPublicProfile(articleNumber: number) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { articleNumber },
+      include: {
+        user: { select: { id: true, createdAt: true } },
+        products: {
+          where: { status: 'APPROVED' },
+          select: {
+            id: true, name: true, slug: true, price: true, imageUrl: true, images: true,
+            stock: true, sku: true, status: true,
+            category: {
+              select: { id: true, name: true, nameEn: true, nameUz: true, code: true, slug: true, parentId: true,
+                parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } }
+              }
+            },
+            brand: { select: { id: true, name: true, slug: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 48,
+        },
+      },
+    })
+
+    if (!seller) throw new NotFoundException('Seller not found')
+
+    // Count total sold (order items delivered)
+    const soldResult = await this.prisma.orderItem.aggregate({
+      _sum: { quantity: true },
+      where: {
+        product: { sellerId: seller.id },
+        order: { status: 'DELIVERED' },
+      },
+    })
+
+    const totalProducts = seller.products.length
+
+    return {
+      id: seller.id,
+      articleNumber: seller.articleNumber,
+      company: seller.company,
+      verified: seller.verified,
+      memberSince: seller.user.createdAt,
+      totalProducts,
+      totalSold: soldResult._sum.quantity ?? 0,
+      products: seller.products,
     }
   }
 }

@@ -71,6 +71,7 @@ export default function AdminProductDetailPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
+    const [activeImageIdx, setActiveImageIdx] = useState(0);
 
     if (!id) {
         return (
@@ -170,7 +171,7 @@ export default function AdminProductDetailPage() {
     const { product, seller } = data;
     const isPending = product.status === "PENDING";
     const daysInModeration = daysSince(product.createdAt);
-    const imageUrl = product.images[0] ? resolveImageUrl(product.images[0]) : "";
+    const images = product.images.map((img) => resolveImageUrl(img));
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
@@ -199,15 +200,54 @@ export default function AdminProductDetailPage() {
                     {/* ── SECTION A: Product Info ── */}
                     <div className="grid gap-6 md:grid-cols-[400px_1fr]">
 
-                        {/* Left — Image */}
-                        <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-                            {imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={imageUrl}
-                                    alt={product.title}
-                                    className="w-full h-[320px] md:h-[400px] object-cover"
-                                />
+                        {/* Left — Image Gallery */}
+                        <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                            {images.length > 0 ? (
+                                <>
+                                    {/* Main image */}
+                                    <div className="relative h-[280px] md:h-[360px] bg-slate-50">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={images[activeImageIdx]}
+                                            alt={product.title}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {images.length > 1 && (
+                                            <>
+                                                <button
+                                                    onClick={() => setActiveImageIdx((i) => (i - 1 + images.length) % images.length)}
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-all border border-slate-100"
+                                                >
+                                                    <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => setActiveImageIdx((i) => (i + 1) % images.length)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-all border border-slate-100"
+                                                >
+                                                    <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                                                </button>
+                                                <span className="absolute bottom-3 right-3 bg-black/50 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                                                    {activeImageIdx + 1} / {images.length}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                    {/* Thumbnails */}
+                                    {images.length > 1 && (
+                                        <div className="flex gap-2 p-3 overflow-x-auto">
+                                            {images.map((src, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setActiveImageIdx(idx)}
+                                                    className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImageIdx === idx ? 'border-[#1B4D91] shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                                >
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={src} alt="" className="w-full h-full object-cover" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <div className="flex items-center justify-center h-[320px] md:h-[400px] bg-slate-50 text-slate-300">
                                     <ImageIcon className="size-16" />

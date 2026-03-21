@@ -185,5 +185,12 @@ async function bootstrap() {
   app.useGlobalFilters(new SafeHttpExceptionFilter());
 
   await app.listen(process.env.PORT || 5000, '0.0.0.0');
+
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.on(signal, async () => {
+      await app.close();
+      process.exit(0);
+    });
+  }
 }
 void bootstrap();

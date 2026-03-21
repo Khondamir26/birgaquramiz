@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import type { ActionItem, AccountMenuItem, NavLink } from "@/config/navigation";
 import { getAccountMenu, getActionItems, getNavLinks } from "@/config/navigation";
 import BurgerSidebar from "@/components/navbar/BurgerSidebar";
+import CatalogBurgerMenu from "@/components/navbar/CatalogBurgerMenu";
 import NavbarActions from "@/components/navbar/NavbarActions";
 import NavbarLinks from "@/components/navbar/NavbarLinks";
 import NavbarSearch from "@/components/navbar/NavbarSearch";
@@ -208,7 +209,7 @@ export default function Navbar() {
 
           <NavbarTopBar
             city={tNav("city")}
-            linksSlot={<NavbarLinks links={resolvedNavLinks} pathname={pathname} className="hidden items-center gap-2 xl:flex" />}
+            linksSlot={<NavbarLinks links={resolvedNavLinks.filter(l => l.id !== "home")} pathname={pathname} className="hidden items-center gap-2 xl:flex" />}
             rightSlot={<LanguageSwitcher compact />}
           />
 
@@ -217,6 +218,7 @@ export default function Navbar() {
               <Link href={user?.role === "ADMIN" ? "/admin" : user?.role === "SELLER" ? "/seller/dashboard" : "/"} className="group min-w-0">
                 <span className="text-[43px] font-black lowercase leading-none tracking-[-0.07em] text-white">birga quramiz</span>
               </Link>
+              {!user?.role || user?.role === "USER" ? <CatalogBurgerMenu /> : null}
             </div>
 
             <NavbarSearch

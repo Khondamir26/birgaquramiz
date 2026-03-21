@@ -5,6 +5,8 @@ import {
   UseGuards,
   Req,
   Get,
+  Param,
+  BadRequestException,
 } from '@nestjs/common'
 import type { Request } from 'express'
 import { SellerService } from './seller.service'
@@ -30,5 +32,12 @@ export class SellerController {
   @Get('analytics')
   analytics(@Req() req: AuthedRequest) {
     return this.sellerService.getAnalytics(req.user)
+  }
+
+  @Get('public/:id')
+  getPublicProfile(@Param('id') id: string) {
+    const articleNumber = parseInt(id, 10)
+    if (isNaN(articleNumber)) throw new BadRequestException('Invalid seller ID')
+    return this.sellerService.getPublicProfile(articleNumber)
   }
 }

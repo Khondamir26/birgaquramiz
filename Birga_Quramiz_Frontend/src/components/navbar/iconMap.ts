@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Package,
   ShoppingCart,
+  Tag,
   Truck,
   User2,
   Users,
@@ -26,4 +27,5 @@ export const navbarIconMap: Record<IconKey, React.ElementType> = {
   heart: Heart,
   shoppingCart: ShoppingCart,
   user2: User2,
+  tag: Tag,
 };

@@ -59,11 +59,11 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 
+# Copy Prisma generated client from builder (avoids regenerating)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
-
-# Generate Prisma client (safe for runtime)
-RUN pnpm prisma generate
 
 # Make entrypoint executable
 RUN chmod +x ./entrypoint.sh

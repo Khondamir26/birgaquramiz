@@ -3,18 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { Eye, EyeOff, Phone, Lock, ArrowRight, Loader2 } from 'lucide-react'
 import { login } from '@/lib/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { formatPhone } from '@/lib/formatPhone'
+import Link from 'next/link'
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+export function LoginForm() {
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
   const setInitialized = useAuthStore((s) => s.setInitialized)
@@ -22,29 +17,24 @@ export function LoginForm({
 
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhone(e.target.value))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
-      const { user } = await login({ phone, password })
+      const { user } = await login({ phone: phone.replace(/\s/g, ''), password })
       setUser(user)
       setInitialized(true)
-
-      if (user.role === 'ADMIN') {
-        router.push('/admin')
-        return
-      }
-
-      if (user.role === 'SELLER') {
-        router.push('/seller/dashboard')
-        return
-      }
-
+      if (user.role === 'ADMIN') { router.push('/admin'); return }
+      if (user.role === 'SELLER') { router.push('/seller/dashboard'); return }
       router.push('/catalog')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('loginFailed'))
@@ -54,92 +44,98 @@ export function LoginForm({
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <Card className="overflow-hidden p-0 shadow-2xl border-[#1B4D91]/10 rounded-3xl">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form onSubmit={handleSubmit} className="p-6 md:p-8">
-            <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-black text-[#1B4D91]">{t('loginTitle')}</h1>
-                <p className="text-muted-foreground text-sm">
-                  {t('noAccount')}{' '}
-                  <a href="/signup" className="underline font-bold text-[#1B4D91]">
-                    {t('createAccount')}
-                  </a>
-                </p>
-                <a href="/admin/login" className="text-xs text-muted-foreground underline hover:text-[#1B4D91] transition-colors">
-                  {t('adminSignIn')}
-                </a>
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[400px]">
+
+        {/* Logo */}
+        <div className="mb-10 text-center">
+          <Link href="/">
+            <span className="text-[38px] font-black lowercase leading-none tracking-[-0.07em] text-[#0b3190]">
+              birga quramiz
+            </span>
+          </Link>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-lg shadow-slate-200 border border-slate-100 px-8 py-9">
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-[26px] font-black text-slate-900 mb-3">{t('loginTitle')}</h1>
+            <p className="text-[13px] text-slate-400">{t('noAccount')}</p>
+            <Link href="/signup" className="inline-block mt-1 text-[13px] font-bold text-[#0b3190] hover:underline">
+              {t('createAccount')}
+            </Link>
+          </div>
+
+          {error && (
+            <div className={`mb-6 flex items-start gap-2.5 rounded-2xl border px-4 py-3 ${error.toLowerCase().includes('pending') ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'}`}>
+              <div className={`mt-0.5 shrink-0 size-4 rounded-full flex items-center justify-center ${error.toLowerCase().includes('pending') ? 'bg-amber-400' : 'bg-red-400'}`}>
+                <span className="text-white text-[9px] font-black">!</span>
               </div>
+              <p className={`text-[12px] font-semibold ${error.toLowerCase().includes('pending') ? 'text-amber-700' : 'text-red-600'}`}>{error}</p>
+            </div>
+          )}
 
-              {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold text-center border border-red-100 italic">
-                  {error}
-                </div>
-              )}
-
-              <Field>
-                <FieldLabel className="text-[#1B4D91]/70">{t('phone')}</FieldLabel>
-                <Input
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Phone */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('phone')}</label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+998901234567"
+                  onChange={handlePhoneChange}
+                  placeholder="+998 90 123 45 67"
                   required
-                  className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
+                  className="w-full h-12 pl-10 pr-4 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
                 />
-              </Field>
+              </div>
+            </div>
 
-              <Field>
-                <FieldLabel className="text-[#1B4D91]/70">{t('password')}</FieldLabel>
-                <Input
-                  type="password"
+            {/* Password */}
+            <div>
+              <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('password')}</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="rounded-2xl border-slate-200 focus:ring-[#1B4D91]"
+                  className="w-full h-12 pl-10 pr-11 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[14px] font-medium text-slate-800 focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
                 />
-              </Field>
-
-              <Field>
-                <Button
-                  type="submit"
-                  className="w-full bg-navbar-gradient text-white rounded-2xl h-12 font-black transition-all shadow-lg shadow-[#1B4D91]/20 hover:scale-[1.02] active:scale-95"
-                  disabled={loading}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  tabIndex={-1}
                 >
-                  {loading ? t('signingIn') : t('signIn')}
-                </Button>
-              </Field>
-            </FieldGroup>
-          </form>
-
-          <div className="bg-gradient-to-br from-[#1B4D91] to-[#163d73] relative hidden md:flex md:items-center md:justify-center p-8 text-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#E31E24]/10 rounded-full -ml-32 -mb-32 blur-3xl" />
-
-            <div className="text-center relative z-10">
-              <h2 className="text-3xl font-black mb-4">Birga Quramiz</h2>
-              <div className="h-1 w-12 bg-[#E31E24] mx-auto mb-6 rounded-full" />
-              <p className="text-white/80 font-medium leading-relaxed max-w-[280px]">
-                {t('subtitle')}
-              </p>
-              <div className="mt-8 flex flex-col gap-4 text-xs font-bold text-white/60">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="size-1.5 rounded-full bg-emerald-400" />
-                  {t('securePayments')}
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="size-1.5 rounded-full bg-emerald-400" />
-                  {t('wideCatalog')}
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="size-1.5 rounded-full bg-emerald-400" />
-                  {t('aiConsultant')}
-                </div>
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-3 h-13 w-full rounded-full bg-navbar-gradient text-white font-black text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-[#0b3190]/25 hover:shadow-xl hover:shadow-[#0b3190]/30 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <>
+                  {t('signIn')}
+                  <ArrowRight className="size-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+      </div>
     </div>
   )
 }

@@ -9,11 +9,11 @@ import {
   Query,
   Patch,
   Delete,
-  UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   BadRequestException,
 } from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
+import { FilesInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import type { Request } from 'express'
@@ -55,20 +55,20 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @UseInterceptors(
-    FileInterceptor('image', {
+    FilesInterceptor('images', 5, {
       storage: multerStorage,
       fileFilter: imageFileFilter,
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  async create(@Body() body: CreateProductDto, @Req() req: AuthedRequest, @UploadedFile() file?: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('Product image is required')
+  async create(@Body() body: CreateProductDto, @Req() req: AuthedRequest, @UploadedFiles() files?: Express.Multer.File[]) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one product image is required')
     }
 
-    const imageUrl = this.uploadService.uploadProductImage(file)
+    const imageUrls = files.map((f) => this.uploadService.uploadProductImage(f))
 
-    return this.productsService.create({ ...body, imageUrl }, req.user)
+    return this.productsService.create({ ...body, imageUrls }, req.user)
   }
 
   @Get()
@@ -81,6 +81,7 @@ export class ProductsController {
     @Query('maxPrice') maxPrice?: string,
     @Query('sortBy') sortBy?: string,
     @Query('brand') brand?: string,
+    @Query('parentCategoryId') parentCategoryId?: string,
   ) {
     return this.productsService.getApproved(
       Number(page),
@@ -91,6 +92,7 @@ export class ProductsController {
       maxPrice ? Number(maxPrice) : undefined,
       sortBy,
       brand,
+      parentCategoryId,
     )
   }
 
@@ -112,7 +114,7 @@ export class ProductsController {
   @Roles('SELLER')
   @Patch('seller/my/:id')
   @UseInterceptors(
-    FileInterceptor('image', {
+    FilesInterceptor('images', 5, {
       storage: multerStorage,
       fileFilter: imageFileFilter,
       limits: { fileSize: 5 * 1024 * 1024 },
@@ -122,16 +124,13 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() body: UpdateProductDto,
     @Req() req: AuthedRequest,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    let imageUrl: string | undefined
+    const newImageUrls = files && files.length > 0
+      ? files.map((f) => this.uploadService.uploadProductImage(f))
+      : undefined
 
-    if (file) {
-      imageUrl = this.uploadService.uploadProductImage(file)
-    }
-
-    const payload = imageUrl ? { ...body, imageUrl } : body
-    return this.productsService.updateMyProduct(id, payload, req.user)
+    return this.productsService.updateMyProduct(id, body, req.user, newImageUrls)
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -169,8 +168,11 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Get('admin/pending')
-  getPending() {
-    return this.productsService.getPending()
+  getPending(
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    return this.productsService.getPending(Number(page), Number(limit))
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -206,6 +208,11 @@ export class ProductsController {
   @Patch('admin/deletion-requests/:id/reject')
   rejectDeletionRequest(@Param('id') id: string) {
     return this.productsService.rejectDeletionRequest(id)
+  }
+
+  @Get('slug/:slug')
+  getBySlug(@Param('slug') slug: string) {
+    return this.productsService.getBySlug(slug)
   }
 
   @Get(':id')

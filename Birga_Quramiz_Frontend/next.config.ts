@@ -2,13 +2,12 @@ import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
-const isProduction = process.env.NODE_ENV === 'production'
 
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https: http:`,
+  `img-src 'self' data: blob: https: http://localhost:5000 http://127.0.0.1:5000`,
   "font-src 'self' data:",
   "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
@@ -55,12 +54,8 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: [
           {
-            key: 'Access-Control-Allow-Credentials',
-            value: 'true',
-          },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: isProduction ? 'https://api.birga-quramiz.uz' : 'http://localhost:5000',
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
           },
           {
             key: 'Content-Security-Policy',

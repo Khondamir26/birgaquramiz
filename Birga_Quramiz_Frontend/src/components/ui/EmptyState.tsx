@@ -44,7 +44,7 @@ export default function EmptyState({
 
       <button
         onClick={() => router.push(buttonHref)}
-        className="mt-10 h-13 md:h-[60px] w-full max-w-[280px] md:max-w-[340px] rounded-2xl md:rounded-[24px] bg-navbar-gradient hover:shadow-xl hover:shadow-[#1B4D91]/30 text-[14px] md:text-[16px] font-black text-white shadow-lg shadow-[#1B4D91]/20 active:scale-[0.97] transition-all"
+        className="mt-10 h-13 md:h-[60px] w-full max-w-[280px] md:max-w-[340px] rounded-full bg-navbar-gradient hover:shadow-xl hover:shadow-[#0b3190]/30 text-[14px] md:text-[16px] font-black text-white shadow-lg shadow-[#0b3190]/20 active:scale-[0.97] transition-all"
       >
         {buttonText}
       </button>

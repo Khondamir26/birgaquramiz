@@ -11,7 +11,7 @@ type LayoutProps = {
 export default async function CatalogCategoryLayout({ children, params }: LayoutProps) {
   const { id } = await params;
 
-  const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/categories/slug/${id}`, {
     cache: "no-store",
   });
 

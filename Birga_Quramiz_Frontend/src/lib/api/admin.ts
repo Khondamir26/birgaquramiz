@@ -76,6 +76,38 @@ export function rejectAdminDeletionRequest(id: string) {
   })
 }
 
+export interface PendingSeller {
+  id: string
+  company: string
+  verified: boolean
+  user: {
+    id: string
+    name: string
+    phone: string
+    createdAt: string
+  }
+  _count: { products: number }
+}
+
+export function getAdminPendingSellers(params?: { page?: number; limit?: number; q?: string }) {
+  const query = new URLSearchParams()
+  if (params?.page) query.set('page', String(params.page))
+  if (params?.limit) query.set('limit', String(params.limit))
+  if (params?.q?.trim()) query.set('q', params.q.trim())
+  const qs = query.toString()
+  return apiFetch<{ data: PendingSeller[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
+    `/admin/sellers/pending${qs ? `?${qs}` : ''}`
+  )
+}
+
+export function verifyAdminSeller(id: string) {
+  return apiFetch<{ message: string }>(`/admin/sellers/${id}/verify`, { method: 'PATCH' })
+}
+
+export function rejectAdminSeller(id: string) {
+  return apiFetch<{ message: string }>(`/admin/sellers/${id}/reject`, { method: 'PATCH' })
+}
+
 export interface DeletionRequest {
   id: string
   productId: string
