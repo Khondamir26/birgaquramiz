@@ -9,6 +9,5 @@ export default function robots(): MetadataRoute.Robots {
       }
     ],
     sitemap: 'https://birga-quramiz.uz/sitemap.xml',
-    host: 'https://birga-quramiz.uz'
   };
 }
