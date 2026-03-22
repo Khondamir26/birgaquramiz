@@ -105,7 +105,7 @@ export class SellerService {
           where: { status: 'APPROVED' },
           select: {
             id: true, name: true, slug: true, price: true, imageUrl: true, images: true,
-            stock: true, sku: true, status: true,
+            stock: true, sku: true, status: true, createdAt: true, rating: true, reviewsCount: true,
             category: {
               select: { id: true, name: true, nameEn: true, nameUz: true, code: true, slug: true, parentId: true,
                 parent: { select: { id: true, name: true, nameEn: true, nameUz: true, slug: true } }
