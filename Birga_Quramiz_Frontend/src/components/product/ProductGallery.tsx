@@ -120,7 +120,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       </div>
 
       {/* ── Main image ── */}
-      <div className="relative max-w-[464px] mx-auto w-full lg:max-w-none xl:col-start-2 xl:sticky xl:top-6 xl:self-start z-10">
+      <div className="relative max-w-[464px] mx-auto w-full lg:max-w-none xl:col-start-2 xl:sticky xl:top-6 xl:self-start">
         <div
           className="relative w-full aspect-square lg:aspect-[3/4] xl:aspect-[4/5] overflow-hidden bg-slate-50 lg:rounded-3xl border-0 lg:border lg:border-slate-100 select-none"
           onTouchStart={handleTouchStart}

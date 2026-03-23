@@ -393,12 +393,15 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       </div>
 
       {/* ── Similar products ── */}
-      {/* Mobile: card inside gray stack with bottom padding for fixed CTA */}
-      <div className="lg:hidden bg-[#e8e8ed] px-[6px] pb-[130px]">
-        <div className="bg-white rounded-2xl border border-[#e2e2e8] px-4 py-2">
-          <SimilarProducts product={product} initialItems={similarItems} />
+      {/* Mobile: only render card when items exist; spacer always shown for fixed CTA */}
+      {similarItems && similarItems.length > 0 && (
+        <div className="lg:hidden bg-[#e8e8ed] px-[6px]">
+          <div className="bg-white rounded-2xl border border-[#e2e2e8] px-4 py-2">
+            <SimilarProducts product={product} initialItems={similarItems} />
+          </div>
         </div>
-      </div>
+      )}
+      <div className="lg:hidden h-[130px]" />
       {/* Desktop: contained section below reviews */}
       <div className="hidden lg:block mx-auto w-full max-w-[1440px] px-6 pb-12 mt-4">
         <SimilarProducts product={product} />

@@ -24,7 +24,7 @@ export default function ProductInfo({ product, onOpenSpecs }: ProductInfoProps) 
   ];
 
   return (
-    <div className="flex flex-col gap-6 mt-2 md:mt-0 relative z-10 w-full min-w-0 order-2 md:order-none col-span-1">
+    <div className="flex flex-col gap-6 mt-2 md:mt-0 relative w-full min-w-0 order-2 md:order-none col-span-1">
 
       {/* Brand badge & title */}
       <div className="flex flex-col gap-3">
