@@ -173,7 +173,7 @@ export default function CheckoutPage() {
   if (successOrderId) {
     return (
       <div className="page-shell max-w-3xl pb-32">
-        <div className="surface-card rounded-[32px] p-8 md:p-12 text-center shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col items-center">
+        <div className="surface-card rounded-[32px] p-6 md:p-12 text-center shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col items-center">
           <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="size-10 text-green-500" />
           </div>
@@ -225,7 +225,7 @@ export default function CheckoutPage() {
       </section>
 
       {items.length === 0 ? (
-        <section className="flex flex-col items-center justify-center p-12 text-center">
+        <section className="flex flex-col items-center justify-center p-6 md:p-12 text-center">
           <div className="flex size-32 items-center justify-center rounded-full bg-[#1B4D91]/5 mb-6">
             <ShoppingBag className="size-16 text-[#1B4D91]/15" />
           </div>
@@ -367,7 +367,7 @@ export default function CheckoutPage() {
           </form>
 
           {/* ── Desktop order summary (Aesthetic matched to Cart) ── */}
-          <aside className="sticky top-24 rounded-[32px] bg-gradient-to-br from-white to-slate-50/50 border border-slate-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.04)] p-8 md:p-10 flex flex-col w-full h-max">
+          <aside className="md:sticky top-24 rounded-[32px] bg-gradient-to-br from-white to-slate-50/50 border border-slate-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.04)] p-6 md:p-10 flex flex-col w-full h-max">
             <h2 className="text-[22px] font-black text-[#1B4D91] border-b border-slate-100 pb-4 mb-6">{t("summary.title")}</h2>
 
             <div className="space-y-4 mb-8">

@@ -37,10 +37,11 @@ export default function BrandLogo({ src, alt, fill, className, width, height }: 
     )
   }
 
-  // For arbitrary external URLs, use standard <img> to avoid Optimization DoS risks 
+  // For arbitrary external URLs, use standard <img> to avoid Optimization DoS risks
   // and Next.js "hostname not configured" errors.
   return (
-    <img 
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={src} 
       alt={alt} 
       className={className} 

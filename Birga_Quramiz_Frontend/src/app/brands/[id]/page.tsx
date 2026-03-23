@@ -116,7 +116,7 @@ export default function BrandDetailPage() {
         </div>
 
         <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 pt-4">
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
+          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm flex flex-col md:flex-row gap-4 md:gap-8 items-start relative overflow-hidden">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
             {brand.logoUrl ? (
               <div className="w-32 h-32 md:w-48 md:h-48 relative shrink-0 bg-white border border-slate-100 p-4 rounded-2xl flex items-center justify-center overflow-hidden">
@@ -134,7 +134,7 @@ export default function BrandDetailPage() {
             )}
 
             <div className="flex flex-col gap-4 relative z-10 w-full">
-               <h1 className="text-3xl md:text-5xl font-black text-[#1B4D91]">{brand.name}</h1>
+               <h1 className="text-xl md:text-5xl font-black text-[#1B4D91]">{brand.name}</h1>
                {brand.description && (
                   <p className="text-slate-600 text-sm md:text-base leading-relaxed max-w-3xl whitespace-pre-wrap bg-slate-50 p-4 md:p-6 rounded-2xl border border-slate-100">
                      {brand.description}
@@ -153,28 +153,28 @@ export default function BrandDetailPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <h2 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
-              Ассортимент {brand.name} 
-              <span className="bg-[#1B4D91]/10 text-[#1B4D91] px-3 py-1 rounded-full text-sm">
-                 {data?.meta?.total ?? products.length} товаров 
+          <div className="mt-4 md:mt-8">
+            <h2 className="text-lg md:text-2xl font-black text-slate-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3">
+              Ассортимент {brand.name}
+              <span className="bg-[#1B4D91]/10 text-[#1B4D91] px-2.5 py-1 rounded-full text-xs md:text-sm">
+                {data?.meta?.total ?? products.length} товаров
               </span>
             </h2>
 
             {loadingProducts ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl h-[320px] animate-pulse" />
+                  <div key={i} className="bg-white rounded-2xl h-[280px] md:h-[320px] animate-pulse" />
                 ))}
               </div>
             ) : errorProducts ? (
-               <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center">Вы не удалось загрузить ассортимент товаров.</div>
+               <div className="bg-red-50 text-red-500 p-4 md:p-6 rounded-2xl text-center text-sm">Ассортимент товаров не удалось загрузить.</div>
             ) : products.length === 0 ? (
-              <div className="bg-white py-16 text-center rounded-3xl border border-dashed border-slate-200">
-                <p className="text-slate-400 font-medium">К сожалению, на данный момент товары этого бренда отсутствуют.</p>
+              <div className="bg-white py-12 md:py-16 text-center rounded-3xl border border-dashed border-slate-200">
+                <p className="text-slate-400 font-medium text-sm md:text-base px-4">К сожалению, на данный момент товары этого бренда отсутствуют.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

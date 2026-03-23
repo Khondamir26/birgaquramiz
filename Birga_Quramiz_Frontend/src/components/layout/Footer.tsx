@@ -1,10 +1,12 @@
 "use client";
 
-
+import { useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/store/authStore";
 import { Mail, Phone, Linkedin, Instagram, Twitter, Facebook } from "lucide-react";
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 const footerGradient =
   "linear-gradient(97.26deg, #163b92 0.49%, #1a429e 14.88%, #1f4cac 29.27%, #2559bc 43.14%, #2c66cb 57.02%, #2f6fd5 70.89%, #295fbf 84.76%, #214da8 99.15%), linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08))";
@@ -12,18 +14,16 @@ const footerGradient =
 export default function Footer() {
   const t = useTranslations("Footer");
   const userRole = useAuthStore((state) => state.user?.role);
-  const socialLabels = {
+  const socialLabels = useMemo(() => ({
     linkedin: t.has("linkedin") ? t("linkedin") : "LinkedIn",
     instagram: t.has("instagram") ? t("instagram") : "Instagram",
     twitter: t.has("twitter") ? t("twitter") : "Twitter",
     facebook: t.has("facebook") ? t("facebook") : "Facebook",
-  };
-
-  const year = new Date().getFullYear();
+  }), [t]);
 
   return (
     <footer 
-      className="hidden md:block relative overflow-hidden text-white"
+      className="hidden lg:block relative overflow-hidden text-white"
       style={{ background: footerGradient }}
     >
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_38%,rgba(0,0,0,0.08))] pointer-events-none" />
@@ -164,7 +164,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10 bg-black/10">
         <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-6 py-5 text-[12px] text-white/50 font-medium tracking-wide">
-          <p>© {year} Birga Quramiz. {t("rights")}</p>
+          <p>© {CURRENT_YEAR} Birga Quramiz. {t("rights")}</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-white transition-colors">{t("privacyLink")}</Link>
             <Link href="#" className="hover:text-white transition-colors">{t("termsLink")}</Link>

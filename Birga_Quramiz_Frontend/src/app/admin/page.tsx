@@ -338,7 +338,7 @@ export default function AdminDashboardPage() {
 
               {/* pending counts even if 0, for visibility */}
               {alerts.length === 0 && (
-                <div className="mt-1 grid grid-cols-3 gap-2 px-2 pb-2">
+                <div className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2 px-2 pb-2">
                   <Link href="/admin/products" className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                     <Package className="size-4 text-slate-400" />
                     <div>

@@ -112,7 +112,21 @@
     "resultsFor": "Результаты для \"{search}\"",
     "productsCount": "{count} товаров",
     "retry": "Повторить",
-    "tryAnotherQuery": "Попробуйте другой запрос"
+    "tryAnotherQuery": "Попробуйте другой запрос",
+    "priceFilter": "Цена",
+    "from": "От",
+    "to": "До",
+    "reset": "Сбросить",
+    "done": "Готово",
+    "show": "Показать",
+    "filters": "Фильтры",
+    "sortBy": "Сортировка",
+    "resetFilters": "Сбросить фильтры",
+    "sortNewest": "Сначала новые",
+    "sortPriceAsc": "Цена: по возрастанию",
+    "sortPriceDesc": "Цена: по убыванию",
+    "category": "Категория",
+    "brand": "Бренд"
   },
   "Category": {
     "notFound": "Категория не найдена",
@@ -305,7 +319,10 @@
     "increase": "Увеличить количество",
     "added": "Добавлено",
     "addedToCartToast": "Товар добавлен в корзину",
-    "priceLabel": "Цена за шт.:"
+    "priceLabel": "Цена за шт.:",
+    "inCart": "В корзине",
+    "reviews": "{count} отзывов",
+    "noReviews": "Нет отзывов"
   },
   "ProductDetail": {
     "backToCatalog": "Назад в каталог",
@@ -318,6 +335,7 @@
     "invoiceTracking": "Включены счет и отслеживание доставки",
     "outOfStock": "Нет в наличии",
     "seller": "Продавец: {name}",
+    "sellerLabel": "Продавец",
     "notFound": "Товар не найден.",
     "onlyCustomersCanBuy": "Покупка доступна только клиентам",
     "back": "Назад",
@@ -763,6 +781,7 @@
     "to": "До",
     "filters": "Фильтры",
     "show": "Показать",
+    "more": "ещё",
     "noFilteredProducts": "Нет товаров по выбранным фильтрам",
     "resetFilters": "Сбросить фильтры",
     "resetAll": "Сбросить всё",

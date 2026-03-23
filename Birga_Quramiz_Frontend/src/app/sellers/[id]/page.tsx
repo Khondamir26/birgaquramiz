@@ -297,7 +297,7 @@ export default function SellerProfilePage() {
         <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 py-6 space-y-5">
           <div className="h-[88px] rounded-xl bg-[#f0f0f0] animate-pulse" />
           <div className="h-10 rounded-xl bg-[#f0f0f0] animate-pulse" />
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+          <div className="grid gap-2 md:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 10 }).map((_, i) => <div key={i} className="rounded-2xl bg-[#f0f0f0] h-[320px] animate-pulse" />)}
           </div>
         </div>
@@ -444,7 +444,7 @@ export default function SellerProfilePage() {
         </div>
 
         {/* ── Filter toolbar using NavigationMenu ── */}
-        <div className="flex items-center gap-0 pb-3">
+        <div className="flex items-center gap-0 pb-3 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
           <NavigationMenu viewport={false} value={openMenu} onValueChange={setOpenMenu} className="max-w-none justify-start h-9">
             <NavigationMenuList className="gap-2 justify-start flex-nowrap h-9">
 
@@ -836,7 +836,7 @@ export default function SellerProfilePage() {
               {hasActiveFilters && <button onClick={clearAllFilters} className="mt-3 text-[14px] font-bold text-[#1B4D91] hover:underline">{t("resetFilters")}</button>}
             </div>
           ) : (
-            <div className={`grid gap-3 grid-cols-2 sm:grid-cols-3 ${viewMode === "4col" ? "md:grid-cols-4" : "md:grid-cols-4 xl:grid-cols-5"}`}>
+            <div className={`grid gap-2 md:gap-3 grid-cols-2 sm:grid-cols-3 ${viewMode === "4col" ? "md:grid-cols-4" : "md:grid-cols-4 xl:grid-cols-5"}`}>
               {filteredProducts.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import type { Product } from "@/types";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
+
+const UZ_MONTHS = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
 
 type StickyPurchaseCardProps = {
   product: Product;
@@ -35,13 +37,13 @@ export default function StickyPurchaseCard({
   const locale = useLocale();
   const [sellerPopupOpen, setSellerPopupOpen] = useState(false);
 
-  const estimatedDate = new Date();
-  estimatedDate.setDate(estimatedDate.getDate() + 2);
-
-  const UZ_MONTHS = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
-  const formattedDate = locale === "uz"
-    ? `${estimatedDate.getDate()} ${UZ_MONTHS[estimatedDate.getMonth()]}`
-    : new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(estimatedDate);
+  const formattedDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return locale === "uz"
+      ? `${d.getDate()} ${UZ_MONTHS[d.getMonth()]}`
+      : new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(d);
+  }, [locale]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tSeller = useTranslations("SellerProfile");
 
@@ -55,13 +57,13 @@ export default function StickyPurchaseCard({
 
   return (
     <div className="hidden lg:flex flex-col w-full shrink-0 order-4 relative z-10">
-      <div className="sticky top-[100px] flex flex-col bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+      <div className="flex flex-col bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100">
 
         {/* Price */}
         <div className="flex flex-col mb-4">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-[32px] font-black tracking-tight text-[#11253d] leading-none">
-              {(price * (quantity || 1)).toLocaleString("ru-RU")}
+              {(price * (quantity || 1)).toLocaleString(locale === "en" ? "en-US" : "ru-RU")}
               <span className="text-[18px] font-bold ml-1.5 text-slate-400">{t("currencyUzs")}</span>
             </span>
           </div>

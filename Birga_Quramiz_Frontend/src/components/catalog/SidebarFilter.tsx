@@ -62,7 +62,7 @@ export default function SidebarFilter({
             {/* Mobile Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[60] bg-[#1B4D91]/20 backdrop-blur-sm md:hidden"
+                    className="fixed inset-0 z-[60] bg-[#1B4D91]/20 backdrop-blur-sm lg:hidden"
                     onClick={onClose}
                 />
             )}
@@ -70,12 +70,12 @@ export default function SidebarFilter({
             {/* Sidebar Container */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 right-0 z-[70] w-full max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out md:sticky md:top-24 md:z-0 md:w-[280px] md:translate-x-0 md:bg-white md:rounded-3xl md:shadow-sm md:border md:border-slate-200/60 md:h-fit flex flex-col pt-10 px-6 md:pt-6 md:px-6 pb-10 min-h-screen md:min-h-0",
+                    "fixed inset-y-0 right-0 z-[70] w-full max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-24 lg:z-0 lg:w-[280px] lg:translate-x-0 lg:bg-white lg:rounded-3xl lg:shadow-sm lg:border lg:border-slate-200/60 lg:h-fit flex flex-col pt-10 px-6 lg:pt-6 lg:px-6 pb-10 min-h-screen lg:min-h-0",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
                 {/* Mobile Header */}
-                <div className="flex items-center justify-between mb-8 md:hidden">
+                <div className="flex items-center justify-between mb-8 lg:hidden">
                     <div className="flex items-center gap-2 text-[#1B4D91]">
                         <Filter className="size-5" />
                         <h2 className="text-lg font-black tracking-tight">Filters</h2>
@@ -89,7 +89,7 @@ export default function SidebarFilter({
                 </div>
 
                 {/* Desktop Header */}
-                <div className="hidden items-center justify-between mb-6 md:flex border-b border-slate-100 pb-4">
+                <div className="hidden items-center justify-between mb-6 lg:flex border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-2 text-[#1B4D91]">
                         <Filter className="size-4.5" />
                         <h2 className="text-[17px] font-black tracking-tight">Filters</h2>
@@ -172,7 +172,7 @@ export default function SidebarFilter({
                     </button>
                     <button
                         onClick={handleClear}
-                        className="w-full rounded-2xl bg-slate-100 py-4 text-[13px] font-bold text-slate-500 hover:bg-slate-200 active:scale-[0.98] transition-all md:hidden"
+                        className="w-full rounded-2xl bg-slate-100 py-4 text-[13px] font-bold text-slate-500 hover:bg-slate-200 active:scale-[0.98] transition-all lg:hidden"
                     >
                         Clear All
                     </button>

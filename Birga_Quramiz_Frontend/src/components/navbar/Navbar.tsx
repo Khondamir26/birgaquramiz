@@ -187,7 +187,7 @@ export default function Navbar() {
       {/* Mobile Header - Only visible on Home page */}
       {["/", "/ru", "/uz", "/en", "/ru/", "/uz/", "/en/"].includes(pathname) && (
         <div
-          className="flex h-[74px] w-full items-center justify-between border-b border-white/10 px-4 shadow-[0_12px_34px_rgba(11,49,144,0.24)] md:hidden"
+          className="flex h-[74px] w-full items-center justify-between border-b border-white/10 px-4 shadow-[0_12px_34px_rgba(11,49,144,0.24)] lg:hidden"
           style={{ background: headerGradient }}
         >
           <Link
@@ -203,13 +203,13 @@ export default function Navbar() {
         </div>
       )}
 
-        <div className={`hidden md:block ${headerShellClass}`} style={{ background: headerGradient }}>
+        <div className={`hidden lg:block ${headerShellClass}`} style={{ background: headerGradient }}>
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_38%,rgba(0,0,0,0.08))]" />
           <div className="absolute inset-x-0 bottom-0 h-px bg-white/20" />
 
           <NavbarTopBar
             city={tNav("city")}
-            linksSlot={<NavbarLinks links={resolvedNavLinks.filter(l => l.id !== "home")} pathname={pathname} className="hidden items-center gap-2 xl:flex" />}
+            linksSlot={<NavbarLinks links={resolvedNavLinks.filter(l => l.id !== "home")} pathname={pathname} className="hidden items-center gap-2 lg:flex" />}
             rightSlot={<LanguageSwitcher compact />}
           />
 

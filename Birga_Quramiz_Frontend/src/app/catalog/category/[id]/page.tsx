@@ -97,6 +97,7 @@ export default function CatalogCategoryPage() {
       }
       void loadProducts();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category?.id, category?.parentId]);
 
   const handleShowAllProducts = () => {
@@ -221,7 +222,7 @@ export default function CatalogCategoryPage() {
         {isParent && !showAllProducts && (
           <>
             {childrenLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="h-20 rounded-2xl bg-white animate-pulse" />
                 ))}
@@ -233,20 +234,20 @@ export default function CatalogCategoryPage() {
             ) : (
               <>
                 {/* Subcategory cards — full width grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
                   {children.map((child) => (
                     <Link
                       key={child.id}
                       href={`/catalog/category/${child.slug ?? child.id}`}
-                      className="group flex items-center gap-4 bg-white hover:bg-[#f0f4ff] active:bg-[#e4ebff] rounded-2xl px-4 md:px-5 py-4 md:py-5 shadow-sm hover:shadow-md transition-all duration-200"
+                      className="group flex items-center gap-2.5 md:gap-4 bg-white hover:bg-[#f0f4ff] active:bg-[#e4ebff] rounded-2xl px-3 md:px-5 py-3 md:py-5 shadow-sm hover:shadow-md transition-all duration-200"
                     >
-                      <div className={cn("shrink-0 flex size-10 md:size-12 items-center justify-center rounded-xl", iconColor)}>
-                        <IconComponent className="size-5 md:size-6" />
+                      <div className={cn("shrink-0 flex size-8 md:size-12 items-center justify-center rounded-xl", iconColor)}>
+                        <IconComponent className="size-4 md:size-6" />
                       </div>
-                      <span className="flex-1 text-[14px] md:text-[15px] font-semibold text-slate-800 leading-snug">
+                      <span className="flex-1 text-[12px] md:text-[15px] font-semibold text-slate-800 leading-snug line-clamp-2">
                         {getCategoryName(child, locale)}
                       </span>
-                      <ChevronRight className="size-4 text-slate-300 group-hover:text-[#1B4D91] shrink-0 group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="size-3.5 md:size-4 text-slate-300 group-hover:text-[#1B4D91] shrink-0 group-hover:translate-x-0.5 transition-all" />
                     </Link>
                   ))}
                 </div>

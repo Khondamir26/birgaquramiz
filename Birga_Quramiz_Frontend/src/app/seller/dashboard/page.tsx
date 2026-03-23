@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSellerAnalytics } from "@/lib/api/seller";
 import { getMySellerProducts } from "@/lib/api/products";
 import { getSellerOrders } from "@/lib/api/orders";
@@ -67,7 +67,7 @@ export default function SellerDashboardPage() {
     }
   }, [isInitialized, isAuthenticated, user, fetchData]);
 
-  const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
+  const statusConfig = useMemo<Record<string, { label: string; icon: typeof CheckCircle; color: string }>>(() => ({
     DELIVERED: { label: t("statusDelivered"), icon: CheckCircle, color: "#10b981" },
     NEW: { label: t("statusNew"), icon: Clock, color: "#f59e0b" },
     PAID: { label: t("statusPaid"), icon: AlertCircle, color: "#3b82f6" },
@@ -76,7 +76,7 @@ export default function SellerDashboardPage() {
     CANCELLED: { label: t("statusCancelled"), icon: XCircle, color: "#ef4444" },
     SHIPPED: { label: t("statusShipped"), icon: Truck, color: "#8b5cf6" },
     PENDING: { label: t("statusPending"), icon: Clock, color: "#f59e0b" },
-  };
+  }), [t]);
 
   if (!isInitialized || loading || (isAuthenticated && !user)) {
     return (
@@ -285,9 +285,9 @@ export default function SellerDashboardPage() {
                   { label: t("statusPending"), count: pendingProducts, color: "#f59e0b", bg: "#fef3c7" },
                   { label: t("statusRejected"), count: rejectedProducts, color: "#ef4444", bg: "#fee2e2" },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl p-3 text-center" style={{ backgroundColor: item.bg }}>
-                    <p className="text-[22px] font-black" style={{ color: item.color }}>{item.count}</p>
-                    <p className="text-[10px] font-bold mt-0.5 uppercase tracking-wider" style={{ color: item.color }}>{item.label}</p>
+                  <div key={item.label} className="rounded-2xl p-2.5 md:p-3 text-center" style={{ backgroundColor: item.bg }}>
+                    <p className="text-[18px] md:text-[22px] font-black" style={{ color: item.color }}>{item.count}</p>
+                    <p className="text-[9px] md:text-[10px] font-bold mt-0.5 uppercase tracking-wider" style={{ color: item.color }}>{item.label}</p>
                   </div>
                 ))}
               </div>
@@ -354,7 +354,7 @@ export default function SellerDashboardPage() {
           {totalRevenue > 0 && (
             <div className="rounded-3xl bg-gradient-to-r from-[#1B4D91] to-[#2a6dd9] p-6 text-white shadow-lg shadow-[#1B4D91]/20">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">{t("revenueTitle")}</p>
-              <p className="text-3xl font-black">{totalRevenue.toLocaleString("ru-RU")} <span className="text-xl opacity-60">UZS</span></p>
+              <p className="text-2xl md:text-3xl font-black">{totalRevenue.toLocaleString("ru-RU")} <span className="text-lg md:text-xl opacity-60">UZS</span></p>
               <div className="mt-3 h-px bg-white/10" />
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {[

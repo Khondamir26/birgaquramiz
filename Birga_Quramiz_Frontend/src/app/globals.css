@@ -169,6 +169,13 @@
     scroll-behavior: smooth;
   }
 
+  /* Product page: navbar scrolls with content (not sticky) */
+  body.product-page header {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1 !important;
+  }
+
   /* Prevent overscroll bounce on mobile for better app feel */
   html,
   body {
@@ -194,11 +201,9 @@
     touch-action: manipulation;
   }
 
-  /* Enhancing button feeling on mobile */
+  /* Minimum touch target size (Apple HIG) */
   button {
-    @apply transition-transform active:scale-95;
     min-height: 44px;
-    /* Apple Human Interface Guidelines minimum touch target size */
   }
 
   .home-swiper .swiper-pagination {

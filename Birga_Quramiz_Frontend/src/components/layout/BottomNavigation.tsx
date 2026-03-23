@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,38 +26,34 @@ export default function BottomNavigation() {
     // ── Admin tabs: Dashboard | Users | Products | Orders | Profile
     // ── Seller tabs: Dashboard | Products | Orders | AI | Profile
     // ── User tabs:   Home | Catalog | Cart | Favorites | Profile
-    let navItems: Array<{ href: string, icon: React.ElementType, label: string, showCartBadge?: boolean, showFavBadge?: boolean }> = [];
-
-    if (isAdmin) {
-        navItems = [
+    const navItems = useMemo<Array<{ href: string; icon: React.ElementType; label: string; showCartBadge?: boolean; showFavBadge?: boolean }>>(() => {
+        if (isAdmin) return [
             { href: "/admin", icon: LayoutDashboard, label: t("adminDashboard") },
             { href: "/admin/products", icon: Package, label: t("adminProducts") },
             { href: "/admin/users", icon: Users, label: t("users") },
             { href: "/admin/orders", icon: ClipboardList, label: t("orders") },
             { href: "/profile", icon: User, label: t("profile") },
         ];
-    } else if (isSeller) {
-        navItems = [
+        if (isSeller) return [
             { href: "/seller/dashboard", icon: LayoutDashboard, label: t("sellerDashboard") },
             { href: "/seller/products", icon: Package, label: t("myProducts") },
             { href: "/seller/orders", icon: ClipboardList, label: t("orders") },
             { href: "/ai-chat", icon: Bot, label: t("aiConsultant") },
             { href: "/profile", icon: User, label: t("profile") },
         ];
-    } else {
-        navItems = [
+        return [
             { href: "/", icon: Home, label: t("home"), showCartBadge: false, showFavBadge: false },
             { href: "/catalog", icon: LayoutGrid, label: t("catalog"), showCartBadge: false, showFavBadge: false },
             { href: "/cart", icon: ShoppingCart, label: t("cart"), showCartBadge: true, showFavBadge: false },
             { href: "/favorites", icon: Heart, label: t("favorites"), showCartBadge: false, showFavBadge: true },
             { href: "/profile", icon: User, label: t("profile"), showCartBadge: false, showFavBadge: false },
         ];
-    }
+    }, [isAdmin, isSeller, t]);
 
     return (
         <nav
             className={cn(
-                "fixed bottom-0 left-0 right-0 z-50 md:hidden",
+                "fixed bottom-0 left-0 right-0 z-50 lg:hidden",
                 "bg-white/95 backdrop-blur-md",
                 "border-t border-slate-100",
                 "pb-[calc(env(safe-area-inset-bottom)+6px)] pt-2",

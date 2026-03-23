@@ -6,8 +6,9 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, X } from "lucide-react";
 
 type SpecsDrawerProps = {
   open: boolean;
@@ -51,10 +52,15 @@ export default function SpecsDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col bg-white border-l-0 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] gap-0">
-        <SheetHeader className="px-6 py-5 border-b border-slate-100 bg-white z-10 sticky top-0">
-          <SheetTitle className="text-[20px] font-bold text-[#242424] leading-tight">
+        <SheetHeader className="px-6 py-4 border-b border-slate-100 bg-white z-10 sticky top-0 flex flex-row items-center justify-between">
+          <SheetTitle className="text-[18px] font-bold text-[#242424] leading-tight">
             {t("specsAndDescription")}
           </SheetTitle>
+          <SheetClose asChild>
+            <button className="text-slate-300 hover:text-slate-600 transition-colors" aria-label="Close">
+              <X className="size-5" strokeWidth={2} />
+            </button>
+          </SheetClose>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto w-full px-6 py-6 pb-[140px]">

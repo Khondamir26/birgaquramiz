@@ -68,10 +68,10 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 lg:gap-5 lg:contents md:contents relative">
+    <div className="flex flex-col xl:flex-row gap-4 xl:gap-5 xl:contents relative">
 
-      {/* ── Desktop: Vertical thumbnail strip ── */}
-      <div className="hidden md:flex flex-col relative w-[84px] shrink-0 lg:col-start-1" style={{ maxHeight: 560 }}>
+      {/* ── Desktop: Vertical thumbnail strip — hidden below xl (1280px) ── */}
+      <div className="hidden xl:flex flex-col relative w-[84px] shrink-0 xl:col-start-1 xl:sticky xl:top-6 xl:self-start" style={{ maxHeight: 560 }}>
 
         {showTopFade && (
           <button
@@ -120,9 +120,9 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       </div>
 
       {/* ── Main image ── */}
-      <div className="relative w-full lg:col-start-2 place-self-start z-10">
+      <div className="relative max-w-[464px] mx-auto w-full lg:max-w-none xl:col-start-2 xl:sticky xl:top-6 xl:self-start z-10">
         <div
-          className="relative w-full aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] overflow-hidden bg-slate-50 rounded-2xl md:rounded-3xl border border-slate-100 select-none"
+          className="relative w-full aspect-square lg:aspect-[3/4] xl:aspect-[4/5] overflow-hidden bg-slate-50 lg:rounded-3xl border-0 lg:border lg:border-slate-100 select-none"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -140,63 +140,34 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
             <>
               <button
                 onClick={prev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 hidden md:flex w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm items-center justify-center shadow-md hover:bg-white hover:scale-105 transition-all border border-slate-100 z-10"
+                className="absolute left-3 top-1/2 -translate-y-1/2 hidden lg:flex w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm items-center justify-center shadow-md hover:bg-white hover:scale-105 transition-all border border-slate-100 z-10"
                 aria-label="Previous"
               >
                 <ChevronLeft className="size-4 text-slate-700" />
               </button>
               <button
                 onClick={next}
-                className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm items-center justify-center shadow-md hover:bg-white hover:scale-105 transition-all border border-slate-100 z-10"
+                className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm items-center justify-center shadow-md hover:bg-white hover:scale-105 transition-all border border-slate-100 z-10"
                 aria-label="Next"
               >
                 <ChevronRight className="size-4 text-slate-700" />
               </button>
 
               {/* Counter badge */}
-              <span className="absolute bottom-3 right-3 hidden md:flex bg-black/40 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
+              <span className="absolute bottom-3 right-3 hidden lg:flex bg-black/40 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
                 {activeIndex + 1} / {images.length}
               </span>
             </>
           )}
 
-          {/* Mobile: dot indicators */}
+          {/* Mobile: X / Y counter bottom-left */}
           {images.length > 1 && (
-            <div className="md:hidden absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 px-4 z-10">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveIndex(i)}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-300 shadow-sm",
-                    i === activeIndex ? "w-6 bg-[#1B4D91]" : "w-1.5 bg-white/80"
-                  )}
-                />
-              ))}
-            </div>
+            <span className="lg:hidden absolute bottom-3 left-3 bg-black/40 text-white text-[12px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
+              {activeIndex + 1} / {images.length}
+            </span>
           )}
         </div>
 
-        {/* Mobile: horizontal thumbnail strip below main image */}
-        {images.length > 1 && (
-          <div className="md:hidden flex gap-2 mt-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {images.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveIndex(i)}
-                className={cn(
-                  "shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all",
-                  i === activeIndex
-                    ? "border-[#1B4D91] shadow-md"
-                    : "border-transparent opacity-55 hover:opacity-100"
-                )}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
     </div>

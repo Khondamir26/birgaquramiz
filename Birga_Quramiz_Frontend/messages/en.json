@@ -112,7 +112,21 @@
     "resultsFor": "Results for \"{search}\"",
     "productsCount": "{count} products",
     "retry": "Retry",
-    "tryAnotherQuery": "Try another search query"
+    "tryAnotherQuery": "Try another search query",
+    "priceFilter": "Price",
+    "from": "From",
+    "to": "To",
+    "reset": "Reset",
+    "done": "Done",
+    "show": "Show",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "resetFilters": "Reset filters",
+    "sortNewest": "Newest first",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "category": "Category",
+    "brand": "Brand"
   },
   "Category": {
     "notFound": "Category not found",
@@ -305,7 +319,10 @@
     "decrease": "Decrease quantity",
     "addedToCartToast": "Product added to cart",
     "increase": "Increase quantity",
-    "priceLabel": "Price per item:"
+    "priceLabel": "Price per item:",
+    "inCart": "In cart",
+    "reviews": "{count} reviews",
+    "noReviews": "No reviews"
   },
   "ProductDetail": {
     "backToCatalog": "Back to catalog",
@@ -318,6 +335,7 @@
     "invoiceTracking": "Invoice and shipment tracking included",
     "outOfStock": "Out of stock",
     "seller": "Seller",
+    "sellerLabel": "Seller",
     "notFound": "Product not found.",
     "onlyCustomersCanBuy": "Only customers can buy",
     "back": "Back",
@@ -533,6 +551,7 @@
     "to": "To",
     "filters": "Filters",
     "show": "Show",
+    "more": "more",
     "noFilteredProducts": "No products match the filters",
     "resetFilters": "Reset filters",
     "resetAll": "Reset all",

@@ -112,7 +112,21 @@
     "resultsFor": "\"{search}\" uchun natijalar",
     "productsCount": "{count} ta mahsulot",
     "retry": "Qayta urinish",
-    "tryAnotherQuery": "Boshqa so'rov bilan qidiring"
+    "tryAnotherQuery": "Boshqa so'rov bilan qidiring",
+    "priceFilter": "Narx",
+    "from": "Dan",
+    "to": "Gacha",
+    "reset": "Tozalash",
+    "done": "Tayyor",
+    "show": "Ko'rsatish",
+    "filters": "Filtrlar",
+    "sortBy": "Saralash",
+    "resetFilters": "Filtrlarni tozalash",
+    "sortNewest": "Yangilari",
+    "sortPriceAsc": "Arzondan qimmatga",
+    "sortPriceDesc": "Qimmatdan arzonga",
+    "category": "Kategoriya",
+    "brand": "Brend"
   },
   "Category": {
     "notFound": "Kategoriya topilmadi",
@@ -305,7 +319,10 @@
     "decrease": "Miqdorni kamaytirish",
     "addedToCartToast": "Mahsulot savatga qoshildi",
     "increase": "Miqdorni oshirish",
-    "priceLabel": "Donasi uchun narx:"
+    "priceLabel": "Donasi uchun narx:",
+    "inCart": "Savatda",
+    "reviews": "{count} ta sharh",
+    "noReviews": "Sharhlar yo'q"
   },
   "ProductDetail": {
     "backToCatalog": "Katalogga qaytish",
@@ -318,6 +335,7 @@
     "invoiceTracking": "Hisob-faktura va yetkazib berish kuzatuvi mavjud",
     "outOfStock": "Mavjud emas",
     "seller": "Sotuvchi: {name}",
+    "sellerLabel": "Sotuvchi",
     "notFound": "Mahsulot topilmadi.",
     "onlyCustomersCanBuy": "Faqat mijozlar xarid qilishi mumkin",
     "back": "Orqaga",
@@ -743,6 +761,7 @@
     "to": "Shungacha",
     "filters": "Filtrlar",
     "show": "Ko'rsatish",
+    "more": "ta",
     "noFilteredProducts": "Tanlangan filtrlar bo'yicha mahsulot yo'q",
     "resetFilters": "Filtrlarni tozalash",
     "resetAll": "Hammasini tozalash",
