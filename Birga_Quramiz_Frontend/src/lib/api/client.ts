@@ -1,5 +1,8 @@
 import { clearSessionHint, markSessionHint } from '@/lib/auth/sessionHint'
+// Server-side: use internal Docker network URL to avoid public internet roundtrip
+// Client-side: use the public API URL baked in at build time
 const BASE_URL =
+  (typeof window === 'undefined' && process.env.API_INTERNAL_URL) ||
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === 'production'
     ? 'https://api.birga-quramiz.uz'

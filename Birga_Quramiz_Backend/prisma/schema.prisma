@@ -55,7 +55,6 @@ model User {
   telegramPhoto    String?
   languageCode     String?
   role             Role     @default(USER)
-  refreshTokenHash String?
   createdAt        DateTime @default(now())
 
   authSessions AuthSession[]
@@ -216,6 +215,8 @@ model Review {
 
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
 }
 
 model Brand {

@@ -72,6 +72,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-G-T853TX7K3C}
     container_name: birga-frontend
     restart: unless-stopped
     environment:

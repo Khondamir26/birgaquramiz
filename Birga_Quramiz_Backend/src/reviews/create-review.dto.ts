@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, IsOptional, IsArray, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsOptional, IsArray, Min, Max, MaxLength } from 'class-validator';
 
 export class CreateReviewDto {
   @IsNotEmpty()
@@ -13,14 +13,17 @@ export class CreateReviewDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   pros?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   cons?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   comment?: string;
 
   @IsOptional()

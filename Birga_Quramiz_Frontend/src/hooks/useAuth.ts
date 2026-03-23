@@ -19,12 +19,17 @@ function initializeAuth() {
       let user: User | null = null
 
       if (typeof window !== 'undefined') {
-        let attempts = 0
-        // Wait up to 500ms for Telegram WebApp
-        // @ts-expect-error window.Telegram might not be defined
-        while (!window.Telegram?.WebApp && attempts < 10) {
-          await new Promise(resolve => setTimeout(resolve, 50))
-          attempts++
+        // Only poll for Telegram SDK when the page was opened inside a Telegram WebApp.
+        // Telegram appends `tgWebAppData` to the URL hash — skip entirely for normal users.
+        const isTelegramContext = window.location.hash.includes('tgWebAppData')
+
+        if (isTelegramContext) {
+          let attempts = 0
+          // @ts-expect-error window.Telegram might not be defined
+          while (!window.Telegram?.WebApp && attempts < 10) {
+            await new Promise(resolve => setTimeout(resolve, 50))
+            attempts++
+          }
         }
 
         // @ts-expect-error window.Telegram might not be defined

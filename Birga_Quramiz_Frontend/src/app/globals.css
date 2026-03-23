@@ -236,19 +236,6 @@
     box-shadow: 0 18px 54px rgba(11, 49, 144, 0.34);
   }
 
-  /* hide-scrollbar.css */
-  .hide-scrollbar {
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE & Edge */
-  }
-
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari and Opera */
-  }
-
   /* Wildberries-exact scrollbar */
   .scrollbar-thin-wb {
     scrollbar-width: thin;

@@ -1,76 +1,52 @@
 import type { MetadataRoute } from 'next';
 
+const BASE = 'https://birga-quramiz.uz';
+const API  = process.env.API_INTERNAL_URL || 'https://api.birga-quramiz.uz';
+
+async function fetchAllPages<T>(path: string, pageSize = 200): Promise<T[]> {
+  const results: T[] = [];
+  let page = 1;
+  while (true) {
+    const res = await fetch(`${API}${path}?page=${page}&limit=${pageSize}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) break;
+    const json = await res.json();
+    const items: T[] = Array.isArray(json) ? json : (json.data ?? []);
+    results.push(...items);
+    const total: number = json.meta?.total ?? json.total ?? items.length;
+    if (results.length >= total || items.length < pageSize) break;
+    page++;
+  }
+  return results;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = 'https://birga-quramiz.uz';
+  const [products, brands] = await Promise.all([
+    fetchAllPages<{ slug: string; updatedAt?: string }>('/products').catch(() => []),
+    fetchAllPages<{ slug: string; updatedAt?: string }>('/brands').catch(() => []),
+  ]);
 
-  // 1. Fetch dynamic products
-  let products: { slug: string }[] = [];
-  try {
-    const res = await fetch('https://api.birga-quramiz.uz/products', { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const json = await res.json();
-      // Handle both array and paginated response { data: [] }
-      products = Array.isArray(json) ? json : (json.data || []);
-    }
-  } catch (error) {
-    console.error('Failed to fetch products for sitemap:', error);
-  }
+  const staticRoutes = ['/', '/catalog', '/seller', '/builders', '/equipment', '/about', '/help', '/brands'];
 
-  const productPages: MetadataRoute.Sitemap = Array.isArray(products) ? products.map((product) => ({
-    url: `${base}/product/${product.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily',
-    priority: 0.9,
-  })) : [];
-
-  // 2. Fetch dynamic brands
-  let brands: { slug: string }[] = [];
-  try {
-    const res = await fetch('https://api.birga-quramiz.uz/brands', { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const json = await res.json();
-      // Handle both array and paginated response { data: [] }
-      brands = Array.isArray(json) ? json : (json.data || []);
-    }
-  } catch (error) {
-    console.error('Failed to fetch brands for sitemap:', error);
-  }
-
-  const brandPages: MetadataRoute.Sitemap = Array.isArray(brands) ? brands.map((brand) => ({
-    url: `${base}/brands/${brand.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  })) : [];
-
-  // 3. Define static pages
-  const staticRoutes = [
-    '/catalog',
-    '/seller',
-    '/builders',
-    '/equipment',
-    '/about',
-    '/help',
-    '/brands',
-  ];
-
-  const staticPages: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
-    url: `${base}${route}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
-
-  // 4. Return full final sitemap
   return [
-    {
-      url: base,
+    ...staticRoutes.map((route) => ({
+      url: `${BASE}${route}`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    ...staticPages,
-    ...productPages,
-    ...brandPages,
+      changeFrequency: 'weekly' as const,
+      priority: route === '/' ? 1.0 : 0.8,
+    })),
+    ...products.filter((p) => p.slug).map((p) => ({
+      url: `${BASE}/product/${p.slug}`,
+      lastModified: p.updatedAt ? new Date(p.updatedAt) : new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    })),
+    ...brands.filter((b) => b.slug).map((b) => ({
+      url: `${BASE}/brands/${b.slug}`,
+      lastModified: b.updatedAt ? new Date(b.updatedAt) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
   ];
 }

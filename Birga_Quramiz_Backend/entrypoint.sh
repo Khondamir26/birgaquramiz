@@ -12,8 +12,12 @@ until nc -z "$DB_HOST" "$DB_PORT"; do
   sleep 2
 done
 
-echo "Database is up - running Prisma migrations..."
-npx prisma migrate deploy
+if [ "$SKIP_MIGRATION" = "true" ]; then
+  echo "Skipping Prisma migrations (SKIP_MIGRATION=true)"
+else
+  echo "Database is up - running Prisma migrations..."
+  npx prisma migrate deploy
+fi
 
 echo "Ensuring uploads directory exists..."
 mkdir -p uploads/products

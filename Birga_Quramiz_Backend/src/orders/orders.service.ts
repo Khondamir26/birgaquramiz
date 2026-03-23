@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import type { CreateOrderDto } from './dto/create-order.dto'
 import type { AuthUser } from '../auth/auth.types'
@@ -17,18 +17,13 @@ export class OrdersService {
     private telegramService: TelegramService,
   ) { }
 
-  private ensureSellerProfile(
+  private async getSellerProfile(
     user: AuthUser,
     prismaClient: PrismaService | Prisma.TransactionClient = this.prisma,
   ) {
-    return prismaClient.seller.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        company: `${user.name} Store`,
-      },
-    })
+    const seller = await prismaClient.seller.findUnique({ where: { userId: user.id } })
+    if (!seller) throw new NotFoundException('Seller profile not found')
+    return seller
   }
 
   async create(user: AuthUser, payload: CreateOrderDto) {
@@ -117,36 +112,26 @@ export class OrdersService {
         }
       })
 
-      for (const item of items) {
-        const product = productsMap.get(item.productId)
-        if (!product) continue
+      // Batch insert all order items in one query
+      await tx.orderItem.createMany({
+        data: items.map((item) => {
+          const product = productsMap.get(item.productId)!
+          return { orderId: order.id, productId: product.id, quantity: item.quantity, price: product.price }
+        }),
+      })
 
-        await tx.orderItem.create({
-          data: {
-            orderId: order.id,
-            productId: product.id,
-            quantity: item.quantity,
-            price: product.price,
-          },
-        })
+      // Decrement stock in parallel (each product has a different amount)
+      const stockUpdates = await Promise.all(
+        items.map((item) =>
+          tx.product.updateMany({
+            where: { id: item.productId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          }),
+        ),
+      )
 
-        const updatedProduct = await tx.product.updateMany({
-          where: {
-            id: product.id,
-            stock: {
-              gte: item.quantity,
-            },
-          },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        })
-
-        if (updatedProduct.count === 0) {
-          throw new BadRequestException('Not enough stock (concurrent update)')
-        }
+      if (stockUpdates.some((r) => r.count === 0)) {
+        throw new BadRequestException('Not enough stock (concurrent update)')
       }
 
       return order
@@ -251,7 +236,7 @@ export class OrdersService {
     }
 
     if (user.role === 'SELLER') {
-      const seller = await this.ensureSellerProfile(user)
+      const seller = await this.getSellerProfile(user)
 
       const ownsProduct = order.items.some((item) => item.product.sellerId === seller.id)
       if (!ownsProduct) throw new BadRequestException('Not your order')
@@ -292,7 +277,7 @@ export class OrdersService {
   }
 
   async sellerOrders(user: AuthUser, status?: string, page = 1, limit = 10) {
-    const seller = await this.ensureSellerProfile(user)
+    const seller = await this.getSellerProfile(user)
 
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
@@ -377,7 +362,7 @@ export class OrdersService {
       }
 
       if (user.role === 'SELLER') {
-        const seller = await this.ensureSellerProfile(user, tx)
+        const seller = await this.getSellerProfile(user, tx)
 
         const ownsProduct = await tx.orderItem.findFirst({
           where: {
@@ -409,16 +394,15 @@ export class OrdersService {
 
       if (updated.count === 0) throw new BadRequestException('Order cannot be cancelled')
 
-      for (const item of order.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              increment: item.quantity,
-            },
-          },
-        })
-      }
+      // Restore stock in parallel
+      await Promise.all(
+        order.items.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          }),
+        ),
+      )
 
       return { message: 'Order cancelled successfully' }
     })

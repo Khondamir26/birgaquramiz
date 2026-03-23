@@ -3,9 +3,7 @@ import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
 const PRIMARY_DOMAIN = 'birga-quramiz.uz'
-
 const ACCESS_COOKIE = 'access_token'
-
 const ADMIN_PATH = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
 
@@ -18,21 +16,15 @@ function isAdminPath(pathname: string) {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`)
 }
 
-async function hasAdminRole(request: NextRequest) {
+async function getRole(request: NextRequest): Promise<string | null> {
   const token = request.cookies.get(ACCESS_COOKIE)?.value
   const jwtSecret = process.env.JWT_SECRET
-
-  if (!token || !jwtSecret) return false
-
+  if (!token || !jwtSecret) return null
   try {
-    const { payload } = await jwtVerify(
-      token,
-      new TextEncoder().encode(jwtSecret)
-    )
-
-    return payload.role === 'ADMIN'
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(jwtSecret))
+    return (payload.role as string) ?? null
   } catch {
-    return false
+    return null
   }
 }
 
@@ -40,41 +32,37 @@ export async function proxy(request: NextRequest) {
   const host = normalizeHost(request.headers.get('host'))
   const { pathname, search } = request.nextUrl
 
-  // ⭐ canonical redirect ONLY for wrong production domains
-  if (
-    host === 'birgaquramiz.uz' ||
-    host === 'www.birgaquramiz.uz'
-  ) {
-    return NextResponse.redirect(
-      `https://${PRIMARY_DOMAIN}${pathname}${search}`,
-      301
-    )
+  // Canonical redirect for wrong domains
+  if (host === 'birgaquramiz.uz' || host === 'www.birgaquramiz.uz') {
+    return NextResponse.redirect(`https://${PRIMARY_DOMAIN}${pathname}${search}`, 301)
   }
 
-  // ⭐ skip non-admin pages
-  if (!isAdminPath(pathname)) {
-    return NextResponse.next()
+  const role = await getRole(request)
+
+  // Redirect authenticated users away from /login
+  if (pathname === '/login' && role) {
+    const dest = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/seller/dashboard' : '/'
+    return NextResponse.redirect(new URL(dest, request.url))
   }
 
-  const isAdmin = await hasAdminRole(request)
+  // Admin route protection
+  if (isAdminPath(pathname)) {
+    const isAdmin = role === 'ADMIN'
 
-  // ⭐ logged admin → don't allow login page
-  if (pathname === ADMIN_LOGIN_PATH && isAdmin) {
-    return NextResponse.redirect(new URL(ADMIN_PATH, request.url))
-  }
+    if (pathname === ADMIN_LOGIN_PATH && isAdmin) {
+      return NextResponse.redirect(new URL(ADMIN_PATH, request.url))
+    }
 
-  // ⭐ not admin → go to admin login
-  if (pathname !== ADMIN_LOGIN_PATH && !isAdmin) {
-    const loginUrl = new URL(ADMIN_LOGIN_PATH, request.url)
-    loginUrl.searchParams.set('next', `${pathname}${search}`)
-    return NextResponse.redirect(loginUrl)
+    if (pathname !== ADMIN_LOGIN_PATH && !isAdmin) {
+      const loginUrl = new URL(ADMIN_LOGIN_PATH, request.url)
+      loginUrl.searchParams.set('next', `${pathname}${search}`)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next|.*\\..*).*)'
-  ]
+  matcher: ['/((?!api|_next|.*\\..*).*)',],
 }

@@ -2,6 +2,7 @@
 
 import { useFavorites } from "@/hooks/useFavorites";
 import { useTranslations } from "next-intl";
+import type { Product } from "@/types";
 import ProductCard from "@/components/product/ProductCard";
 import { Heart } from "lucide-react";
 
@@ -66,7 +67,7 @@ export default function FavoritesPage() {
                     <div className="px-4 md:px-6 pt-4 md:pt-0">
                         <div className="grid grid-cols-2 gap-3 md:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {items.map((product) => (
-                                <ProductCard key={product.id} product={product} />
+                                <ProductCard key={product.id} product={product as Product} />
                             ))}
                         </div>
                     </div>

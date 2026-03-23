@@ -6,15 +6,10 @@ import type { AuthUser } from '../auth/auth.types'
 export class SellerService {
   constructor(private prisma: PrismaService) {}
 
-  private ensureSellerProfile(user: AuthUser, company?: string) {
-    return this.prisma.seller.upsert({
-      where: { userId: user.id },
-      update: company?.trim() ? { company: company.trim() } : {},
-      create: {
-        userId: user.id,
-        company: company?.trim() || `${user.name} Store`,
-      },
-    })
+  private async getSellerProfile(user: AuthUser) {
+    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
+    if (!seller) throw new NotFoundException('Seller profile not found')
+    return seller
   }
 
   async becomeSeller(company: string, user: AuthUser) {
@@ -22,77 +17,62 @@ export class SellerService {
       throw new BadRequestException('Admins cannot become sellers')
     }
 
-    const seller = await this.ensureSellerProfile(user, company)
-
-    if (user.role === 'USER') {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { role: 'SELLER' },
-      })
-    }
+    // Create or return existing seller profile — do NOT grant SELLER role yet.
+    // Role is only upgraded once an admin calls verifySeller().
+    const seller = await this.prisma.seller.upsert({
+      where: { userId: user.id },
+      update: company?.trim() ? { company: company.trim() } : {},
+      create: {
+        userId: user.id,
+        company: company?.trim() || `${user.name} Store`,
+      },
+    })
 
     return {
-      message: 'Now you are SELLER',
+      message: 'Your seller application has been submitted and is pending admin approval.',
       seller,
     }
   }
 
   async getAnalytics(user: AuthUser) {
-    const seller = await this.ensureSellerProfile(user)
+    const seller = await this.getSellerProfile(user)
 
-    const orders = await this.prisma.order.findMany({
-      where: {
-        items: {
-          some: {
-            product: {
-              sellerId: seller.id,
-            },
-          },
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    })
+    // Count orders per status using DB aggregation — no full record fetch
+    const [statusCounts, revenueResult, totalOrdersResult] = await Promise.all([
+      this.prisma.order.groupBy({
+        by: ['status'],
+        where: { items: { some: { product: { sellerId: seller.id } } } },
+        _count: { id: true },
+      }),
+      this.prisma.orderItem.aggregate({
+        where: { product: { sellerId: seller.id }, order: { status: 'DELIVERED' } },
+        _sum: { price: true, quantity: true },
+      }),
+      this.prisma.order.count({
+        where: { items: { some: { product: { sellerId: seller.id } } } },
+      }),
+    ])
 
-    let totalRevenue = 0
-    let totalDelivered = 0
-    let totalCancelled = 0
-    let totalNew = 0
-    let totalConfirmed = 0
-    let totalShipped = 0
-
-    for (const order of orders) {
-      if (order.status === 'DELIVERED') {
-        totalDelivered++
-
-        for (const item of order.items) {
-          if (item.product.sellerId === seller.id) {
-            totalRevenue += item.price * item.quantity
-          }
-        }
-      }
-
-      if (order.status === 'CANCELLED') totalCancelled++
-      if (order.status === 'NEW') totalNew++
-      if (order.status === 'CONFIRMED') totalConfirmed++
-      if (order.status === 'SHIPPED') totalShipped++
+    const breakdown: Record<string, number> = {
+      NEW: 0, CONFIRMED: 0, SHIPPED: 0, DELIVERED: 0, CANCELLED: 0,
+    }
+    for (const row of statusCounts) {
+      breakdown[row.status] = row._count.id
     }
 
+    // Revenue = sum(price * quantity) for delivered items
+    // Since Prisma aggregate can't do price*qty, we compute from raw sum of price field
+    // (price in OrderItem stores the unit price; quantity is separate)
+    const deliveredItems = await this.prisma.orderItem.findMany({
+      where: { product: { sellerId: seller.id }, order: { status: 'DELIVERED' } },
+      select: { price: true, quantity: true },
+    })
+    const totalRevenue = deliveredItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
+
     return {
-      totalOrders: orders.length,
+      totalOrders: totalOrdersResult,
       totalRevenue,
-      breakdown: {
-        NEW: totalNew,
-        CONFIRMED: totalConfirmed,
-        SHIPPED: totalShipped,
-        DELIVERED: totalDelivered,
-        CANCELLED: totalCancelled,
-      },
+      breakdown,
     }
   }
 

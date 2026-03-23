@@ -304,10 +304,11 @@ export class AdminService {
     const seller = await this.prisma.seller.findUnique({ where: { id: sellerId } })
     if (!seller) throw new NotFoundException('Seller not found')
 
-    await this.prisma.seller.update({
-      where: { id: sellerId },
-      data: { verified: true },
-    })
+    // Verify seller and grant SELLER role atomically
+    await this.prisma.$transaction([
+      this.prisma.seller.update({ where: { id: sellerId }, data: { verified: true } }),
+      this.prisma.user.update({ where: { id: seller.userId }, data: { role: 'SELLER' } }),
+    ])
 
     return { message: 'Seller verified' }
   }

@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
-import { extname, join } from 'path'
+import { join } from 'path'
 import type { Request } from 'express'
 import { UploadService } from '../upload/upload.service'
 import { ProductsService } from './products.service'
@@ -28,11 +28,20 @@ import type { AuthUser } from '../auth/auth.types'
 
 type AuthedRequest = Request & { user: AuthUser }
 
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png':  '.png',
+  'image/webp': '.webp',
+  'image/avif': '.avif',
+  'image/gif':  '.gif',
+}
+
 const multerStorage = diskStorage({
   destination: join(process.cwd(), 'uploads', 'products'),
   filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-    cb(null, `${uniqueSuffix}${extname(file.originalname)}`)
+    const ext = MIME_TO_EXT[file.mimetype] ?? '.jpg'
+    cb(null, `${uniqueSuffix}${ext}`)
   },
 })
 
@@ -180,13 +189,6 @@ export class ProductsController {
   @Post('admin/approve/:id')
   approve(@Param('id') id: string) {
     return this.productsService.approve(id)
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  @Post('admin/reject/:id')
-  reject(@Param('id') id: string) {
-    return this.productsService.reject(id)
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

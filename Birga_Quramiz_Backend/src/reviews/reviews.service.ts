@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './create-review.dto';
 import { AuthUser } from '../auth/auth.types';
@@ -10,43 +10,41 @@ export class ReviewsService {
   async create(userId: string, data: CreateReviewDto) {
     const { productId, rating, pros, cons, comment, images } = data;
 
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
 
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
+    // Verify the user has purchased and received this product
+    const purchased = await this.prisma.orderItem.findFirst({
+      where: {
+        productId,
+        order: { userId, status: 'DELIVERED' },
+      },
+    });
+    if (!purchased) throw new ForbiddenException('You can only review products you have purchased');
+
+    // Prevent duplicate reviews (DB unique constraint is the final guard)
+    const existing = await this.prisma.review.findUnique({
+      where: { productId_userId: { productId, userId } },
+    });
+    if (existing) throw new ConflictException('You have already reviewed this product');
 
     return this.prisma.$transaction(async (tx) => {
-      // Create the review
       const review = await tx.review.create({
-        data: {
-          productId,
-          userId,
-          rating,
-          pros,
-          cons,
-          comment,
-          images: images || [],
-        },
+        data: { productId, userId, rating, pros, cons, comment, images: images || [] },
       });
 
-      // Fetch all reviews for this product to recalculate rating
-      const allReviews = await tx.review.findMany({
+      // Use DB aggregate instead of fetching all reviews
+      const agg = await tx.review.aggregate({
         where: { productId },
-        select: { rating: true },
+        _avg: { rating: true },
+        _count: { id: true },
       });
 
-      const reviewsCount = allReviews.length;
-      const averageRating = allReviews.reduce((acc, curr) => acc + curr.rating, 0) / reviewsCount;
-
-      // Update product with new aggregates
       await tx.product.update({
         where: { id: productId },
         data: {
-          rating: averageRating,
-          reviewsCount,
+          rating: agg._avg.rating ?? rating,
+          reviewsCount: agg._count.id,
         },
       });
 

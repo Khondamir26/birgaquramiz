@@ -8,6 +8,16 @@ import { generateProductSlug } from './slug.util'
 
 type CreateProductInput = CreateProductDto & { imageUrls: string[] }
 
+function parseSpecifications(value: unknown): object | undefined {
+  if (!value) return undefined
+  if (typeof value === 'object') return value as object
+  try {
+    return JSON.parse(value as string)
+  } catch {
+    throw new BadRequestException('Invalid specifications: must be valid JSON')
+  }
+}
+
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) { }
@@ -63,7 +73,7 @@ export class ProductsService {
           brandId: data.brandId,
           sku,
           slug,
-          specifications: data.specifications ? (typeof data.specifications === 'string' ? JSON.parse(data.specifications) : data.specifications) : undefined,
+          specifications: parseSpecifications(data.specifications),
         },
         include: {
           brand: true,
@@ -308,7 +318,7 @@ export class ProductsService {
             categoryId,
             sku: newSku,
             slug: newSlug,
-            specifications: rest.specifications ? (typeof rest.specifications === 'string' ? JSON.parse(rest.specifications) : rest.specifications) : undefined,
+            specifications: parseSpecifications(rest.specifications),
             status: 'PENDING',
           },
           include: {
@@ -340,7 +350,7 @@ export class ProductsService {
         ...updateData,
         ...imageFields,
         ...(updatedSlug ? { slug: updatedSlug } : {}),
-        specifications: updateData.specifications ? (typeof updateData.specifications === 'string' ? JSON.parse(updateData.specifications) : updateData.specifications) : undefined,
+        specifications: parseSpecifications(updateData.specifications),
         status: 'PENDING',
       },
       include: {
