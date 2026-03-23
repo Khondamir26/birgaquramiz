@@ -376,7 +376,22 @@
     "bestPrice": "Eng yaxshi narx",
     "descriptionLabel": "Tavsif",
     "specificationsLabel": "Xususiyatlar",
-    "deliveryFromSeller": "sotuvchi ombori"
+    "deliveryFromSeller": "sotuvchi ombori",
+    "reviewsTab": "Baholar",
+    "questionsTab": "Savollar",
+    "buyersChoice": "Xaridorlar tanlovi",
+    "ratingsCount": "{count} ta baho",
+    "noReviewsYet": "Hozircha sharhlar yo'q",
+    "pros": "Tovar plyuslari",
+    "cons": "Tovar minuslari",
+    "viewAllPhotos": "Barcha fotosurat va videolarni ko'rish",
+    "viewAllReviews": "Barcha fikr-mulohazalarni ko'rish",
+    "viewAllCount": "Barcha {count} ta sharhni ko'rish",
+    "askQuestion": "Tovar haqida savol bering",
+    "noQuestions": "Savollar hozircha yo'q",
+    "questionsCount": "{count} savol",
+    "similarTitle": "Bularni ham ko'ring",
+    "similarAll": "Barchasi"
   },
   "Builders": {
     "title": "Tasdiqlangan ustalar",

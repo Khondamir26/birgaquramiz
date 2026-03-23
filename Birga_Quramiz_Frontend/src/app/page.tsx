@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { getProducts } from "@/lib/api/products";
 import type { Product } from "@/types";
@@ -46,7 +44,7 @@ export default function HomePage() {
       {/* Preload LCP banner image — HomeSwiper is ssr:false so the browser needs this hint */}
       <link rel="preload" as="image" href="/images/banners/construction_bg.avif" fetchPriority="high" />
       <div className="mx-auto w-full md:max-w-[1440px]">
-        <div className="mx-auto flex flex-col gap-8 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+        <div className="flex flex-col gap-8 px-3 md:px-6 pt-4 md:pt-6">
 
           {/* Hero Swiper Section */}
           <HomeSwiper />
@@ -54,7 +52,7 @@ export default function HomePage() {
           {/* Product Sections */}
           <div className="flex flex-col gap-6 md:gap-8">
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 mt-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4 mt-2">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="rounded-2xl md:rounded-[32px] bg-white animate-pulse" style={{ height: 320 }} />
                 ))}
@@ -70,23 +68,17 @@ export default function HomePage() {
                 return (
                   <section
                     key={section.id}
-                    className="flex flex-col gap-5 bg-white rounded-3xl p-4 md:p-6 shadow-sm"
+                    className="flex flex-col gap-3 md:gap-5 bg-white rounded-3xl px-3 pt-3 pb-4 md:px-6 md:pt-5 md:pb-6 shadow-sm"
                   >
-                    <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center px-0.5">
                       <div className="flex flex-col gap-1">
-                        <h2 className="text-[20px] md:text-[24px] font-black text-[#1B4D91] leading-none">{section.title}</h2>
+                        <h2 className="text-[18px] md:text-[24px] font-black text-[#1B4D91] leading-none">{section.title}</h2>
                         <div className="h-1 w-10 bg-navbar-gradient rounded-full" />
                       </div>
-                      <Link href="/catalog" className="group flex items-center gap-1 text-[13px] font-bold text-slate-500 hover:text-[#1B4D91] transition-all">
-                        {t('allProducts') || 'Все'}
-                        <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 group-hover:bg-[#1B4D91]/10 transition-colors">
-                          <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                      </Link>
                     </div>
 
-                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 ">
-                      {section.items.slice(0, 5).map((product) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
+                      {section.items.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
                     </div>

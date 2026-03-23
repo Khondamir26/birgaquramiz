@@ -68,7 +68,7 @@ export function useMarketplaceSearch(shortcuts: MarketplaceShortcut[], debounceM
         }));
         setProductResults(products);
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [debouncedQuery]);
 

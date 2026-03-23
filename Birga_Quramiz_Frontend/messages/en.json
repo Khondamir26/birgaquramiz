@@ -376,7 +376,22 @@
     "bestPrice": "Best price",
     "descriptionLabel": "Description",
     "specificationsLabel": "Specifications",
-    "deliveryFromSeller": "seller warehouse"
+    "deliveryFromSeller": "seller warehouse",
+    "reviewsTab": "Reviews",
+    "questionsTab": "Questions",
+    "buyersChoice": "Buyers' choice",
+    "ratingsCount": "{count} ratings",
+    "noReviewsYet": "No reviews yet",
+    "pros": "Product pros",
+    "cons": "Product cons",
+    "viewAllPhotos": "View all photos & videos",
+    "viewAllReviews": "View all reviews",
+    "viewAllCount": "View all {count} reviews",
+    "askQuestion": "Ask a question about the product",
+    "noQuestions": "No questions yet",
+    "questionsCount": "{count} questions",
+    "similarTitle": "You may also like",
+    "similarAll": "All"
   },
   "Builders": {
     "title": "Verified Builders",

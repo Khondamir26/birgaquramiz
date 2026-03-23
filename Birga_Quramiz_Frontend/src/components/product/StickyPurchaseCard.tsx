@@ -5,8 +5,7 @@ import type { Product } from "@/types";
 import { ChevronRight, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
-
-const UZ_MONTHS = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
+import { UZ_MONTHS } from "@/lib/date";
 
 type StickyPurchaseCardProps = {
   product: Product;

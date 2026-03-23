@@ -144,9 +144,9 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
           ) : (
             <button
               onClick={handleAddToCart}
-              className="w-full h-full cursor-pointer rounded-2xl bg-[#275fdb] border-[1.5px] border-[#275fdb] gap-2 text-white text-[15px] font-semibold flex items-center justify-center transition-colors hover:bg-opacity-90 active:scale-[0.98]"
+              className="w-full py-2.5 cursor-pointer rounded-2xl bg-[#275fdb] border-[1.5px] border-[#275fdb] gap-1.5 md:gap-2 text-white text-[12px] md:text-[14px] font-semibold flex items-center justify-center transition-colors hover:bg-opacity-90 active:scale-[0.98]"
             >
-              <ShoppingCart size={16}  />
+              <ShoppingCart className="size-[13px] md:size-[15px] shrink-0" />
               {t("addToCart")}
             </button>
           )}

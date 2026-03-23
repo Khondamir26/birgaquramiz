@@ -79,6 +79,7 @@ export default function CatalogPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const categoryListRef = useRef<HTMLDivElement>(null);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string; nameEn?: string | null; nameUz?: string | null }>>([]);
   const [availableBrands, setAvailableBrands] = useState<Array<{ id: string; name: string }>>([]);
@@ -110,8 +111,13 @@ export default function CatalogPage() {
   }, [q]);
 
   useEffect(() => {
-    getCategories().then(setAllCategories).catch(console.error);
+    getCategories().then(setAllCategories).catch(() => {});
   }, []);
+
+  // Reset category list scroll position instantly when drilling in/out
+  useEffect(() => {
+    if (categoryListRef.current) categoryListRef.current.scrollTop = 0;
+  }, [selectedParent]);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,9 +266,9 @@ export default function CatalogPage() {
 
       {/* ── MOBILE: WB-style catalog ── */}
       {!isDesktop && (
-        <div className="flex flex-col pb-20">
+        <div className="flex flex-col h-[100dvh]">
           {/* Sticky search bar */}
-          <div className="sticky top-0 z-10 bg-white px-3 py-2.5 border-b border-[#f0f0f0]">
+          <div className="shrink-0 bg-white px-3 py-2.5 border-b border-[#f0f0f0] z-10">
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#999]" />
@@ -294,6 +300,9 @@ export default function CatalogPage() {
               </div>
             </div>
           </div>
+
+          {/* Scrollable content — owns its own scroll, never bounces the page */}
+          <div ref={categoryListRef} className="flex-1 overflow-y-auto pb-20">
 
           {/* Category navigation — no URL change until final click */}
           {!isMobileSearchActive && (
@@ -408,12 +417,12 @@ export default function CatalogPage() {
               )}
               {meta && meta.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-center gap-3 pb-4">
-                  <button disabled={page <= 1} onClick={() => { setPage((p) => p - 1); window.scrollTo(0, 0); }}
+                  <button disabled={page <= 1} onClick={() => { setPage((p) => p - 1); if (categoryListRef.current) categoryListRef.current.scrollTop = 0; }}
                     className={cn("flex size-10 items-center justify-center rounded-xl border-2 font-bold", page <= 1 ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
                     <ChevronLeft className="size-5" />
                   </button>
                   <span className="rounded-xl border-2 border-[#1B4D91]/20 bg-white px-5 py-2 text-[13px] font-black text-[#1B4D91]">{page} / {meta.totalPages}</span>
-                  <button disabled={page >= meta.totalPages} onClick={() => { setPage((p) => p + 1); window.scrollTo(0, 0); }}
+                  <button disabled={page >= meta.totalPages} onClick={() => { setPage((p) => p + 1); if (categoryListRef.current) categoryListRef.current.scrollTop = 0; }}
                     className={cn("flex size-10 items-center justify-center rounded-xl border-2 font-bold", page >= meta.totalPages ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
                     <ChevronRight className="size-5" />
                   </button>
@@ -421,6 +430,8 @@ export default function CatalogPage() {
               )}
             </div>
           )}
+
+          </div>{/* end scrollable content */}
         </div>
       )}
 

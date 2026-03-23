@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Eye, EyeOff, Phone, Lock, ArrowRight, Loader2 } from 'lucide-react'
@@ -13,6 +13,8 @@ export function LoginForm() {
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
   const setInitialized = useAuthStore((s) => s.setInitialized)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isInitialized = useAuthStore((s) => s.isInitialized)
   const t = useTranslations('Auth')
 
   const [phone, setPhone] = useState('')
@@ -20,6 +22,14 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Redirect already-logged-in users — must be after all hooks
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) router.replace('/')
+  }, [isInitialized, isAuthenticated, router])
+
+  // Render nothing until auth is known or while redirecting
+  if (!isInitialized || isAuthenticated) return null
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value))
@@ -35,7 +45,7 @@ export function LoginForm() {
       setInitialized(true)
       if (user.role === 'ADMIN') { router.push('/admin'); return }
       if (user.role === 'SELLER') { router.push('/seller/dashboard'); return }
-      router.push('/catalog')
+      router.push('/')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('loginFailed'))
     } finally {

@@ -376,7 +376,22 @@
     "bestPrice": "Лучшая цена",
     "descriptionLabel": "Описание",
     "specificationsLabel": "Характеристики",
-    "deliveryFromSeller": "склад продавца"
+    "deliveryFromSeller": "склад продавца",
+    "reviewsTab": "Отзывы",
+    "questionsTab": "Вопросы",
+    "buyersChoice": "Выбор покупателей",
+    "ratingsCount": "{count} оценок",
+    "noReviewsYet": "Пока нет отзывов",
+    "pros": "Плюсы товара",
+    "cons": "Минусы товара",
+    "viewAllPhotos": "Посмотреть все фото и видео",
+    "viewAllReviews": "Посмотреть все отзывы",
+    "viewAllCount": "Смотреть все {count} отзывов",
+    "askQuestion": "Задать вопрос о товаре",
+    "noQuestions": "Вопросов пока нет",
+    "questionsCount": "{count} вопросов",
+    "similarTitle": "Смотрите также",
+    "similarAll": "Все"
   },
   "Builders": {
     "title": "Проверенные строители",
