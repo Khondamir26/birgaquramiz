@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 import { useTranslations } from "next-intl";
 import { resolveImageUrl } from "@/lib/image";
 import { 
@@ -22,6 +23,7 @@ import Image from "next/image";
 export default function CartPage() {
   const router = useRouter();
   const { items, removeItem, increment, decrement, clearCart } = useCartStore();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
   const t = useTranslations("Cart");
 
   const [selectedItems, setSelectedItems] = useState<string[]>(items.map(i => i.id));
@@ -162,8 +164,26 @@ export default function CartPage() {
                           )}
                           
                           <div className="flex items-center gap-3 mt-0.5">
-                            <button className="size-10 flex items-center justify-center rounded-[12px] bg-[#F8FAFC] text-slate-400 hover:text-[#275fdb] hover:bg-slate-50 transition-all">
-                              <Heart className="size-5" />
+                            <button
+                              onClick={() => toggleFavorite({
+                                id: item.id,
+                                sku: item.sku,
+                                slug: item.id,
+                                sellerId: '',
+                                name: item.name,
+                                description: '',
+                                imageUrl: item.image,
+                                images: [item.image],
+                                price: item.price,
+                                stock: item.stock ?? 0,
+                                status: 'APPROVED',
+                                createdAt: '',
+                                brand: item.brandName ? { id: '', name: item.brandName, slug: '', logoUrl: '', featured: false, createdAt: '' } : null,
+                                seller: item.sellerCompany ? { id: '', userId: '', company: item.sellerCompany, verified: false } : undefined,
+                              })}
+                              className={`size-10 flex items-center justify-center rounded-[12px] bg-[#F8FAFC] transition-all ${isFavorite(item.id) ? 'text-[#E31E24]' : 'text-slate-400 hover:text-[#E31E24]'} hover:bg-slate-50`}
+                            >
+                              <Heart className={`size-5 ${isFavorite(item.id) ? 'fill-current' : ''}`} />
                             </button>
                             <button 
                               onClick={() => removeItem(item.id)}

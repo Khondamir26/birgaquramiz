@@ -15,6 +15,7 @@ export function LoginForm() {
   const setInitialized = useAuthStore((s) => s.setInitialized)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isInitialized = useAuthStore((s) => s.isInitialized)
+  const user = useAuthStore((s) => s.user)
   const t = useTranslations('Auth')
 
   const [phone, setPhone] = useState('')
@@ -25,8 +26,11 @@ export function LoginForm() {
 
   // Redirect already-logged-in users — must be after all hooks
   useEffect(() => {
-    if (isInitialized && isAuthenticated) router.replace('/')
-  }, [isInitialized, isAuthenticated, router])
+    if (!isInitialized || !isAuthenticated) return
+    if (user?.role === 'ADMIN') { router.replace('/admin'); return }
+    if (user?.role === 'SELLER') { router.replace('/seller/dashboard'); return }
+    router.replace('/')
+  }, [isInitialized, isAuthenticated, user, router])
 
   // Render nothing until auth is known or while redirecting
   if (!isInitialized || isAuthenticated) return null

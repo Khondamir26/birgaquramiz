@@ -245,6 +245,7 @@ export default function AdminDashboardPage() {
   const quickActions = [
     { label: t("actionProducts") || "Products",           sub: t("actionProductsSub") || "Moderation",        icon: Package,       href: "/admin/products",          accent: "#1B4D91" },
     { label: "Brands",                                     sub: "Manage catalog brands",                        icon: Tag,           href: "/admin/brands",            accent: "#8b5cf6" },
+    { label: "Категории",                                  sub: "Управление категориями",                        icon: Package,       href: "/admin/categories",        accent: "#0e9f6e" },
     { label: t("actionUsers") || "Users",                  sub: t("actionUsersSub") || "Control",              icon: Users,         href: "/admin/users",             accent: "#10b981" },
     { label: t("actionOrders") || "Orders",                sub: t("actionOrdersSub") || "Oversight",           icon: ClipboardList, href: "/admin/orders",            accent: "#f59e0b" },
     { label: t("actionDeletionRequests") || "Deletions",  sub: t("actionDeletionRequestsSub") || "Review",    icon: Trash2,        href: "/admin/deletion-requests", accent: "#E31E24" },

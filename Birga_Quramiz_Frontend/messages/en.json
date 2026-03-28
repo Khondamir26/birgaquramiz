@@ -86,6 +86,10 @@
     "deliveryText": "Delivery or pickup at checkout without mandatory registration.",
     "trustedProcess": "Trusted process",
     "trustedText": "Moderated products and role-based workflow for platform quality.",
+    "banner2Title": "Premium finishing materials",
+    "banner2Subtitle": "Marble, natural stone and ceramics from leading suppliers — for projects of any scale.",
+    "banner3Title": "Everything for renovation — in one place",
+    "banner3Subtitle": "Tiles, flooring, tools and fasteners. Thousands of items delivered straight to your site.",
     "startCatalog": "Start with catalog",
     "startCatalogText": "Product search, cart and checkout are available immediately, without forcing registration first.",
     "openProducts": "Open products",
@@ -299,7 +303,9 @@
     "title": "Favorites",
     "emptyTitle": "Favorites is empty",
     "emptyText": "Tap ♡ on any product to add it here",
-    "goMarketplace": "Browse catalog"
+    "goMarketplace": "Browse catalog",
+    "clearAll": "Clear all",
+    "itemsCount": "{count} items"
   },
   "Languages": {
     "en": "English",
@@ -366,6 +372,7 @@
     "writeReview": "Write a review",
     "recommended": "Recommended products",
     "article": "Article",
+    "articleCopied": "Article number copied",
     "brand": "Brand",
     "inStockCount": "In stock · {count} pcs",
     "specsAndDescription": "Specifications & description",
@@ -820,14 +827,23 @@
       "q2": "Are prices final?",
       "a2": "Yes, we work directly with factories to ensure transparent and final pricing.",
       "q3": "Do you offer technical support?",
-      "a3": "Yes, our AI Consultant and human support team are available 24/7."
-    }
+      "a3": "Yes, our AI Consultant and human support team are available 24/7.",
+      "q4": "Can I order without registration?",
+      "a4": "Yes, guest checkout is fully supported. Just enter your name and phone number at checkout.",
+      "q5": "How do I track my order?",
+      "a5": "If signed in, check the 'My Orders' section. Guests can contact support with their order ID.",
+      "q6": "What types of materials are available?",
+      "a6": "Building blocks, finishing materials, tools, electrical, plumbing, roofing, and more — all from verified sellers."
+    },
+    "supportTitle": "Need assistance?",
+    "supportText": "Our support team is ready to help with any question.",
+    "supportCta": "AI Consultant",
+    "contactUs": "Contact us"
   },
   "About": {
     "hero": {
       "title": "Birga Quramiz: Better Together",
-      "subtitle": "The first comprehensive construction marketplace in Uzbekistan, connecting verified sellers with customers through a professional ecosystem.",
-      "badge": "About Our Platform"
+      "subtitle": "The first comprehensive construction marketplace in Uzbekistan, connecting verified sellers with customers through a professional ecosystem."
     },
     "who": {
       "title": "Who We Are",
@@ -859,6 +875,21 @@
       "subtitle": "Join thousands of builders and homeowners already using Birga Quramiz.",
       "browse": "Browse Catalog",
       "becomeSeller": "Become a Seller"
+    },
+    "stats": {
+      "sellersLabel": "Verified Sellers",
+      "productsLabel": "Products",
+      "regionsLabel": "Regions",
+      "ordersLabel": "Orders Completed"
+    },
+    "details": {
+      "title": "Company Details",
+      "nameLabel": "Company",
+      "nameValue": "Birga Quramiz",
+      "innLabel": "Tax ID (INN)",
+      "addressLabel": "Address",
+      "addressValue": "Tashkent, Uzbekistan",
+      "emailLabel": "Email"
     }
   }
 }

@@ -199,7 +199,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       </div>
 
       {/* ── Mobile content ── */}
-      <div className="lg:hidden flex flex-col bg-[#e8e8ed] px-[6px] pt-1">
+      <div className="lg:hidden flex flex-col bg-[#e8e8ed] px-[6px] pt-1 pb-[130px]">
 
         {/* ── Card: Price ── */}
         <div className="bg-white rounded-2xl border border-[#e2e2e8] px-4 py-4">
@@ -401,7 +401,6 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
           </div>
         </div>
       )}
-      <div className="lg:hidden h-[130px]" />
       {/* Desktop: contained section below reviews */}
       <div className="hidden lg:block mx-auto w-full max-w-[1440px] px-6 pb-12 mt-4">
         <SimilarProducts product={product} />

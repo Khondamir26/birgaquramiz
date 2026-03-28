@@ -86,6 +86,7 @@
     "deliveryText": "Royxatdan otmasdan checkoutda yetkazib berish yoki olib ketishni tanlash mumkin.",
     "trustedProcess": "Ishonchli jarayon",
     "trustedText": "Mahsulot moderatsiyasi va rollarga asoslangan boshqaruv bilan sifat nazorati.",
+    "banner3Title": "Ta'mirlash uchun hamma narsa — bir joyda",
     "startCatalog": "Katalogdan boshlang",
     "startCatalogText": "Qidiruv, savat va checkout royxatdan otmasdan ham darhol mavjud.",
     "openProducts": "Mahsulotlarni ochish",
@@ -299,7 +300,9 @@
     "title": "Sevimlilar",
     "emptyTitle": "Sevimlilar bo'sh",
     "emptyText": "Istalgan mahsulotdagi ♡ tugmasini bosing",
-    "goMarketplace": "Katalogga o'tish"
+    "goMarketplace": "Katalogga o'tish",
+    "clearAll": "Tozalash",
+    "itemsCount": "{count} ta mahsulot"
   },
   "Languages": {
     "en": "Inglizcha",
@@ -366,6 +369,7 @@
     "writeReview": "Write a review",
     "recommended": "Recommended products",
     "article": "Maqola",
+    "articleCopied": "Mahsulot raqami nusxalandi",
     "brand": "Brend",
     "inStockCount": "Mavjud · {count} dona",
     "specsAndDescription": "Xususiyatlar va tavsif",
@@ -692,21 +696,30 @@
       "scoringDescription": "15 daqiqa ichida kredit limiti tasdiqlanadi."
     },
     "faq": {
-      "title": "Ko‘p so‘raladigan savollar",
+      "title": "Ko’p so’raladigan savollar",
       "description": "Platformamiz haqida tezkor javoblar.",
-      "q1": "Qanday qilib sotuvchi bo‘lish mumkin?",
-      "a1": "Pastki qismdagi 'Sotuvchi bo‘lish' tugmasini bosib, ro‘yxatdan o‘ting.",
+      "q1": "Qanday qilib sotuvchi bo’lish mumkin?",
+      "a1": "Pastki qismdagi ‘Sotuvchi bo’lish’ tugmasini bosib, ro’yxatdan o’ting.",
       "q2": "Narxlar yakuniymi?",
       "a2": "Ha, biz zavodlar bilan bevosita ishlaymiz va narxlar yakuniy hamda shaffof.",
       "q3": "Texnik yordam mavjudmi?",
-      "a3": "Ha, AI maslahatchi va qo‘llab-quvvatlash jamoamiz 24/7 xizmat ko‘rsatadi."
-    }
+      "a3": "Ha, AI maslahatchi va qo’llab-quvvatlash jamoamiz 24/7 xizmat ko’rsatadi.",
+      "q4": "Ro’yxatdan o’tmasdan buyurtma berish mumkinmi?",
+      "a4": "Ha, mehmon sifatida buyurtma berish to’liq qo’llab-quvvatlanadi. Faqat ism va telefon raqamingizni kiriting.",
+      "q5": "Buyurtma holatini qanday kuzatish mumkin?",
+      "a5": "Tizimga kirgan bo’lsangiz, ‘Mening buyurtmalarim’ bo’limini tekshiring. Mehmonlar buyurtma ID si bilan qo’llab-quvvatlashga murojaat qilishi mumkin.",
+      "q6": "Qanday materiallar mavjud?",
+      "a6": "Qurilish bloklari, pardozlash materiallari, asboblar, elektr, sanitariya, tom yopish va boshqalar — tasdiqlangan sotuvchilardan."
+    },
+    "supportTitle": "Yordam kerakmi?",
+    "supportText": "Qo’llab-quvvatlash jamoamiz har qanday savolingizga javob berishga tayyor.",
+    "supportCta": "AI Maslahatchi",
+    "contactUs": "Bog’lanish"
   },
   "About": {
     "hero": {
       "title": "Birga Quramiz: Birgalikda yaxshiroq",
-      "subtitle": "O‘zbekistondagi birinchi kompleks qurilish marketplace platformasi — tasdiqlangan sotuvchilar va xaridorlarni professional ekotizim orqali bog‘laymiz.",
-      "badge": "Platforma haqida"
+      "subtitle": "O’zbekistondagi birinchi kompleks qurilish marketplace platformasi — tasdiqlangan sotuvchilar va xaridorlarni professional ekotizim orqali bog’laymiz."
     },
     "who": {
       "title": "Biz kimmiz",
@@ -736,8 +749,23 @@
     "cta": {
       "title": "Qurilishni boshlashga tayyormisiz?",
       "subtitle": "Minglab quruvchilar va uy egalari allaqachon Birga Quramiz platformasidan foydalanmoqda.",
-      "browse": "Katalogni ko‘rish",
-      "becomeSeller": "Sotuvchi bo‘lish"
+      "browse": "Katalogni ko’rish",
+      "becomeSeller": "Sotuvchi bo’lish"
+    },
+    "stats": {
+      "sellersLabel": "Tasdiqlangan sotuvchilar",
+      "productsLabel": "Mahsulotlar",
+      "regionsLabel": "Viloyatlar",
+      "ordersLabel": "Bajarilgan buyurtmalar"
+    },
+    "details": {
+      "title": "Kompaniya rekvizitlari",
+      "nameLabel": "Nomi",
+      "nameValue": "Birga Quramiz",
+      "innLabel": "STIR",
+      "addressLabel": "Manzil",
+      "addressValue": "Toshkent, O’zbekiston",
+      "emailLabel": "Email"
     }
   },
   "SellerProfile": {

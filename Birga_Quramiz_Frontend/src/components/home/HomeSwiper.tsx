@@ -20,40 +20,42 @@ export default function HomeSwiper() {
     {
       id: 1,
       image: "/images/banners/bq.avif",
-      // title: t("bannerTitle") || "Welcome to Birga Quramiz!",
-      // subtitle: t("bannerSubtitle") || "Your trusted construction materials marketplace.",
+      title: t("bannerTitle"),
+      subtitle: t("bannerSubtitle"),
     },
     {
       id: 2,
-      image: "/images/banners/helmet.avif",
-      title: t("factoryPrices") || "Factory Prices",
-      subtitle: t("factoryText") || "Direct offers from verified sellers with transparent stock.",
+      image: "/images/banners/banner_1.avif",
+      title: t("banner2Title"),
+      subtitle: t("banner2Subtitle"),
     },
     {
       id: 3,
-      image: "/images/banners/trust.avif",
-      title: t("trustedProcess") || "Trusted Process",
-      subtitle: t("trustedText") || "Moderated products and role-based workflow for platform quality.",
+      image: "/images/banners/banner_3.avif",
+      title: t("banner3Title"),
+      subtitle: t("banner3Subtitle"),
     },
   ];
 
   const currentBanner = banners[activeIndex] || banners[0];
 
   return (
-    <div className="relative mx-auto w-full max-w-[1440px] overflow-hidden rounded-[16px] md:rounded-[32px] shadow-xl shadow-[#1B4D91]/5 bg-white">
+    <div className="relative mx-auto w-full max-w-[1440px] overflow-hidden rounded-3xl shadow-xl shadow-[#1B4D91]/5 bg-white">
+
+      {/* Left gradient so text is readable without covering image */}
+      <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
 
       {/* Fixed Content Overlay */}
-      <div className="absolute inset-0 z-10 pointer-events-none flex h-full items-center px-6 sm:px-12 md:px-20">
+      <div className="absolute inset-0 z-20 pointer-events-none flex h-full items-center px-6 sm:px-12 md:px-20">
         <div
           key={currentBanner.id}
-          className="max-w-[90%] md:max-w-[640px] animate-in fade-in duration-700 -mt-2 md:-mt-4"
+          className="w-[42%] sm:w-[38%] md:w-[34%] animate-in fade-in duration-700"
         >
-
-          <h2 className="text-[18px] sm:text-[28px] md:text-[44px] font-black text-white leading-[1.15] md:leading-[1.1] drop-shadow-lg text-balance tracking-tight">
+          <h2 className="text-[15px] sm:text-[20px] md:text-[26px] font-black text-white leading-[1.2] tracking-tight">
             {currentBanner.title}
           </h2>
 
-          <p className="mt-1.5 sm:mt-3 md:mt-5 text-[12px] sm:text-[14px] md:text-[17px] font-medium text-white/80 md:text-white/90 drop-shadow-md leading-relaxed max-w-[280px] sm:max-w-md md:max-w-xl line-clamp-2 md:line-clamp-none">
+          <p className="mt-1 sm:mt-2 text-[11px] sm:text-[12px] md:text-[13px] font-medium text-white/80 leading-relaxed line-clamp-2 md:line-clamp-3">
             {currentBanner.subtitle}
           </p>
         </div>
@@ -86,7 +88,7 @@ export default function HomeSwiper() {
                 sizes="100vw"
                 className="object-cover transition-opacity duration-1000"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0B2141]/90 via-[#0B2141]/50 sm:via-[#1B4D91]/40 to-transparent" />
+              <div className="absolute inset-0" />
             </div>
           </SwiperSlide>
         ))}

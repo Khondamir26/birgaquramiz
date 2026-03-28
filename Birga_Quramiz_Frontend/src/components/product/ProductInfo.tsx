@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Product } from "@/types";
 import CategoryCard from "./CategoryCard";
@@ -13,6 +14,18 @@ type ProductInfoProps = {
 export default function ProductInfo({ product, onOpenSpecs }: ProductInfoProps) {
   const t = useTranslations("ProductDetail");
   const locale = useLocale();
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const handleCopyArticle = (value: string) => {
+    navigator.clipboard.writeText(value);
+    setToastVisible(true);
+  };
+
+  useEffect(() => {
+    if (!toastVisible) return;
+    const timer = setTimeout(() => setToastVisible(false), 2200);
+    return () => clearTimeout(timer);
+  }, [toastVisible]);
 
   const tableRows = [
     { label: t("article"), value: product.sku || product.id.slice(0, 8).toUpperCase(), isId: true },
@@ -25,6 +38,19 @@ export default function ProductInfo({ product, onOpenSpecs }: ProductInfoProps) 
 
   return (
     <div className="flex flex-col gap-6 mt-2 md:mt-0 relative w-full min-w-0 order-2 md:order-none col-span-1">
+      {/* Article copied toast — desktop only */}
+      <div
+        className={`hidden md:flex fixed top-[150px] left-1/2 -translate-x-1/2 z-[9999] items-center gap-2.5 px-5 py-3 rounded-full bg-[#1a1a1a] text-white text-[13px] font-semibold shadow-2xl pointer-events-none transition-all duration-300 ${
+          toastVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+        }`}
+      >
+        <span className="flex size-4.5 items-center justify-center rounded-full bg-emerald-500 shrink-0">
+          <svg width="9" height="9" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>
+        {t("articleCopied")}
+      </div>
 
       {/* Brand badge & title */}
       <div className="flex flex-col gap-3">
@@ -81,13 +107,16 @@ export default function ProductInfo({ product, onOpenSpecs }: ProductInfoProps) 
                   </div>
                 </th>
                 <td className="py-2 pl-2 text-right md:text-left">
-                  <span className="text-[#242424] text-[14px] font-medium leading-tight inline-flex items-center gap-1.5">
+                  <span
+                    className={`text-[#242424] text-[14px] font-medium leading-tight inline-flex items-center gap-1.5 ${row.isId ? "cursor-pointer" : ""}`}
+                    onClick={row.isId ? () => handleCopyArticle(row.value) : undefined}
+                  >
                     {row.value}
                     {row.isId && (
                       <button
-                        onClick={() => navigator.clipboard.writeText(row.value)}
-                        className="text-[#a0a0a0] hover:text-slate-600 p-0.5"
-                        aria-label="Copy"
+                        onClick={(e) => { e.stopPropagation(); handleCopyArticle(row.value); }}
+                        className="text-[#a0a0a0] hover:text-slate-600 p-0.5 cursor-pointer"
+                        aria-label="Copy article"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                       </button>

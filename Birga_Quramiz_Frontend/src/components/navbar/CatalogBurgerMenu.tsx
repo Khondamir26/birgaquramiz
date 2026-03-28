@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { getCategoryName } from "@/lib/categoryName";
@@ -49,17 +50,31 @@ export default function CatalogBurgerMenu() {
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeParentId, setActiveParentId] = useState<string | null>(null);
-  const [headerH, setHeaderH] = useState(97);
+  const [panelTop, setPanelTop] = useState(97);
+  const [mounted, setMounted] = useState(false);
+
+  const updatePanelTop = useCallback(() => {
+    const header = document.querySelector("header");
+    if (header) {
+      setPanelTop(Math.max(0, header.getBoundingClientRect().bottom));
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   useLayoutEffect(() => {
-    const measure = () => {
-      const header = document.querySelector("header");
-      if (header) setHeaderH(header.getBoundingClientRect().height);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updatePanelTop();
+    window.addEventListener("resize", updatePanelTop);
+    window.addEventListener("scroll", updatePanelTop, { passive: true });
+    return () => {
+      window.removeEventListener("resize", updatePanelTop);
+      window.removeEventListener("scroll", updatePanelTop);
     };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
+  }, [updatePanelTop]);
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
@@ -84,29 +99,16 @@ export default function CatalogBurgerMenu() {
 
   const hasRight = !!activeParentId;
 
-  return (
+  const portalContent = mounted ? createPortal(
     <>
-      {/* ── Burger button — same height as search bar (56px) ── */}
-      <button
-        onClick={() => open ? close() : setOpen(true)}
-        aria-label="Open catalog"
-        aria-expanded={open}
-        className="flex items-center justify-center h-[56px] w-[56px] shrink-0 rounded-full border-2 border-white/25 bg-white/15 text-white transition-colors hover:bg-white/25 active:scale-[0.95]"
-      >
-        {open
-          ? <X className="size-6" strokeWidth={2} />
-          : <Menu className="size-6" strokeWidth={2} />
-        }
-      </button>
-
       {/* ── Backdrop overlay ── */}
       <div
         onClick={close}
         style={{
           position: "fixed",
           inset: 0,
-          top: headerH,
-          zIndex: 198,
+          top: panelTop,
+          zIndex: 1998,
           background: "rgba(0,0,0,0.5)",
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
@@ -119,10 +121,10 @@ export default function CatalogBurgerMenu() {
         style={{
           position: "fixed",
           left: 0,
-          top: headerH,
-          height: `calc(100dvh - ${headerH}px)`,
+          top: panelTop,
+          height: `calc(100dvh - ${panelTop}px)`,
           width: hasRight ? 620 : 270,
-          zIndex: 199,
+          zIndex: 1999,
           display: "flex",
           background: "#fff",
           boxShadow: "4px 0 40px rgba(15,35,80,0.18)",
@@ -222,6 +224,26 @@ export default function CatalogBurgerMenu() {
           )}
         </div>
       </div>
+    </>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      {/* ── Burger button — same height as search bar (56px) ── */}
+      <button
+        onClick={() => open ? close() : setOpen(true)}
+        aria-label="Open catalog"
+        aria-expanded={open}
+        className="flex items-center justify-center h-[56px] w-[56px] shrink-0 rounded-full border-2 border-white/25 bg-white/15 text-white transition-colors hover:bg-white/25 active:scale-[0.95]"
+      >
+        {open
+          ? <X className="size-6" strokeWidth={2} />
+          : <Menu className="size-6" strokeWidth={2} />
+        }
+      </button>
+
+      {portalContent}
     </>
   );
 }
