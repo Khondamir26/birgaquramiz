@@ -25,7 +25,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-20 pt-6 md:pt-10">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-10">
+      <div className="max-w-[1488px] mx-auto px-4 md:px-10">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6 md:mb-8">

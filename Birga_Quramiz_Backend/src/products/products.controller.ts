@@ -75,7 +75,7 @@ export class ProductsController {
       throw new BadRequestException('At least one product image is required')
     }
 
-    const imageUrls = files.map((f) => this.uploadService.uploadProductImage(f))
+    const imageUrls = await Promise.all(files.map((f) => this.uploadService.uploadProductImage(f)))
 
     return this.productsService.create({ ...body, imageUrls }, req.user)
   }
@@ -136,7 +136,7 @@ export class ProductsController {
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const newImageUrls = files && files.length > 0
-      ? files.map((f) => this.uploadService.uploadProductImage(f))
+      ? await Promise.all(files.map((f) => this.uploadService.uploadProductImage(f)))
       : undefined
 
     return this.productsService.updateMyProduct(id, body, req.user, newImageUrls)

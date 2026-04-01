@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
   if (!isInitialized || (isAuthenticated && !user)) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-        <div className="mx-auto w-full md:max-w-[1440px] px-4 md:px-6 pt-4 md:pt-6 flex flex-col gap-5">
+        <div className="mx-auto w-full md:max-w-[1488px] px-4 md:px-6 pt-4 md:pt-6 flex flex-col gap-5">
           <div className="h-28 animate-pulse rounded-3xl bg-white" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-      <div className="mx-auto w-full md:max-w-[1440px]">
+      <div className="mx-auto w-full md:max-w-[1488px]">
         <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
           {/* ── Hero banner ────────────────────────────────────────────────── */}

@@ -437,7 +437,7 @@ export default function CatalogPage() {
 
       {/* ── DESKTOP: filter toolbar + products ── */}
       {isDesktop && (
-        <div className="mx-auto w-full max-w-[1440px]">
+        <div className="mx-auto w-full max-w-[1488px]">
           <div className="px-6 pt-5">
             <Breadcrumbs items={breadcrumbItems} />
           </div>

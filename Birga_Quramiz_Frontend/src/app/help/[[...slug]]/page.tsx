@@ -154,7 +154,7 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-20 md:pb-12">
-      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 pt-5 md:pt-8 flex flex-col gap-6">
+      <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6 pt-5 md:pt-8 flex flex-col gap-6">
 
         {/* Hero */}
         <div className="rounded-3xl bg-[#1B4D91] px-7 py-8 md:px-10 md:py-10 flex items-center justify-between relative overflow-hidden">

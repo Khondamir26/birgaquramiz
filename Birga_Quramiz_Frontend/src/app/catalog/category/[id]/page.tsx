@@ -113,7 +113,7 @@ export default function CatalogCategoryPage() {
     return (
       <div className="min-h-screen bg-[#f4f6fa]">
         <div className="w-full h-[260px] md:h-[340px] bg-slate-200 animate-pulse" />
-        <div className="mx-auto max-w-[1440px] px-4 md:px-8 py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mx-auto max-w-[1488px] px-4 md:px-8 py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-28 rounded-2xl bg-white animate-pulse" />
           ))}
@@ -165,7 +165,7 @@ export default function CatalogCategoryPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B2141]/60 via-transparent to-transparent" />
 
         {/* All hero content constrained to 1440px container */}
-        <div className="absolute inset-0 mx-auto w-full max-w-[1440px] px-4 md:px-8 flex flex-col justify-between py-4 md:py-6">
+        <div className="absolute inset-0 mx-auto w-full max-w-[1488px] px-4 md:px-8 flex flex-col justify-between py-4 md:py-6">
           {/* Top row: back button */}
           <button
             onClick={() => router.back()}
@@ -211,7 +211,7 @@ export default function CatalogCategoryPage() {
       </div>
 
       {/* ── Content ── */}
-      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8 pt-4 md:pt-6">
+      <div className="mx-auto w-full max-w-[1488px] px-4 md:px-8 pt-4 md:pt-6">
 
         {/* Breadcrumb — desktop only */}
         <div className="hidden md:block mb-6">

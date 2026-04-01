@@ -1,0 +1,23 @@
+<svg width="446" height="595" viewBox="0 0 446 595" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect
+    x="8"
+    y="8"
+    width="430"
+    height="579"
+    rx="32"
+    stroke="url(#paint0_linear)"
+    stroke-width="10"
+    filter="url(#glow)"
+  />
+
+  <defs>
+    <linearGradient id="paint0_linear" x1="223" y1="0" x2="223" y2="595" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#133781" />
+      <stop offset="1" stop-color="#2065F0" />
+    </linearGradient>
+
+    <filter id="glow" x="0" y="0" width="446" height="595" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#2065F0" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+</svg>

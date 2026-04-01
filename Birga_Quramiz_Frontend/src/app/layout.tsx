@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Navbar from '@/components/layout/Navbar';
-import { acrom, onest } from './fonts';
+import { acrom, onest, manrope } from './fonts';
 import ClientLayout from "@/components/layout/ClientLayout";
 import Script from 'next/script';
 import { Toaster } from 'sonner';
@@ -118,7 +118,7 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://api.birga-quramiz.uz" />
       </head>
-      <body className={`${acrom.className} ${onest.variable} antialiased tap-highlight-none text-foreground bg-background`}>
+      <body className={`${acrom.className} ${onest.variable} ${manrope.variable} antialiased tap-highlight-none text-foreground bg-background`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="flex min-h-screen flex-col">
             <Navbar />

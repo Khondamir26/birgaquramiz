@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ProductFrame from "@/components/ui/ProductFrame";
 import {
   createProduct,
   deleteMySellerProduct,
@@ -127,6 +128,7 @@ export default function SellerProductsPage() {
   const [editingLoading, setEditingLoading] = useState(false);
 
   const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<Product | null>(null);
+  const [viewMode, setViewMode] = useState<"3col" | "4col">("4col");
 
   const editingProduct = useMemo(
     () => products.find((p) => p.id === editingId) || null,
@@ -472,7 +474,7 @@ export default function SellerProductsPage() {
   };
 
   return (
-    <div className="page-shell max-w-[1440px] space-y-4 md:space-y-6 pb-24 md:pb-32 px-2 md:px-0">
+    <div className="page-shell max-w-[1488px] space-y-4 md:space-y-6 pb-24 md:pb-32 px-2 md:px-0">
 
       {/* Premium Header */}
       <section className="surface-card rounded-2xl md:rounded-[32px] p-4 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
@@ -577,6 +579,40 @@ export default function SellerProductsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Grid toggle buttons */}
+          <div className="hidden md:flex items-center gap-1 bg-white border-2 border-slate-100 rounded-2xl px-2 h-14 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+            <button
+              onClick={() => setViewMode("3col")}
+              className="p-2 rounded-xl transition-colors"
+              aria-label="3 columns"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={viewMode === "3col" ? "text-[#1B4D91]" : "text-[#bbb]"}>
+                <rect x="2" y="2" width="6" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="9" y="2" width="6" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="16" y="2" width="6" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="2" y="13" width="6" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="9" y="13" width="6" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="16" y="13" width="6" height="9" rx="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode("4col")}
+              className="p-2 rounded-xl transition-colors"
+              aria-label="4+ columns"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={viewMode === "4col" ? "text-[#1B4D91]" : "text-[#bbb]"}>
+                <rect x="1" y="2" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="7" y="2" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="13" y="2" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="19" y="2" width="4" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="1" y="13" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="7" y="13" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="13" y="13" width="5" height="9" rx="1.5" fill="currentColor"/>
+                <rect x="19" y="13" width="4" height="9" rx="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -615,96 +651,74 @@ export default function SellerProductsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 text-left">
+          <div className={`grid gap-3 md:gap-4 ${viewMode === "3col" ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"}`}>
             {filteredAndSortedProducts.map((product) => {
               const active = product.status === "APPROVED";
               const rejected = product.status === "REJECTED";
               const actionBusy = actionProductId === product.id;
 
               return (
-                <article key={product.id} onClick={() => router.push(`/seller/products/${product.id}`)} className="surface-card rounded-2xl md:rounded-[32px] p-3 md:p-5 shadow-[0_4px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all border border-slate-100 flex flex-col h-[320px] md:h-[480px] bg-white group overflow-hidden cursor-pointer">
-
-                  {/* Top Header: Image & Quick Info */}
-                  <div className="flex flex-col md:flex-col gap-3 md:gap-4 shrink-0">
-                    {/* Fixed Size Thumbnail Container */}
-                    <div className="w-full relative shrink-0">
-                      <div className="aspect-[4/3] md:aspect-[16/10] w-full rounded-xl md:rounded-[24px] bg-slate-50 border border-slate-100 overflow-hidden relative">
-                        {product.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={resolveImageUrl(product.imageUrl)} alt={product.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
-                          <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-slate-100 text-[10px] md:text-sm font-bold text-slate-400">{t("noPhoto")}</div>
-                        )}
-
-                        {/* Status Overlay */}
-                        <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10">
-                          <div className={`inline-flex items-center px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider shadow-sm ${active ? "bg-green-100/90 text-green-700 backdrop-blur-md" : rejected ? "bg-red-100/90 text-red-700 backdrop-blur-md" : "bg-amber-100/90 text-amber-700 backdrop-blur-md"}`}>
-                            {product.status}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Core Info - Strict Height Constraints */}
-                    <div className="flex-1 w-full flex flex-col px-0.5">
-                      {/* SKU */}
-                      {product.sku && (
-                        <p className="text-[10px] md:text-[11px] font-semibold text-slate-400 mb-0.5">Art: {product.sku}</p>
-                      )}
-                      {/* Name - Exactly 2 lines */}
-                      <div className="h-10 md:h-[48px] overflow-hidden mb-1">
-                        <p className="font-bold md:font-extrabold text-[13px] md:text-[17px] text-slate-800 leading-tight md:leading-tight line-clamp-2" title={product.name}>{product.name}</p>
-                      </div>
-
-                      {/* Price - 1 line */}
-                      <p className="font-black text-[#E31E24] text-[15px] md:text-xl truncate">{product.price.toLocaleString()} <span className="text-[9px] md:text-[12px] opacity-80">{t("currencyUzs")}</span></p>
-                    </div>
-                  </div>
-
-                  {/* Middle Section (Desktop Detailed Text) */}
-                  <div className="hidden md:flex flex-col mt-3 px-0.5 shrink-0">
-                    {/* Description - Exactly 2 lines */}
-                    <div className="h-10 overflow-hidden">
-                      <p className="text-[13px] text-slate-500 font-medium line-clamp-2 leading-tight">{product.description}</p>
-                    </div>
-                    {/* Desktop Stock */}
-                    <p className="text-[13px] text-slate-500 font-bold mt-2 truncate">{t("inStock")} <span className="text-slate-800">{product.stock} {t("inStockUnit")}</span></p>
-                  </div>
-
-                  {/* Mobile tight stock indicator (Bottom-aligned) */}
-                  <div className="md:hidden mt-auto px-0.5">
-                    <p className="text-[11px] text-slate-500 font-bold truncate">{t("inStock")} <span className="text-slate-800">{product.stock} {t("inStockUnit")}</span></p>
-                  </div>
-
-                  {/* Actions (Pushed to bottom using auto margins) */}
-                  <div className="mt-2 md:mt-0 md:pt-4 pt-2 border-t border-slate-100 flex flex-wrap gap-1.5 md:gap-2 shrink-0 md:mt-auto">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openEdit(product); }}
-                      disabled={actionBusy}
-                      className="h-8 md:h-10 px-2 md:px-4 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px] md:text-[13px] hover:bg-slate-200 transition-colors disabled:opacity-50 flex-1 min-w-[30%]"
-                    >
-                      {t("edit")}
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); void handleToggleVisibility(product); }}
-                      disabled={actionBusy}
-                      className={`h-8 md:h-10 px-2 md:px-4 rounded-full font-bold text-[11px] md:text-[13px] transition-colors disabled:opacity-50 flex-1 min-w-[30%] ${active ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-                    >
-                      {actionBusy ? "..." : active ? t("hide") : t("activate")}
-                    </button>
-                    {/* Delete — only for PENDING/REJECTED */}
-                    {!active && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); void handleDelete(product); }}
-                        disabled={actionBusy}
-                        className="h-8 md:h-10 w-8 md:px-4 md:w-auto flex items-center justify-center rounded-full bg-red-50 text-[#E31E24] font-bold text-[11px] md:text-[13px] hover:bg-red-100 transition-colors disabled:opacity-50 flex-none"
-                        title={t("delete")}
-                      >
-                        <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                <article
+                  key={product.id}
+                  onClick={() => router.push(`/seller/products/${product.id}`)}
+                  className="bg-white rounded-2xl flex flex-col overflow-hidden cursor-pointer w-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  {/* IMAGE */}
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f5f5f5] rounded-2xl">
+                    <span className={`absolute top-2 left-2 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm ${active ? "bg-green-100/90 text-green-700" : rejected ? "bg-red-100/90 text-red-700" : "bg-amber-100/90 text-amber-700"}`}>
+                      {product.status}
+                    </span>
+                    {product.imageUrl ? (
+                      <ProductFrame
+                        src={resolveImageUrl(product.imageUrl)}
+                        alt={product.name}
+                        loading="lazy"
+                        className="absolute inset-0"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-[11px] font-bold text-slate-400">{t("noPhoto")}</div>
                     )}
                   </div>
 
+                  {/* INFO */}
+                  <div className="pb-3 pt-2.5 px-2.5 flex flex-col flex-grow">
+                    <h3 className="text-[14px] text-black line-clamp-2 mb-1">{product.name}</h3>
+                    <div className="mb-1.5 flex items-baseline gap-1">
+                      <span className="text-[16px] font-bold text-black tracking-tight">{product.price.toLocaleString("ru-RU")}</span>
+                      <span className="text-[12px] text-black">UZS</span>
+                    </div>
+                    <p className="text-[12px] text-slate-400 mb-2">
+                      {t("inStock")} <span className="text-slate-600 font-medium">{product.stock} {t("inStockUnit")}</span>
+                    </p>
+
+                    {/* SELLER ACTIONS */}
+                    <div className="mt-auto flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEdit(product); }}
+                        disabled={actionBusy}
+                        className="flex-1 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-semibold text-[12px] md:text-[13px] hover:bg-slate-200 transition-colors disabled:opacity-50"
+                      >
+                        {t("edit")}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void handleToggleVisibility(product); }}
+                        disabled={actionBusy}
+                        className={`flex-1 py-2.5 rounded-2xl font-semibold text-[12px] md:text-[13px] transition-colors disabled:opacity-50 ${active ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-green-50 text-green-600 hover:bg-green-100"}`}
+                      >
+                        {actionBusy ? "..." : active ? t("hide") : t("activate")}
+                      </button>
+                      {!active && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); void handleDelete(product); }}
+                          disabled={actionBusy}
+                          className="w-9 flex items-center justify-center rounded-2xl bg-red-50 text-[#E31E24] hover:bg-red-100 transition-colors disabled:opacity-50 shrink-0"
+                          title={t("delete")}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </article>
               );
             })}

@@ -85,7 +85,7 @@ export default function BrandDetailPage() {
   if (loadingBrand) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-12">
-        <div className="mx-auto w-full md:max-w-[1440px] px-4 md:px-6 pt-6">
+        <div className="mx-auto w-full md:max-w-[1488px] px-4 md:px-6 pt-6">
           <div className="h-40 w-full bg-white animate-pulse rounded-2xl mb-8" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -110,7 +110,7 @@ export default function BrandDetailPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-12">
-      <div className="mx-auto w-full md:max-w-[1440px]">
+      <div className="mx-auto w-full md:max-w-[1488px]">
         <div className="px-4 md:px-6 pt-3 md:pt-5">
           <Breadcrumbs items={breadcrumbItems} />
         </div>

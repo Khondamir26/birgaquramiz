@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import ProductFrame from "@/components/ui/ProductFrame";
 
 type ProductGalleryProps = {
   images: string[];
@@ -93,17 +94,18 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
               onMouseEnter={() => setActiveIndex(i)}
               onClick={() => setActiveIndex(i)}
               className={cn(
-                "relative shrink-0 w-full aspect-[84/100] rounded-xl overflow-hidden border-2 transition-all duration-200 bg-slate-50",
+                "relative shrink-0 w-full aspect-[84/100] rounded-xl overflow-hidden border-2 transition-all duration-200 bg-white",
                 i === activeIndex
                   ? "border-[#1B4D91] shadow-md shadow-[#1B4D91]/10 scale-[0.97]"
                   : "border-transparent opacity-60 hover:opacity-100 hover:border-slate-200"
               )}
             >
+              {/* Plain image for thumbnails — frame PNG is unreadable at 84px */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img}
                 alt={`${productName} ${i + 1}`}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-[6%] w-[88%] h-[88%] object-contain"
               />
             </button>
           ))}
@@ -122,17 +124,16 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       {/* ── Main image ── */}
       <div className="relative max-w-[464px] mx-auto w-full lg:max-w-none xl:col-start-2 xl:sticky xl:top-6 xl:self-start">
         <div
-          className="relative w-full aspect-square lg:aspect-[3/4] xl:aspect-[4/5] overflow-hidden bg-slate-50 lg:rounded-3xl border-0 lg:border lg:border-slate-100 select-none"
+          className="relative w-full aspect-square lg:aspect-[3/4] xl:aspect-[4/5] overflow-hidden select-none"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <ProductFrame
             key={activeIndex}
             src={images[activeIndex]}
             alt={productName}
-            fetchPriority={activeIndex === 0 ? "high" : undefined}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
+            loading={activeIndex === 0 ? "eager" : "lazy"}
+            className="absolute inset-0"
           />
 
           {/* Desktop prev/next arrows — only when multiple images */}

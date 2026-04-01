@@ -26,7 +26,7 @@ export default async function HomePage() {
     <div className="flex flex-col pb-44 bg-[#f8f9fb]">
       {/* Preload LCP banner image — HomeSwiper is ssr:false so the browser needs this hint */}
       <link rel="preload" as="image" href="/images/banners/bq.avif" fetchPriority="high" />
-      <div className="mx-auto w-full md:max-w-[1440px]">
+      <div className="mx-auto w-full md:max-w-[1488px]">
         <div className="flex flex-col gap-8 px-3 md:px-6 pt-4 md:pt-6">
 
           <HomeSwiperClient />

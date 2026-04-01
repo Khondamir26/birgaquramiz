@@ -19,46 +19,36 @@ export default function HomeSwiper() {
   const banners = [
     {
       id: 1,
-      image: "/images/banners/bq.avif",
+      image: "/images/banners/banner_1.svg",
       title: t("bannerTitle"),
       subtitle: t("bannerSubtitle"),
     },
-    {
-      id: 2,
-      image: "/images/banners/banner_1.avif",
-      title: t("banner2Title"),
-      subtitle: t("banner2Subtitle"),
-    },
-    {
-      id: 3,
-      image: "/images/banners/banner_3.avif",
-      title: t("banner3Title"),
-      subtitle: t("banner3Subtitle"),
-    },
+
   ];
 
   const currentBanner = banners[activeIndex] || banners[0];
 
   return (
-    <div className="relative mx-auto w-full max-w-[1440px] overflow-hidden rounded-3xl shadow-xl shadow-[#1B4D91]/5 bg-white">
-
-      {/* Left gradient so text is readable without covering image */}
-      <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
+    <div className="relative mx-auto w-full max-w-[1488px] overflow-hidden rounded-3xl shadow-xl shadow-[#1B4D91]/5 bg-white">
 
       {/* Fixed Content Overlay */}
-      <div className="absolute inset-0 z-20 pointer-events-none flex h-full items-center px-6 sm:px-12 md:px-20">
-        <div
-          key={currentBanner.id}
-          className="w-[42%] sm:w-[38%] md:w-[34%] animate-in fade-in duration-700"
-        >
-          <h2 className="text-[15px] sm:text-[20px] md:text-[26px] font-black text-white leading-[1.2] tracking-tight">
+      <div className="absolute inset-0 z-20 pointer-events-none flex h-full items-center justify-center md:justify-start px-[9%]">
+
+        {/* Left text — desktop only */}
+        <div key={currentBanner.id} className="hidden md:block max-w-[230px] lg:max-w-[310px] animate-in fade-in duration-700">
+          <h2 className="text-[22px] lg:text-[26px] xl:text-[28px] font-black text-white leading-[1.2] tracking-tight">
             {currentBanner.title}
           </h2>
-
-          <p className="mt-1 sm:mt-2 text-[11px] sm:text-[12px] md:text-[13px] font-medium text-white/80 leading-relaxed line-clamp-2 md:line-clamp-3">
+          <p className="w-max tracking-wider mt-1 text-[12px] lg:text-[13px] xl:text-[14px] font-regular text-white/80 leading-relaxed" style={{ fontFamily: "var(--font-manrope)" }}>
             {currentBanner.subtitle}
           </p>
         </div>
+
+        {/* bq — centered on mobile, right-pushed on desktop */}
+        <div className="flex items-center shrink-0 text-white font-black leading-none tracking-tighter text-[45px] sm:text-[65px] md:ml-auto md:text-[80px] lg:text-[110px] xl:text-[135px]">
+          bq
+        </div>
+
       </div>
 
       <Swiper
@@ -74,7 +64,7 @@ export default function HomeSwiper() {
           clickable: true,
         }}
         onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
-        className="home-swiper h-[200px] sm:h-[260px] md:h-[340px] w-full"
+        className="home-swiper w-full aspect-[24/5] min-h-[80px]"
       >
         {banners.map((banner, index) => (
           <SwiperSlide key={banner.id} className="relative w-full h-full">

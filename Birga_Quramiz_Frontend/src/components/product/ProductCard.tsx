@@ -9,7 +9,7 @@ import { resolveImageUrl } from "@/lib/image"
 import type { Product } from "@/types"
 import { ShoppingCart } from "lucide-react"
 import { useFavorites } from "@/hooks/useFavorites"
-import Image from "next/image"
+import ProductFrame from "@/components/ui/ProductFrame"
 
 const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const router = useRouter()
@@ -54,17 +54,17 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   return (
     <article
       onClick={handleCardClick}
-      className="bg-white rounded-2xl flex flex-col overflow-hidden cursor-pointer w-full border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+      className="bg-white rounded-xl flex flex-col overflow-hidden cursor-pointer w-full shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     >
       {/* IMAGE AREA */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f5f5f5] rounded-2xl">
+      <div className="relative aspect-[446/595] w-full rounded-[7%] overflow-hidden">
         <button
           onClick={(e) => {
             e.stopPropagation()
             toggleFavorite(product)
           }}
           aria-label={liked ? "Remove from favorites" : "Add to favorites"}
-          className="absolute top-2 right-2 z-10 p-1"
+          className="absolute top-2 right-2 z-20 p-1"
         >
           {!liked ? (
             <svg fill="none" height="24px" width="24px" xmlns="http://www.w3.org/2000/svg">
@@ -78,13 +78,11 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
           )}
         </button>
 
-        <Image
+        <ProductFrame
           src={resolveImageUrl(product.imageUrl)}
           alt={product.name}
-          fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          className="object-cover"
           loading="lazy"
+          className="absolute inset-0 w-full h-full"
         />
       </div>
 

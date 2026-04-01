@@ -84,7 +84,7 @@ export default function AdminSellersPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-      <div className="mx-auto w-full md:max-w-[1440px] px-4 md:px-6 pt-5 md:pt-7 flex flex-col gap-5">
+      <div className="mx-auto w-full md:max-w-[1488px] px-4 md:px-6 pt-5 md:pt-7 flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">

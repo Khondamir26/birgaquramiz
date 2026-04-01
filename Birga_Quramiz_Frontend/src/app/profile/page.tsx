@@ -121,7 +121,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-40 md:pb-12">
-      <div className="mx-auto w-full max-w-[1440px]">
+      <div className="mx-auto w-full max-w-[1488px]">
         <div className="flex flex-col gap-0 md:px-6 md:pt-6">
 
           {/* Desktop page title */}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 import { Star, ChevronRight, Loader2, Heart } from "lucide-react";
@@ -49,7 +50,7 @@ export default function ProductStickyBar({
       )}
     >
       {/* Centered container — h-[88px] to match WB proportions */}
-      <div className="mx-auto max-w-[1440px] px-6 h-[88px] flex items-center gap-0">
+      <div className="mx-auto max-w-[1488px] px-6 h-[88px] flex items-center gap-0">
 
         {/* ── LEFT: thumbnail + product info ── */}
         <div className="flex items-center gap-4 flex-1 min-w-0 pr-8">
@@ -58,7 +59,7 @@ export default function ProductStickyBar({
             <img
               src={images[0]}
               alt={product.name}
-              className="w-[48px] h-[64px] rounded-xl object-cover shrink-0 border border-slate-100"
+              className="w-[48px] h-[64px] rounded-xl object-contain shrink-0 bg-white"
             />
           )}
 
@@ -67,9 +68,12 @@ export default function ProductStickyBar({
             <div className="flex items-center gap-1 min-w-0">
               {product.brand && (
                 <>
-                  <span className="text-[15px] font-bold text-[#275fdb] shrink-0 whitespace-nowrap">
+                  <Link
+                    href={`/brands/${product.brand.slug}`}
+                    className="text-[15px] font-bold text-[#275fdb] shrink-0 whitespace-nowrap"
+                  >
                     {product.brand.name}
-                  </span>
+                  </Link>
                   <span className="text-[15px] text-slate-300 mx-1 shrink-0">/</span>
                 </>
               )}

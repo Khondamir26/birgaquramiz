@@ -43,7 +43,7 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-20 pt-6 md:pt-10">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-10 flex flex-col gap-6">
+      <div className="max-w-[1488px] mx-auto px-4 md:px-10 flex flex-col gap-6">
 
         {/* ── Hero ── */}
         <div className="rounded-3xl bg-[#1B4D91] px-7 py-10 md:px-14 md:py-16 relative overflow-hidden">

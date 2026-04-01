@@ -71,7 +71,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-32 md:pb-20 pt-6 md:pt-10">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-10">
+      <div className="max-w-[1488px] mx-auto px-4 md:px-10">
         <h1 className="text-[24px] md:text-[32px] font-bold text-black mb-6 md:mb-8 flex items-baseline gap-2">
           {t("title")}
           <span className="text-slate-400 text-[18px] md:text-[20px] font-normal">{itemCount}</span>

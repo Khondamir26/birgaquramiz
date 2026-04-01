@@ -290,11 +290,11 @@ export default function SellerProfilePage() {
     return (
       <div className="flex flex-col min-h-screen bg-white">
         <div className="bg-white border-b border-[#e8e8e8]">
-          <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 py-3">
+          <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6 py-3">
             <div className="h-4 w-48 rounded bg-[#f0f0f0] animate-pulse" />
           </div>
         </div>
-        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 py-6 space-y-5">
+        <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6 py-6 space-y-5">
           <div className="h-[88px] rounded-xl bg-[#f0f0f0] animate-pulse" />
           <div className="h-10 rounded-xl bg-[#f0f0f0] animate-pulse" />
           <div className="grid gap-2 md:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
@@ -343,7 +343,7 @@ export default function SellerProfilePage() {
 
       {/* ── Breadcrumb ── */}
       <div className="bg-white border-b border-[#e8e8e8]">
-        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 py-2.5 flex items-center gap-3">
+        <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6 py-2.5 flex items-center gap-3">
           <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-800 p-1 -ml-1 shrink-0">
             <ArrowLeft className="size-5" />
           </button>
@@ -372,7 +372,7 @@ export default function SellerProfilePage() {
 
       {/* ── Seller header ── */}
       <div className="bg-white">
-        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6 py-4">
+        <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-0 bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl px-5 py-4">
             {/* Logo + name + rating */}
             <div className="flex items-center gap-4 md:pr-8 md:border-r border-[#e0e0e0] shrink-0">
@@ -433,7 +433,7 @@ export default function SellerProfilePage() {
       </div>
 
       {/* ── Main ── */}
-      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6">
+      <div className="mx-auto w-full max-w-[1488px] px-4 md:px-6">
 
         {/* Heading */}
         <div className="py-4 flex items-baseline gap-2">

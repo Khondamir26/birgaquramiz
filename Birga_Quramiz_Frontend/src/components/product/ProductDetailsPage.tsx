@@ -129,7 +129,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
     <div className="flex flex-col min-h-screen bg-white">
 
       {/* ── Desktop header: breadcrumbs + actions ── */}
-      <div className="hidden lg:flex mx-auto w-full max-w-[1440px] px-6 mb-4 mt-5 justify-between items-center">
+      <div className="hidden lg:flex mx-auto w-full max-w-[1488px] px-6 mb-4 mt-5 justify-between items-center">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="text-slate-600 hover:text-slate-900 transition-colors p-1 -ml-1 cursor-pointer" aria-label="Back">
             <ArrowLeft className="size-6" />
@@ -324,7 +324,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       </div>
 
       {/* ── Desktop layout ── */}
-      <div ref={productGridRef} className="hidden lg:block mx-auto w-full max-w-[1440px] px-6">
+      <div ref={productGridRef} className="hidden lg:block mx-auto w-full max-w-[1488px] px-6">
         <div className="grid items-start gap-5
           lg:grid-cols-[minmax(200px,360px)_1fr_340px]
           xl:grid-cols-[84px_minmax(300px,440px)_1fr_360px]
@@ -387,7 +387,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
 
       {/* ── Reviews (desktop only) ── */}
       <div className="hidden lg:block mt-14">
-        <div className="mx-auto w-full max-w-[1440px] px-6">
+        <div className="mx-auto w-full max-w-[1488px] px-6">
           <ReviewsSection product={product} />
         </div>
       </div>
@@ -402,7 +402,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
         </div>
       )}
       {/* Desktop: contained section below reviews */}
-      <div className="hidden lg:block mx-auto w-full max-w-[1440px] px-6 pb-12 mt-4">
+      <div className="hidden lg:block mx-auto w-full max-w-[1488px] px-6 pb-12 mt-4">
         <SimilarProducts product={product} />
       </div>
 

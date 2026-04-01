@@ -42,7 +42,7 @@ export default function BrandsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-12">
-      <div className="mx-auto w-full md:max-w-[1440px]">
+      <div className="mx-auto w-full md:max-w-[1488px]">
         <div className="px-4 md:px-6 pt-3 md:pt-5">
           <Breadcrumbs items={breadcrumbItems} />
         </div>
