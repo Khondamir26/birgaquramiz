@@ -128,8 +128,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.use('/uploads', express.static(uploadsDir));
-
   app.use((req: Request, res: Response, next: NextFunction) => {
     const now = Date.now();
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -173,6 +171,8 @@ async function bootstrap() {
 
     next();
   });
+
+  app.use('/uploads', express.static(uploadsDir));
 
   app.useGlobalPipes(
     new ValidationPipe({

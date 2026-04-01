@@ -1,10 +1,23 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
+import { existsSync, unlinkSync } from 'fs'
+import { join } from 'path'
 import { PrismaService } from '../prisma/prisma.service'
 import type { UpdateProductDto } from './dto/update-product.dto'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { AuthUser } from '../auth/auth.types'
 import { generateProductSlug } from './slug.util'
+
+const CONTENT_FIELDS = ['name', 'description', 'price', 'specifications', 'brandId', 'categoryId'] as const
+
+function deleteImageFiles(imagePaths: string[]) {
+  for (const imagePath of imagePaths) {
+    const abs = join(process.cwd(), imagePath)
+    if (existsSync(abs)) {
+      try { unlinkSync(abs) } catch { /* ignore */ }
+    }
+  }
+}
 
 type CreateProductInput = CreateProductDto & { imageUrls: string[] }
 
@@ -101,6 +114,7 @@ export class ProductsService {
 
     const whereCondition: Prisma.ProductWhereInput = {
       status: 'APPROVED',
+      isVisible: true,
     }
 
     if (parentCategoryId?.trim()) {
@@ -110,7 +124,7 @@ export class ProductsService {
     }
 
     if (q?.trim()) {
-      const terms = q.trim().split(/\s+/).filter(Boolean);
+      const terms = q.trim().split(/\s+/).filter(Boolean).slice(0, 10);
       const orConditions: Prisma.ProductWhereInput[] = [];
 
       terms.forEach(term => {
@@ -286,6 +300,11 @@ export class ProductsService {
       throw new BadRequestException('No fields to update')
     }
 
+    // Only re-submit for moderation when content fields change, not for stock-only updates
+    const hasContentChange = CONTENT_FIELDS.some(
+      (key) => updateData[key as keyof typeof updateData] !== undefined,
+    ) || newImageUrls !== undefined || keepImagesRaw !== undefined
+
     const categoryChanging = updateData.categoryId !== undefined && updateData.categoryId !== product.categoryId
 
     if (categoryChanging) {
@@ -319,7 +338,7 @@ export class ProductsService {
             sku: newSku,
             slug: newSlug,
             specifications: parseSpecifications(rest.specifications),
-            status: 'PENDING',
+            status: 'PENDING', // category change always requires re-moderation
           },
           include: {
             brand: true,
@@ -351,7 +370,7 @@ export class ProductsService {
         ...imageFields,
         ...(updatedSlug ? { slug: updatedSlug } : {}),
         specifications: parseSpecifications(updateData.specifications),
-        status: 'PENDING',
+        ...(hasContentChange ? { status: 'PENDING' } : {}),
       },
       include: {
         brand: true,
@@ -375,27 +394,14 @@ export class ProductsService {
     const seller = await this.ensureSellerProfile(user)
 
     const product = await this.prisma.product.findFirst({
-      where: {
-        id,
-        sellerId: seller.id,
-      },
+      where: { id, sellerId: seller.id },
     })
 
     if (!product) throw new NotFoundException('Product not found')
 
-    if (active) {
-      if (product.status === 'APPROVED') return product
-      return this.prisma.product.update({
-        where: { id },
-        data: { status: 'PENDING' },
-      })
-    }
-
-    if (product.status === 'REJECTED') return product
-
     return this.prisma.product.update({
       where: { id },
-      data: { status: 'REJECTED' },
+      data: { isVisible: active },
     })
   }
 
@@ -415,7 +421,14 @@ export class ProductsService {
       throw new BadRequestException('Approved products cannot be deleted directly. Please request deletion from admin.')
     }
 
+    const imagePaths = product.images.length > 0
+      ? product.images
+      : product.imageUrl ? [product.imageUrl] : []
+
     await this.prisma.product.delete({ where: { id } })
+
+    deleteImageFiles(imagePaths)
+
     return { message: 'Product deleted' }
   }
 
@@ -595,7 +608,19 @@ export class ProductsService {
     if (!request) throw new NotFoundException('Deletion request not found')
     if (request.status !== 'PENDING') throw new BadRequestException('Request already processed')
 
-    await this.prisma.product.delete({ where: { id: request.productId } })
+    const imagePaths = request.product.images.length > 0
+      ? request.product.images
+      : request.product.imageUrl ? [request.product.imageUrl] : []
+
+    await this.prisma.$transaction([
+      this.prisma.deletionRequest.update({
+        where: { id: requestId },
+        data: { status: 'APPROVED' },
+      }),
+      this.prisma.product.delete({ where: { id: request.productId } }),
+    ])
+
+    deleteImageFiles(imagePaths)
 
     return { message: 'Product deleted and request approved' }
   }

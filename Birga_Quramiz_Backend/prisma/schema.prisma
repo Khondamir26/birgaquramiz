@@ -117,6 +117,7 @@ model Product {
   price           Float
   stock           Int
   status          ProductStatus @default(PENDING)
+  isVisible       Boolean       @default(true)
   createdAt       DateTime      @default(now())
   imageUrl        String        @default("")
   images          String[]      @default([])

@@ -41,6 +41,7 @@ export class UploadService {
                     size: 'auto',
                     format: 'png',
                 }),
+                signal: AbortSignal.timeout(30_000),
             })
 
             if (!response.ok) {
