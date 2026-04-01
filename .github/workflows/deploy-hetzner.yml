@@ -80,11 +80,12 @@ jobs:
           PAYME_MERCHANT_KEY: ${{ secrets.PAYME_MERCHANT_KEY }}
           CLICK_SECRET_KEY: ${{ secrets.CLICK_SECRET_KEY }}
           CLICK_SERVICE_ID: ${{ secrets.CLICK_SERVICE_ID }}
+          REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
         with:
           host: ${{ secrets.HETZNER_IP }}
           username: ${{ secrets.HETZNER_USERNAME }}
           password: ${{ secrets.HETZNER_PASSWORD }}
-          envs: IMAGE_TAG,DATABASE_URL,POSTGRES_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID
+          envs: IMAGE_TAG,DATABASE_URL,POSTGRES_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID,REMOVE_BG_API_KEY
           script: |
             set -Eeuo pipefail
 
@@ -208,12 +209,14 @@ jobs:
               printf 'PAYME_MERCHANT_KEY=%s\n'   "${PAYME_MERCHANT_KEY:-test-payme-secret-key}"
               printf 'CLICK_SECRET_KEY=%s\n'     "${CLICK_SECRET_KEY:-test-click-secret-key}"
               printf 'CLICK_SERVICE_ID=%s\n'     "${CLICK_SERVICE_ID:-test-click-service-id}"
+              printf 'REMOVE_BG_API_KEY=%s\n'   "${REMOVE_BG_API_KEY}"
             } > .env
 
             unset IMAGE_TAG DATABASE_URL POSTGRES_PASSWORD JWT_SECRET JWT_REFRESH_SECRET \
                   CORS_ORIGINS COOKIE_DOMAIN NEXT_PUBLIC_API_URL \
                   BCRYPT_SALT_ROUNDS GITHUB_TOKEN TELEGRAM_BOT_TOKEN \
-                  PAYME_MERCHANT_KEY CLICK_SECRET_KEY CLICK_SERVICE_ID || true
+                  PAYME_MERCHANT_KEY CLICK_SECRET_KEY CLICK_SERVICE_ID \
+                  REMOVE_BG_API_KEY || true
 
             ############################################
             # Build containers
