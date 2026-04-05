@@ -83,6 +83,11 @@ export default function Navbar() {
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  // Close sidebar on any navigation
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   const navLinks = useMemo(() => getNavLinks(user?.role), [user?.role]);
   const actionItems = useMemo(() => getActionItems(user?.role, uniqueCount, favorites.length), [user?.role, uniqueCount, favorites.length]);
   const accountMenu = useMemo(() => getAccountMenu(user?.role), [user?.role]);

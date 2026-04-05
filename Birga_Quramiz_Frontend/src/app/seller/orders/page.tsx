@@ -312,7 +312,7 @@ export default function SellerOrdersPage() {
                             </button>
                           </>
                         )}
-                        {order.status === "CONFIRMED" && (
+                        {order.status === "CONFIRMED" && order.deliveryType === "PICKUP" && (
                           <button
                             disabled={actionLoading === shipKey}
                             onClick={() => doAction(() => shipOrder(order.id), shipKey)}
@@ -321,6 +321,12 @@ export default function SellerOrdersPage() {
                             <Truck className="size-3.5" />
                             {actionLoading === shipKey ? "..." : t("ship") || "Отправить"}
                           </button>
+                        )}
+                        {order.status === "CONFIRMED" && order.deliveryType === "DELIVERY" && (
+                          <span className="flex items-center gap-1.5 rounded-2xl bg-slate-100 px-4 py-2 text-[12px] font-semibold text-slate-400">
+                            <Truck className="size-3.5" />
+                            Передано диспетчеру
+                          </span>
                         )}
                         <div className="flex-1" />
                         <span className="text-[11px] text-slate-400 self-center">

@@ -176,8 +176,8 @@ export default function Footer() {
         <div className="mx-auto flex w-full max-w-[1488px] items-center justify-between px-6 py-5 text-[12px] text-white/50 font-medium tracking-wide">
           <p>© {CURRENT_YEAR} Birga Quramiz. {t("rights")}</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-white transition-colors">{t("privacyLink")}</Link>
-            <Link href="#" className="hover:text-white transition-colors">{t("termsLink")}</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">{t("privacyLink")}</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">{t("termsLink")}</Link>
           </div>
         </div>
       </div>

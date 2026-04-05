@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useLocale } from "next-intl";
+import { usePathname } from "next/navigation";
 import { getCategoryName } from "@/lib/categoryName";
 import {
   Menu, X, ChevronRight,
@@ -47,6 +48,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 export default function CatalogBurgerMenu() {
   const locale = useLocale();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeParentId, setActiveParentId] = useState<string | null>(null);
@@ -86,6 +88,13 @@ export default function CatalogBurgerMenu() {
   }, [open]);
 
   const close = () => { setOpen(false); setActiveParentId(null); };
+
+  // Close on any navigation — clicking the logo bypasses the overlay and
+  // leaves the menu open with overflow:hidden stuck on body
+  useEffect(() => {
+    close();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };

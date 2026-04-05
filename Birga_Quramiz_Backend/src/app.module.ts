@@ -12,6 +12,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { BrandsModule } from './brands/brands.module';
+import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { BrandsModule } from './brands/brands.module';
     PaymentsModule,
     ReviewsModule,
     BrandsModule,
+    TrackingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

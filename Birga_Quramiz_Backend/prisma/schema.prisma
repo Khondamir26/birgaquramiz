@@ -11,6 +11,8 @@ enum Role {
   USER
   SELLER
   ADMIN
+  DISPATCHER
+  DRIVER
 }
 
 enum ProductStatus {
@@ -57,10 +59,14 @@ model User {
   role             Role     @default(USER)
   createdAt        DateTime @default(now())
 
-  authSessions AuthSession[]
-  orders       Order[]
-  seller       Seller?
-  reviews      Review[]
+  authSessions   AuthSession[]
+  orders         Order[]
+  driverOrders   Order[]              @relation("DriverOrders")
+  seller         Seller?
+  reviews        Review[]
+  assignments    DeliveryAssignment[] @relation("DriverAssignments")
+  dispatched     DeliveryAssignment[] @relation("DispatcherAssignments")
+  driverProfile  DriverProfile?
 }
 
 model AuthSession {
@@ -173,6 +179,7 @@ model DeletionRequest {
 model Order {
   id              String        @id @default(uuid())
   userId          String?
+  driverId        String?
   total           Float
   status          OrderStatus   @default(NEW)
   createdAt       DateTime      @default(now())
@@ -183,11 +190,14 @@ model Order {
   deliveryType    DeliveryType  @default(DELIVERY)
   paymentMethod   PaymentMethod @default(CASH)
 
-  items OrderItem[]
-  user  User?       @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+  user       User?               @relation(fields: [userId], references: [id])
+  driver     User?               @relation("DriverOrders", fields: [driverId], references: [id])
+  assignment DeliveryAssignment?
 
   @@index([status])
   @@index([userId])
+  @@index([driverId])
   @@index([createdAt])
 }
 
@@ -231,4 +241,53 @@ model Brand {
   createdAt   DateTime @default(now())
 
   products    Product[]
+}
+
+// ─── Delivery / Tracking ──────────────────────────────────────────────────────
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  PICKED_UP
+  DELIVERED
+  CANCELLED
+}
+
+enum DriverStatus {
+  OFFLINE
+  ONLINE
+  ON_DELIVERY
+}
+
+model DriverProfile {
+  id        String       @id @default(uuid())
+  userId    String       @unique
+  status    DriverStatus @default(OFFLINE)
+  /// Last known location — updated via Redis; persisted here on status change
+  lastLat   Float?
+  lastLng   Float?
+  lastSeenAt DateTime?
+  createdAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DeliveryAssignment {
+  id           String           @id @default(uuid())
+  orderId      String           @unique
+  driverId     String
+  dispatcherId String
+  status       AssignmentStatus @default(PENDING)
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  order      Order @relation(fields: [orderId], references: [id])
+  driver     User  @relation("DriverAssignments", fields: [driverId], references: [id])
+  dispatcher User  @relation("DispatcherAssignments", fields: [dispatcherId], references: [id])
+
+  @@index([driverId])
+  @@index([dispatcherId])
+  @@index([status])
+  @@index([createdAt])
 }

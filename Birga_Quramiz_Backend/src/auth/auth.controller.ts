@@ -109,7 +109,7 @@ export class AuthController {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user }
+    return { user, accessToken: tokens.accessToken }
   }
 
   @Post('telegram')
