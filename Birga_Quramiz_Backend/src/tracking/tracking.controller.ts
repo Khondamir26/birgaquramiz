@@ -5,17 +5,31 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   HttpCode,
   HttpStatus,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { memoryStorage } from 'multer'
 import type { Request } from 'express'
+import type { Multer } from 'multer'
 import { TrackingService } from './tracking.service'
 import { TrackingGateway } from './tracking.gateway'
 import { CreateAssignmentDto } from './dto/create-assignment.dto'
 import { UpdateAssignmentStatusDto } from './dto/update-assignment-status.dto'
+import { DriverRecommendationService } from './services/driver-recommendation.service'
+import { OtpService } from './services/otp.service'
+import { LocationHistoryService } from './services/location-history.service'
+import { PodPhotoService } from './services/pod-photo.service'
+import { EtaService } from '../maps/eta.service'
+import { GeocodingService } from '../maps/geocoding.service'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
 import type { AuthUser } from '../auth/auth.types'
@@ -28,25 +42,38 @@ export class TrackingController {
   constructor(
     private readonly trackingService: TrackingService,
     private readonly trackingGateway: TrackingGateway,
+    private readonly recommendationService: DriverRecommendationService,
+    private readonly otpService: OtpService,
+    private readonly podPhotoService: PodPhotoService,
+    private readonly etaService: EtaService,
+    private readonly geocodingService: GeocodingService,
+    private readonly locationHistoryService: LocationHistoryService,
   ) {}
 
   // ─── Dispatcher endpoints ───────────────────────────────────────────────────
 
-  /** GET /tracking/drivers — list all drivers with live status */
+  /** GET /tracking/drivers */
   @Get('drivers')
   @Roles('DISPATCHER', 'ADMIN')
   getDrivers() {
     return this.trackingService.getDrivers()
   }
 
-  /** GET /tracking/orders/assignable — orders ready to be assigned */
+  /** GET /tracking/orders/assignable */
   @Get('orders/assignable')
   @Roles('DISPATCHER', 'ADMIN')
   getAssignableOrders() {
     return this.trackingService.getAssignableOrders()
   }
 
-  /** POST /tracking/assignments — create new delivery assignment */
+  /** GET /tracking/orders/:orderId/recommend-drivers — ranked driver list */
+  @Get('orders/:orderId/recommend-drivers')
+  @Roles('DISPATCHER', 'ADMIN')
+  recommendDrivers(@Param('orderId') orderId: string) {
+    return this.recommendationService.recommend(orderId)
+  }
+
+  /** POST /tracking/assignments */
   @Post('assignments')
   @Roles('DISPATCHER', 'ADMIN')
   @HttpCode(HttpStatus.CREATED)
@@ -56,7 +83,6 @@ export class TrackingController {
   ) {
     const assignment = await this.trackingService.createAssignment(dto, req.user)
 
-    // Push real-time notification to driver via WebSocket
     const payload = {
       assignmentId: assignment.id,
       note: assignment.note,
@@ -70,14 +96,14 @@ export class TrackingController {
 
   // ─── Driver endpoints ───────────────────────────────────────────────────────
 
-  /** GET /tracking/my-assignments — active assignments for logged-in driver */
+  /** GET /tracking/my-assignments */
   @Get('my-assignments')
   @Roles('DRIVER')
   getMyAssignments(@Req() req: AuthedRequest) {
     return this.trackingService.getMyAssignments(req.user.id)
   }
 
-  /** PATCH /tracking/assignments/status — driver/dispatcher updates assignment */
+  /** PATCH /tracking/assignments/status */
   @Patch('assignments/status')
   @Roles('DRIVER', 'DISPATCHER', 'ADMIN')
   updateAssignmentStatus(
@@ -91,9 +117,64 @@ export class TrackingController {
     )
   }
 
+  // ─── OTP endpoints ──────────────────────────────────────────────────────────
+
+  /** POST /tracking/orders/:orderId/otp/request — generate + send OTP to customer */
+  @Post('orders/:orderId/otp/request')
+  @Roles('DRIVER', 'DISPATCHER', 'ADMIN')
+  @HttpCode(HttpStatus.OK)
+  async requestOTP(@Param('orderId') orderId: string) {
+    const code = await this.otpService.generateOTP(orderId)
+    // In production: send SMS here via Eskiz/Playmobile
+    // For dev: return code in response (remove in production)
+    return { message: 'OTP sent to customer', ...(process.env.NODE_ENV !== 'production' && { code }) }
+  }
+
+  /** POST /tracking/orders/:orderId/otp/verify — driver submits code customer told them */
+  @Post('orders/:orderId/otp/verify')
+  @Roles('DRIVER')
+  @HttpCode(HttpStatus.OK)
+  async verifyOTP(
+    @Param('orderId') orderId: string,
+    @Body() body: { code: string },
+  ) {
+    if (!body.code) throw new BadRequestException('OTP code required')
+    const valid = await this.otpService.verifyOTP(orderId, body.code)
+    if (!valid) throw new BadRequestException('Invalid OTP code')
+    return { valid: true }
+  }
+
+  // ─── ETA endpoint ───────────────────────────────────────────────────────────
+
+  /** GET /tracking/orders/:orderId/eta — get current ETA for active delivery */
+  @Get('orders/:orderId/eta')
+  @Roles('USER', 'DISPATCHER', 'ADMIN', 'DRIVER')
+  async getOrderETA(@Param('orderId') orderId: string) {
+    const assignment = await this.trackingService.getAssignmentByOrder(orderId)
+    if (!assignment) throw new NotFoundException('No active assignment for this order')
+
+    const driverLoc = await this.trackingService.getDriverLocation(assignment.driverId)
+    if (!driverLoc) return { eta: null, reason: 'driver_location_unknown' }
+
+    const order = assignment.order as unknown as { deliveryAddress?: string }
+    const destination = order.deliveryAddress
+      ? await this.geocodingService.geocode(order.deliveryAddress)
+      : null
+
+    if (!destination) return { eta: null, reason: 'destination_unknown' }
+
+    const eta = await this.etaService.getETA(
+      { lat: driverLoc.lat, lng: driverLoc.lng },
+      destination,
+      orderId,
+    )
+
+    return { eta }
+  }
+
   // ─── Customer endpoint ──────────────────────────────────────────────────────
 
-  /** GET /tracking/orders/:orderId — get driver info + last known location */
+  /** GET /tracking/orders/:orderId */
   @Get('orders/:orderId')
   @Roles('USER', 'DISPATCHER', 'ADMIN', 'DRIVER')
   async getOrderTracking(
@@ -113,5 +194,86 @@ export class TrackingController {
       },
       location,
     }
+  }
+
+  // ─── Proof-of-delivery photo upload ────────────────────────────────────────
+
+  /**
+   * POST /tracking/assignments/:id/pod-photo
+   * Accepts: multipart/form-data, field name "photo"
+   * Allowed types: image/jpeg, image/png, image/webp
+   * Max raw size: 10 MB (Sharp compresses output to << 1 MB)
+   */
+  @Post('assignments/:id/pod-photo')
+  @Roles('DRIVER', 'DISPATCHER', 'ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(), // keep in RAM for Sharp processing — never touch disk raw
+      limits: { fileSize: PodPhotoService.maxFileSizeBytes },
+      fileFilter: (_req, file, cb) => {
+        if (PodPhotoService.validateMime(file.mimetype)) {
+          cb(null, true)
+        } else {
+          cb(
+            new BadRequestException(
+              `Unsupported file type "${file.mimetype}". Allowed: image/jpeg, image/png, image/webp`,
+            ),
+            false,
+          )
+        }
+      },
+    }),
+  )
+  async uploadPodPhoto(
+    @Param('id') assignmentId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('lat') latStr: string | undefined,
+    @Body('lng') lngStr: string | undefined,
+    @Req() req: AuthedRequest,
+  ) {
+    if (!file) throw new BadRequestException('No photo uploaded — send multipart field "photo"')
+
+    // GPS fields are optional — driver app sends them when available
+    const lat = latStr !== undefined ? parseFloat(latStr) : undefined
+    const lng = lngStr !== undefined ? parseFloat(lngStr) : undefined
+    const gps =
+      lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)
+        ? { lat, lng }
+        : undefined
+
+    const url = await this.podPhotoService.savePodPhoto(
+      assignmentId,
+      file.buffer,
+      file.mimetype,
+      req.user,
+      gps,
+    )
+
+    return { podPhotoUrl: url }
+  }
+
+  // ─── Route replay analytics ──────────────────────────────────────────────────
+
+  /** GET /tracking/drivers/:driverId/history?from=ISO&to=ISO — route replay data */
+  @Get('drivers/:driverId/history')
+  @Roles('DISPATCHER', 'ADMIN')
+  getLocationHistory(
+    @Param('driverId') driverId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    const fromDate = from ? new Date(from) : new Date(Date.now() - 8 * 60 * 60 * 1_000) // last 8h
+    const toDate = to ? new Date(to) : new Date()
+    return this.locationHistoryService.getHistory(driverId, fromDate, toDate)
+  }
+
+  // ─── Admin: Maps API usage stats ────────────────────────────────────────────
+
+  /** GET /tracking/admin/maps-usage */
+  @Get('admin/maps-usage')
+  @Roles('ADMIN')
+  getMapsUsage() {
+    return this.etaService.getUsageStats()
   }
 }

@@ -156,36 +156,43 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
   // ─── Assignments ────────────────────────────────────────────────────────────
 
   async createAssignment(dto: CreateAssignmentDto, dispatcher: AuthUser) {
-    // Validate order exists and is assignable
-    const order = await this.prisma.order.findUnique({
-      where: { id: dto.orderId },
-      include: { assignment: true },
-    })
-    if (!order) throw new NotFoundException('Order not found')
-    if (order.assignment) throw new BadRequestException('Order already has an assignment')
-    if (order.status !== OrderStatus.CONFIRMED) {
-      throw new BadRequestException('Order must be CONFIRMED before assigning a driver')
-    }
+    /**
+     * All validation + writes happen inside a single serializable-level transaction.
+     * This prevents the race condition where two dispatchers assign the same order
+     * simultaneously — the unique constraint on orderId catches duplicates,
+     * but the in-transaction read ensures we give a clear error before that.
+     */
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Lock-read the order inside the transaction
+      const order = await tx.order.findUnique({
+        where: { id: dto.orderId },
+        include: { assignment: true },
+      })
+      if (!order) throw new NotFoundException('Order not found')
+      if (order.assignment) throw new BadRequestException('Order already has an assignment')
+      if (order.status !== OrderStatus.CONFIRMED) {
+        throw new BadRequestException('Order must be CONFIRMED before assigning a driver')
+      }
 
-    // Validate driver exists and has DRIVER role
-    const driver = await this.prisma.user.findUnique({ where: { id: dto.driverId } })
-    if (!driver || driver.role !== Role.DRIVER) {
-      throw new BadRequestException('Invalid driver')
-    }
+      // 2. Validate driver inside transaction
+      const driver = await tx.user.findUnique({ where: { id: dto.driverId } })
+      if (!driver || driver.role !== Role.DRIVER) {
+        throw new BadRequestException('Invalid driver')
+      }
 
-    // Check driver is not already on delivery
-    const activeAssignment = await this.prisma.deliveryAssignment.findFirst({
-      where: {
-        driverId: dto.driverId,
-        status: { in: [AssignmentStatus.ACCEPTED, AssignmentStatus.PICKED_UP] },
-      },
-    })
-    if (activeAssignment) {
-      throw new BadRequestException('Driver already has an active delivery')
-    }
+      // 3. Check driver has no active delivery inside transaction
+      const activeAssignment = await tx.deliveryAssignment.findFirst({
+        where: {
+          driverId: dto.driverId,
+          status: { in: [AssignmentStatus.ACCEPTED, AssignmentStatus.PICKED_UP] },
+        },
+      })
+      if (activeAssignment) {
+        throw new BadRequestException('Driver already has an active delivery')
+      }
 
-    const [assignment] = await this.prisma.$transaction([
-      this.prisma.deliveryAssignment.create({
+      // 4. Create assignment + update order atomically
+      const assignment = await tx.deliveryAssignment.create({
         data: {
           orderId: dto.orderId,
           driverId: dto.driverId,
@@ -206,14 +213,15 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
             },
           },
         },
-      }),
-      this.prisma.order.update({
+      })
+
+      await tx.order.update({
         where: { id: dto.orderId },
         data: { driverId: dto.driverId, status: OrderStatus.SHIPPED },
-      }),
-    ])
+      })
 
-    return assignment
+      return assignment
+    })
   }
 
   async updateAssignmentStatus(

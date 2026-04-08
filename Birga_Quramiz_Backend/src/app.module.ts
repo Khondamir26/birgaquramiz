@@ -13,10 +13,12 @@ import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { BrandsModule } from './brands/brands.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { MapsModule } from './maps/maps.module';
 
 @Module({
   imports: [
     PrismaModule,
+    MapsModule,
     AuthModule,
     AdminModule,
     ProductsModule,

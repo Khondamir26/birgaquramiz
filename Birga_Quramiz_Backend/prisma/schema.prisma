@@ -59,14 +59,16 @@ model User {
   role             Role     @default(USER)
   createdAt        DateTime @default(now())
 
-  authSessions   AuthSession[]
-  orders         Order[]
-  driverOrders   Order[]              @relation("DriverOrders")
-  seller         Seller?
-  reviews        Review[]
-  assignments    DeliveryAssignment[] @relation("DriverAssignments")
-  dispatched     DeliveryAssignment[] @relation("DispatcherAssignments")
-  driverProfile  DriverProfile?
+  authSessions     AuthSession[]
+  orders           Order[]
+  driverOrders     Order[]              @relation("DriverOrders")
+  seller           Seller?
+  reviews          Review[]
+  assignments      DeliveryAssignment[] @relation("DriverAssignments")
+  dispatched       DeliveryAssignment[] @relation("DispatcherAssignments")
+  driverProfile    DriverProfile?
+  locationHistory  LocationHistory[]
+  fraudEvents      FraudEvent[]
 }
 
 model AuthSession {
@@ -279,6 +281,15 @@ model DeliveryAssignment {
   dispatcherId String
   status       AssignmentStatus @default(PENDING)
   note         String?
+  /// Set to true once OTP is verified at delivery
+  otpVerified  Boolean          @default(false)
+  /// Path to proof-of-delivery photo (if captured)
+  podPhotoUrl  String?
+  /// GPS coordinates at time of photo upload — for dispute resolution
+  podPhotoLat  Float?
+  podPhotoLng  Float?
+  /// Server-side timestamp of photo upload (not device time — avoids clock skew)
+  podPhotoAt   DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
@@ -290,4 +301,32 @@ model DeliveryAssignment {
   @@index([dispatcherId])
   @@index([status])
   @@index([createdAt])
+}
+
+/// Batched GPS location history — written every 30s for route replay
+model LocationHistory {
+  id        String   @id @default(uuid())
+  driverId  String
+  lat       Float
+  lng       Float
+  heading   Float?
+  speed     Float?
+  accuracy  Float?
+  createdAt DateTime @default(now())
+
+  driver User @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, createdAt])
+}
+
+/// Fraud / suspicious behaviour log
+model FraudEvent {
+  id        String   @id @default(uuid())
+  driverId  String
+  reason    String
+  createdAt DateTime @default(now())
+
+  driver User @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
 }

@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
   WsException,
@@ -17,6 +18,7 @@ import { WsJwtGuard } from './guards/ws-jwt.guard'
 import { DriverStatus, Role, AssignmentStatus } from '@prisma/client'
 import type { AuthUser } from '../auth/auth.types'
 import { FraudService } from './services/fraud.service'
+import { LocationHistoryService } from './services/location-history.service'
 
 // ─── Event name constants (dot-notation) ──────────────────────────────────────
 export const EVENTS = {
@@ -63,18 +65,68 @@ interface AuthSocket extends Socket {
     credentials: true,
   },
 })
-export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server
+  server!: Server
 
   private readonly logger = new Logger(TrackingGateway.name)
+
+  /**
+   * Track last ping time per socket to detect ghost connections.
+   * Map<socketId, lastPingAt (Unix ms)>
+   */
+  private readonly lastPing = new Map<string, number>()
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null
+
+  /** Ghost socket timeout — disconnect sockets silent for > 60s */
+  private readonly HEARTBEAT_TIMEOUT_MS = 60_000
+  private readonly HEARTBEAT_INTERVAL_MS = 30_000
 
   constructor(
     private readonly trackingService: TrackingService,
     private readonly fraudService: FraudService,
+    private readonly locationHistoryService: LocationHistoryService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
+
+  // ─── Heartbeat + dead socket cleanup ──────────────────────────────────────
+
+  afterInit() {
+    this.heartbeatInterval = setInterval(async () => {
+      const now = Date.now()
+      const sockets = await this.server.fetchSockets()
+
+      for (const socket of sockets) {
+        const last = this.lastPing.get(socket.id)
+
+        if (!last) {
+          // First time we see this socket — record it
+          this.lastPing.set(socket.id, now)
+          continue
+        }
+
+        if (now - last > this.HEARTBEAT_TIMEOUT_MS) {
+          this.logger.warn(`[heartbeat] stale socket=${socket.id} — disconnecting`)
+          this.lastPing.delete(socket.id)
+          socket.disconnect(true)
+        }
+      }
+
+      // Clean up map entries for already-gone sockets
+      for (const [id] of this.lastPing) {
+        const exists = sockets.some((s) => s.id === id)
+        if (!exists) this.lastPing.delete(id)
+      }
+    }, this.HEARTBEAT_INTERVAL_MS)
+  }
+
+  onGatewayDestroy() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
+  }
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
 
@@ -111,6 +163,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
       if (!user) { client.disconnect(true); return }
 
       client.data.user = user
+      this.lastPing.set(client.id, Date.now())
 
       // Auto-join role-based rooms
       if (user.role === Role.DISPATCHER || user.role === Role.ADMIN) {
@@ -133,6 +186,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   async handleDisconnect(client: AuthSocket) {
+    this.lastPing.delete(client.id)
     const user = client.data?.user
     if (!user) return
 
@@ -183,11 +237,25 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
       return { status: 'ok', timestamp: Date.now() }
     }
 
-    // ── Cache location in Redis ───────────────────────────────────────────────
+    // ── Refresh heartbeat — socket is alive ──────────────────────────────────
+    this.lastPing.set(client.id, Date.now())
+
+    // ── Cache location in Redis (live position) ───────────────────────────────
     await this.trackingService.cacheLocation(user.id, payload.lat, payload.lng, {
       heading: payload.heading,
       speed: payload.speed,
       accuracy: payload.accuracy,
+    })
+
+    // ── Buffer for history DB write (batched every 30s) ───────────────────────
+    await this.locationHistoryService.buffer({
+      driverId: user.id,
+      lat: payload.lat,
+      lng: payload.lng,
+      heading: payload.heading ?? null,
+      speed: payload.speed ?? null,
+      accuracy: payload.accuracy ?? null,
+      timestamp: payload.timestamp ?? Date.now(),
     })
 
     const locationEvent = {
