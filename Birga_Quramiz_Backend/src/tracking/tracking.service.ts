@@ -291,6 +291,7 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.deliveryAssignment.findUnique({
       where: { orderId },
       include: {
+        order: { select: { deliveryAddress: true } },
         driver: { select: { id: true, name: true, phone: true } },
         dispatcher: { select: { id: true, name: true } },
       },

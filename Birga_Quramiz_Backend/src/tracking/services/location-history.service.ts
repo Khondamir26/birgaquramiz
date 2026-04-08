@@ -99,7 +99,11 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
     const keys = await this.redis.keys('loc_buf:*').catch(() => [] as string[])
     if (!keys.length) return
 
-    const allRows: Parameters<typeof this.prisma.locationHistory.createMany>[0]['data'] = []
+    const allRows: {
+      driverId: string; lat: number; lng: number
+      heading: number | null; speed: number | null; accuracy: number | null
+      createdAt: Date
+    }[] = []
 
     for (const key of keys) {
       const items = await this.redis.lrange(key, 0, -1).catch(() => [] as string[])

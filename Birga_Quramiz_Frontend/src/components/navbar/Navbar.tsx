@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, startTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -85,7 +85,7 @@ export default function Navbar() {
 
   // Close sidebar on any navigation
   useEffect(() => {
-    setSidebarOpen(false);
+    startTransition(() => setSidebarOpen(false));
   }, [pathname]);
 
   const navLinks = useMemo(() => getNavLinks(user?.role), [user?.role]);

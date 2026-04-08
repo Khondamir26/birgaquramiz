@@ -9,7 +9,7 @@ import { AssignmentStatus, DriverStatus } from '@prisma/client'
 export interface DriverScore {
   driverId: string
   name: string
-  phone: string
+  phone: string | null
   distanceKm: number
   etaMinutes: number
   currentLoad: number   // active assignments count

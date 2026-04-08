@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { io, type Socket } from "socket.io-client";
 import { MapPin, Phone, User, Truck, CheckCircle, Clock } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,7 +82,6 @@ const API_URL =
 
 export default function OrderTrackingPage() {
   const { id: orderId } = useParams<{ id: string }>();
-  const { user } = useAuthStore();
 
   const [data, setData] = useState<TrackingData | null>(null);
   const [driverLoc, setDriverLoc] = useState<DriverLocation | null>(null);
@@ -92,8 +90,8 @@ export default function OrderTrackingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<ReturnType<typeof window.ymaps.Map> | null>(null);
-  const markerRef = useRef<ReturnType<typeof window.ymaps.Placemark> | null>(null);
+  const mapInstanceRef = useRef<InstanceType<typeof window.ymaps.Map> | null>(null);
+  const markerRef = useRef<InstanceType<typeof window.ymaps.Placemark> | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const ymapsReadyRef = useRef(false);
 
