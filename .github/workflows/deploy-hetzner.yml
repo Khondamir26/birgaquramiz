@@ -236,6 +236,10 @@ jobs:
 
             docker compose up -d --remove-orphans
 
+            # Restart Caddy so it reconnects to updated backend/frontend containers
+            docker restart caddy-proxy || true
+            sleep 3
+
             ############################################
             # Health check (2 minutes, every 5s)
             # Uses --resolve so health check works even
