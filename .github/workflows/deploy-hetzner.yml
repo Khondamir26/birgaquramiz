@@ -84,7 +84,7 @@ jobs:
         with:
           host: ${{ secrets.HETZNER_IP }}
           username: ${{ secrets.HETZNER_USERNAME }}
-          password: ${{ secrets.HETZNER_PASSWORD }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
           envs: IMAGE_TAG,DATABASE_URL,POSTGRES_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID,REMOVE_BG_API_KEY
           script: |
             set -Eeuo pipefail
