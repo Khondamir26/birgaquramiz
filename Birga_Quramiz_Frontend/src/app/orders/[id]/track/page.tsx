@@ -33,11 +33,6 @@ interface DriverLocation {
   timestamp: number;
 }
 
-type AssignmentStatus = {
-  assignmentId: string;
-  orderId: string;
-  status: string;
-};
 
 // ─── Yandex Maps global types ──────────────────────────────────────────────────
 declare global {
@@ -131,19 +126,23 @@ export default function OrderTrackingPage() {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      socket.emit("client:subscribe_order", { orderId });
+      socket.emit("client.order.subscribe", { orderId });
     });
 
-    socket.on("server:location_update", (loc: DriverLocation) => {
+    socket.on("order.driver.location", (loc: DriverLocation) => {
       if (loc.driverId === data.assignment?.driver.id) {
         setDriverLoc(loc);
       }
     });
 
-    socket.on("server:assignment_status", (payload: AssignmentStatus) => {
+    socket.on("assignment.status.changed", (payload: { orderId: string; status: string }) => {
       if (payload.orderId === orderId) {
         setAssignmentStatus(payload.status);
       }
+    });
+
+    socket.on("order.delivered", () => {
+      setAssignmentStatus("DELIVERED");
     });
 
     return () => {
