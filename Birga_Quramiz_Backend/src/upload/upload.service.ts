@@ -55,7 +55,7 @@ export class UploadService {
             // ── Step 2: trim transparent margins ──
             const trimmedBuffer = await sharp(removedBgBuffer)
                 .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: 10 })
-                .png()
+                .webp({ quality: 85 })
                 .toBuffer()
 
             // ── Step 3: add proportional padding (5% of the larger dimension) ──
@@ -72,11 +72,11 @@ export class UploadService {
                     right: pad,
                     background: { r: 0, g: 0, b: 0, alpha: 0 },
                 })
-                .png()
+                .webp({ quality: 85 })
                 .toBuffer()
 
-            // ── Step 3: save processed PNG ──
-            const newFilename = file.filename.replace(/\.[^.]+$/, '.png')
+            // ── Step 4: save processed WebP ──
+            const newFilename = file.filename.replace(/\.[^.]+$/, '.webp')
             const newPath = join(dirname(file.path), newFilename)
             writeFileSync(newPath, processedBuffer)
 

@@ -36,9 +36,17 @@ birga-quramiz.uz {
 api.birga-quramiz.uz {
   import site_security
 
-  reverse_proxy backend:5000 {
-    health_uri /health
-    health_interval 10s
-    health_timeout 5s
+  # Static uploads — cache aggressively since filenames are unique timestamps
+  handle /uploads/* {
+    header Cache-Control "public, max-age=31536000, immutable"
+    reverse_proxy backend:5000
+  }
+
+  handle {
+    reverse_proxy backend:5000 {
+      health_uri /health
+      health_interval 10s
+      health_timeout 5s
+    }
   }
 }
