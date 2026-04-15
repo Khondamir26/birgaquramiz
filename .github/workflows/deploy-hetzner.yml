@@ -139,21 +139,26 @@ jobs:
 
             if command -v psql >/dev/null 2>&1 || dpkg -l postgresql* 2>/dev/null | grep -q '^ii'; then
 
-              # Allow password auth from Docker bridge network (172.17.0.0/16)
-              PG_HBA=$(sudo -u postgres psql -tAc "SHOW hba_file")
-              DOCKER_RULE="host    birga_app    birga_admin    172.17.0.0/16    scram-sha-256"
-              if ! sudo grep -qF "172.17.0.0/16" "$PG_HBA"; then
-                echo "$DOCKER_RULE" | sudo tee -a "$PG_HBA" > /dev/null
-                echo "Added Docker subnet rule to pg_hba.conf"
+              # Safely check if postgres user exists and sudo works
+              if id postgres >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+                PG_HBA=$(sudo -u postgres psql -tAc "SHOW hba_file" 2>/dev/null || echo "")
+                if [ -n "$PG_HBA" ]; then
+                  DOCKER_RULE="host    birga_app    birga_admin    172.17.0.0/16    scram-sha-256"
+                  if ! sudo grep -qF "172.17.0.0/16" "$PG_HBA"; then
+                    echo "$DOCKER_RULE" | sudo tee -a "$PG_HBA" > /dev/null
+                    echo "Added Docker subnet rule to pg_hba.conf"
+                  fi
+
+                  PG_CONF=$(sudo -u postgres psql -tAc "SHOW config_file" 2>/dev/null || echo "")
+                  if [ -n "$PG_CONF" ]; then
+                    sudo sed -i "s/^#*\s*listen_addresses\s*=.*/listen_addresses = '*'/" "$PG_CONF"
+                    sudo systemctl reload postgresql || sudo -u postgres pg_ctlcluster "$(pg_lsclusters -h | awk '{print $1}' | head -1)" main reload || true
+                    echo "PostgreSQL config reloaded."
+                  fi
+                fi
+              else
+                echo "PostgreSQL user not available or sudo not configured — skipping pg_hba.conf config."
               fi
-
-              # Allow PostgreSQL to listen on all interfaces (needed for host.docker.internal routing)
-              PG_CONF=$(sudo -u postgres psql -tAc "SHOW config_file")
-              sudo sed -i "s/^#*\s*listen_addresses\s*=.*/listen_addresses = '*'/" "$PG_CONF"
-
-              # Reload PostgreSQL config (no restart needed)
-              sudo systemctl reload postgresql || sudo -u postgres pg_ctlcluster "$(pg_lsclusters -h | awk '{print $1}' | head -1)" main reload || true
-              echo "PostgreSQL config reloaded."
 
             else
               echo "PostgreSQL not installed locally — assuming external DB, skipping pg config."
