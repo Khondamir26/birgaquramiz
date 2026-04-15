@@ -1,23 +1,13 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
-import { existsSync, unlinkSync } from 'fs'
-import { join } from 'path'
 import { PrismaService } from '../prisma/prisma.service'
 import type { UpdateProductDto } from './dto/update-product.dto'
 import type { CreateProductDto } from './dto/create-product.dto'
 import type { AuthUser } from '../auth/auth.types'
 import { generateProductSlug } from './slug.util'
+import { UploadService } from '../upload/upload.service'
 
 const CONTENT_FIELDS = ['name', 'description', 'price', 'specifications', 'brandId', 'categoryId'] as const
-
-function deleteImageFiles(imagePaths: string[]) {
-  for (const imagePath of imagePaths) {
-    const abs = join(process.cwd(), imagePath)
-    if (existsSync(abs)) {
-      try { unlinkSync(abs) } catch { /* ignore */ }
-    }
-  }
-}
 
 type CreateProductInput = CreateProductDto & { imageUrls: string[] }
 
@@ -33,7 +23,7 @@ function parseSpecifications(value: unknown): object | undefined {
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private uploadService: UploadService) { }
 
   private ensureSellerProfile(user: AuthUser) {
     if (user.role !== 'SELLER') {
@@ -427,7 +417,7 @@ export class ProductsService {
 
     await this.prisma.product.delete({ where: { id } })
 
-    deleteImageFiles(imagePaths)
+    await Promise.all(imagePaths.map(url => this.uploadService.deleteProductImage(url)))
 
     return { message: 'Product deleted' }
   }
@@ -620,7 +610,7 @@ export class ProductsService {
       this.prisma.product.delete({ where: { id: request.productId } }),
     ])
 
-    deleteImageFiles(imagePaths)
+    await Promise.all(imagePaths.map(url => this.uploadService.deleteProductImage(url)))
 
     return { message: 'Product deleted and request approved' }
   }

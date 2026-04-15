@@ -7,10 +7,9 @@ import {
 import { PrismaService } from '../../prisma/prisma.service'
 import { AssignmentStatus, Role } from '@prisma/client'
 import type { AuthUser } from '../../auth/auth.types'
-import * as path from 'path'
-import * as fs from 'fs'
 import { randomUUID } from 'crypto'
 import sharp from 'sharp'
+import { UploadService } from '../../upload/upload.service'
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
@@ -22,7 +21,6 @@ const MAX_OUTPUT_SIZE_BYTES = 2 * 1024 * 1024       // 2 MB
 
 const MAX_WIDTH_PX = 1024
 const JPEG_QUALITY = 80
-const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads', 'pod')
 
 export interface PodGps {
   lat: number
@@ -31,10 +29,10 @@ export interface PodGps {
 
 @Injectable()
 export class PodPhotoService {
-  constructor(private readonly prisma: PrismaService) {
-    // Ensure upload dir exists on startup
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploadService: UploadService,
+  ) { }
 
   /** Called by Multer fileFilter — rejects before any bytes hit memory */
   static validateMime(mimetype: string): boolean {
@@ -112,14 +110,10 @@ export class PodPhotoService {
       )
     }
 
-    // ── 6. Write to disk with UUID filename ───────────────────────────────────
+    // ── 6. Upload to R2 with UUID filename ───────────────────────────────────
     // randomUUID(): collision-safe + harder to enumerate than timestamps
     const filename = `${randomUUID()}.jpg`
-    const filePath = path.join(UPLOAD_DIR, filename)
-    fs.writeFileSync(filePath, processedBuffer)
-
-    // ── 7. Persist to DB ──────────────────────────────────────────────────────
-    const publicUrl = `/uploads/pod/${filename}`
+    const publicUrl = await this.uploadService.uploadBuffer(`pod/${filename}`, processedBuffer, 'image/jpeg')
     const uploadedAt = new Date()   // server time — immune to device clock skew
 
     await this.prisma.deliveryAssignment.update({

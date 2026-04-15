@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import { formatPhone } from '@/lib/formatPhone'
 import Link from 'next/link'
 
-export function LoginForm() {
+export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
   const setInitialized = useAuthStore((s) => s.setInitialized)
@@ -17,6 +17,7 @@ export function LoginForm() {
   const isInitialized = useAuthStore((s) => s.isInitialized)
   const user = useAuthStore((s) => s.user)
   const t = useTranslations('Auth')
+  const safeReturn = returnUrl?.startsWith('/') ? returnUrl : '/'
 
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
@@ -29,8 +30,8 @@ export function LoginForm() {
     if (!isInitialized || !isAuthenticated) return
     if (user?.role === 'ADMIN') { router.replace('/admin'); return }
     if (user?.role === 'SELLER') { router.replace('/seller/dashboard'); return }
-    router.replace('/')
-  }, [isInitialized, isAuthenticated, user, router])
+    router.replace(safeReturn)
+  }, [isInitialized, isAuthenticated, user, router, safeReturn])
 
   // Render nothing until auth is known or while redirecting
   if (!isInitialized || isAuthenticated) return null
@@ -49,7 +50,7 @@ export function LoginForm() {
       setInitialized(true)
       if (user.role === 'ADMIN') { router.push('/admin'); return }
       if (user.role === 'SELLER') { router.push('/seller/dashboard'); return }
-      router.push('/')
+      router.push(safeReturn)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('loginFailed'))
     } finally {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { Pencil, Trash2, Plus, X, ChevronRight, FolderOpen, Folder } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { getCategories, createCategory, updateCategory, deleteCategory, type CategoryInput } from "@/lib/api/categories"
 import type { Category } from "@/types"
 
@@ -23,6 +24,7 @@ function generateSlug(name: string) {
 }
 
 export default function AdminCategoriesPage() {
+  const t = useTranslations("AdminCategories")
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -115,7 +117,7 @@ export default function AdminCategoriesPage() {
       handleClose()
       loadCategories()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при сохранении")
+      alert(err instanceof Error ? err.message : t("saving"))
     } finally {
       setSaving(false)
     }
@@ -125,14 +127,14 @@ export default function AdminCategoriesPage() {
     const children = childrenMap[cat.id]
     const hasChildren = children && children.length > 0
     const msg = hasChildren
-      ? `Категория "${cat.name}" содержит ${children.length} подкатегорий. Удалить всё равно?`
-      : `Удалить категорию "${cat.name}"?`
+      ? t("deleteConfirmChildren", { name: cat.name, count: children.length })
+      : t("deleteConfirm", { name: cat.name })
     if (!window.confirm(msg)) return
     try {
       await deleteCategory(cat.id)
       loadCategories()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при удалении")
+      alert(err instanceof Error ? err.message : t("tooltipDelete"))
     }
   }
 
@@ -141,9 +143,9 @@ export default function AdminCategoriesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#1B4D91]">Управление Категориями</h1>
+          <h1 className="text-2xl font-black text-[#1B4D91]">{t("title")}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Добавляйте, редактируйте и удаляйте категории и подкатегории.
+            {t("description")}
           </p>
         </div>
         <button
@@ -151,7 +153,7 @@ export default function AdminCategoriesPage() {
           className="flex items-center gap-2 bg-[#1B4D91] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#123668] transition-colors active:scale-95 shrink-0"
         >
           <Plus className="w-5 h-5" />
-          Добавить категорию
+          {t("addCategory")}
         </button>
       </div>
 
@@ -164,9 +166,9 @@ export default function AdminCategoriesPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          { label: "Всего категорий", value: categories.length, color: "#1B4D91" },
-          { label: "Родительских", value: parents.length, color: "#8b5cf6" },
-          { label: "Подкатегорий", value: categories.length - parents.length, color: "#10b981" },
+          { label: t("statsTotal"), value: categories.length, color: "#1B4D91" },
+          { label: t("statsParent"), value: parents.length, color: "#8b5cf6" },
+          { label: t("statsSub"), value: categories.length - parents.length, color: "#10b981" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4">
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{s.label}</p>
@@ -181,11 +183,11 @@ export default function AdminCategoriesPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">Название</th>
-                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">Код</th>
-                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">Slug</th>
-                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">EN / UZ</th>
-                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider text-right">Действия</th>
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("colName")}</th>
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("colCode")}</th>
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("colSlug")}</th>
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">{t("colLocales")}</th>
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider text-right">{t("colActions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -198,7 +200,7 @@ export default function AdminCategoriesPage() {
               ) : parents.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                    Нет категорий. Добавьте первую.
+                    {t("empty")}
                   </td>
                 </tr>
               ) : (
@@ -249,21 +251,21 @@ export default function AdminCategoriesPage() {
                             <button
                               onClick={() => handleOpenModal(undefined, parent.id)}
                               className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                              title="Добавить подкатегорию"
+                              title={t("tooltipAddSub")}
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleOpenModal(parent)}
                               className="p-1.5 text-slate-400 hover:text-[#1B4D91] hover:bg-[#1B4D91]/10 rounded-lg transition-colors"
-                              title="Редактировать"
+                              title={t("tooltipEdit")}
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(parent)}
                               className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Удалить"
+                              title={t("tooltipDelete")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -300,14 +302,14 @@ export default function AdminCategoriesPage() {
                               <button
                                 onClick={() => handleOpenModal(child)}
                                 className="p-1.5 text-slate-400 hover:text-[#1B4D91] hover:bg-[#1B4D91]/10 rounded-lg transition-colors"
-                                title="Редактировать"
+                                title={t("tooltipEdit")}
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDelete(child)}
                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Удалить"
+                                title={t("tooltipDelete")}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -331,11 +333,11 @@ export default function AdminCategoriesPage() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">
-                  {editingCategory ? "Редактировать категорию" : "Новая категория"}
+                  {editingCategory ? t("modalEditTitle") : t("modalNewTitle")}
                 </h2>
                 {formData.parentId && (
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Подкатегория: <span className="font-bold text-[#1B4D91]">{parentOptions.find(p => p.id === formData.parentId)?.name}</span>
+                    {t("modalSubOf")} <span className="font-bold text-[#1B4D91]">{parentOptions.find(p => p.id === formData.parentId)?.name}</span>
                   </p>
                 )}
               </div>
@@ -347,26 +349,26 @@ export default function AdminCategoriesPage() {
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
               {/* Parent category select */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">Родительская категория</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("fieldParent")}</label>
                 <select
                   value={formData.parentId ?? ""}
                   onChange={(e) => setFormData({ ...formData, parentId: e.target.value || null })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all"
                 >
-                  <option value="">— Корневая категория —</option>
+                  <option value="">{t("fieldParentEmpty")}</option>
                   {parentOptions
                     .filter((p) => p.id !== editingCategory?.id)
                     .map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                 </select>
-                <p className="text-xs text-slate-400 mt-1">Оставьте пустым для создания родительской категории</p>
+                <p className="text-xs text-slate-400 mt-1">{t("fieldParentHint")}</p>
               </div>
 
               {/* Name RU */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Название (RU) <span className="text-red-500">*</span>
+                  {t("fieldNameRu")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -374,14 +376,14 @@ export default function AdminCategoriesPage() {
                   value={formData.name}
                   onChange={handleNameChange}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all"
-                  placeholder="Например: Строительные материалы"
+                  placeholder={t("namePlaceholder")}
                 />
               </div>
 
               {/* Name EN + UZ side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Название EN</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("fieldNameEn")}</label>
                   <input
                     type="text"
                     value={formData.nameEn ?? ""}
@@ -391,7 +393,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Название UZ</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("fieldNameUz")}</label>
                   <input
                     type="text"
                     value={formData.nameUz ?? ""}
@@ -406,7 +408,7 @@ export default function AdminCategoriesPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Код <span className="text-red-500">*</span>
+                    {t("fieldCode")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -418,7 +420,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Slug</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("fieldSlug")}</label>
                   <input
                     type="text"
                     value={formData.slug ?? ""}
@@ -435,14 +437,14 @@ export default function AdminCategoriesPage() {
                   onClick={handleClose}
                   className="flex-1 bg-slate-100 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                 >
-                  Отмена
+                  {t("btnCancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="flex-1 bg-[#1B4D91] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#123668] transition-colors shadow-sm shadow-[#1B4D91]/20 disabled:opacity-60"
                 >
-                  {saving ? "Сохранение..." : editingCategory ? "Сохранить" : "Добавить"}
+                  {saving ? t("saving") : editingCategory ? t("btnSave") : t("btnAdd")}
                 </button>
               </div>
             </form>

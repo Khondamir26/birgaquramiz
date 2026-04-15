@@ -9,14 +9,9 @@ interface ProductFrameProps {
 
 /**
  * Renders a product image inside the standard BQ frame.
- *
- * The frameBQ.png has an opaque white interior and a blue border.
- * `mix-blend-mode: multiply` on the frame overlay makes the white interior
- * act as a transparent window (white × product = product), while the blue
- * border stays blue (blue × product ≈ blue).
- *
- * `isolate` on the container keeps the blend self-contained — it won't
- * bleed into the card background or surrounding page elements.
+ * Uses a raw <img> so local dev URLs (localhost:5000) and production URLs
+ * (media.birga-quramiz.uz) both work without Next.js image proxy config.
+ * The frame.svg overlay sits on top to provide the branded border.
  */
 export default function ProductFrame({
   src,
@@ -24,6 +19,10 @@ export default function ProductFrame({
   loading = "lazy",
   className,
 }: ProductFrameProps) {
+  if (!src) return (
+    <div className={cn("relative bg-white overflow-hidden isolate", className)} />
+  )
+
   return (
     <div className={cn("relative bg-white overflow-hidden isolate", className)}>
       {/* Product image — inset 8% so it sits inside the frame border */}
@@ -32,15 +31,18 @@ export default function ProductFrame({
         src={src}
         alt={alt}
         loading={loading}
+        decoding="async"
         className="absolute inset-[8%] w-[84%] h-[84%] object-contain"
       />
 
-      {/* Frame overlay — mix-blend-multiply lets the product show through the white interior */}
+      {/* Frame overlay */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/frame.svg"
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full z-[2] pointer-events-none select-none"
       />
     </div>

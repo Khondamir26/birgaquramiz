@@ -146,8 +146,10 @@ def s9(c):
 @step("Install backup cron (2:30 AM daily)")
 def s10(c):
     cron_content = (
-        "30 2 * * * deploy "
-        "DATABASE_URL=$(grep DATABASE_URL /home/deploy/birgaquramiz/.env | cut -d= -f2-) "
+        "30 21 * * * deploy "
+        "DATABASE_URL=$(grep ^DATABASE_URL /home/deploy/birgaquramiz/.env | cut -d= -f2-) "
+        "TELEGRAM_BOT_TOKEN=$(grep ^TELEGRAM_BOT_TOKEN /home/deploy/birgaquramiz/.env | cut -d= -f2-) "
+        "TELEGRAM_CHAT_ID=$(grep ^TELEGRAM_CHAT_ID /home/deploy/birgaquramiz/.env | cut -d= -f2-) "
         "BACKUP_DIR=/var/backups/birga "
         "/home/deploy/birgaquramiz/ops/backup-postgres.sh "
         ">> /var/log/birga-backup.log 2>&1\\n"

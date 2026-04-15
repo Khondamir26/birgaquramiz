@@ -76,8 +76,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!isInitialized) return;
-    if (isAuthenticated && user?.role === "ADMIN") { router.push("/admin"); return; }
-    if (isAuthenticated && user?.role === "SELLER") { router.push("/seller/dashboard"); return; }
+    if (!isAuthenticated) { router.replace("/login?returnUrl=/checkout"); return; }
+    if (user?.role === "ADMIN") { router.push("/admin"); return; }
+    if (user?.role === "SELLER") { router.push("/seller/dashboard"); return; }
     if (user?.role === "USER") {
       setForm((prev) => ({
         ...prev,
@@ -262,7 +263,7 @@ export default function CheckoutPage() {
 
   // ── Main checkout layout ────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F0F2F5] pb-36 md:pb-20 pt-6 md:pt-8">
+    <div className="min-h-screen bg-[#F0F2F5] pb-[calc(env(safe-area-inset-bottom)+144px)] md:pb-20 pt-6 md:pt-8">
       <div className="max-w-[1488px] mx-auto px-4 md:px-10">
 
         {/* Page header */}
@@ -570,7 +571,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* ── Mobile sticky bottom bar ──────────────────────────────────────── */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-40 lg:hidden">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] left-0 right-0 z-40 lg:hidden">
         <div className="mx-4 mb-4 rounded-[28px] bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_12px_48px_rgba(0,0,0,0.18)] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#275fdb] mb-0.5">{t("summary.total")}</p>

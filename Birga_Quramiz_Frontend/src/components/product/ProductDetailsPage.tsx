@@ -153,8 +153,8 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
           {/* Back */}
           <button
             onClick={() => router.back()}
-            className="flex items-center justify-center rounded-lg bg-white/75 backdrop-blur-md"
-            style={{ width: 40, height: 40 }}
+            className="flex items-center justify-center rounded-lg bg-white/90"
+            style={{ width: 44, height: 44 }}
             aria-label="Oldingi sahifaga"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -166,8 +166,8 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
             {/* Favorite */}
             <button
               onClick={() => toggleFavorite(product)}
-              className="flex items-center justify-center rounded-lg bg-white/75 backdrop-blur-md"
-              style={{ width: 40, height: 40 }}
+              className="flex items-center justify-center rounded-lg bg-white/90"
+              style={{ width: 44, height: 44 }}
               aria-label="Saralanganlarga qo'shish"
             >
               {liked ? (
@@ -184,8 +184,8 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
             {/* Share */}
             <button
               onClick={handleShare}
-              className="flex items-center justify-center rounded-lg bg-white/75 backdrop-blur-md"
-              style={{ width: 40, height: 40 }}
+              className="flex items-center justify-center rounded-lg bg-white/90"
+              style={{ width: 44, height: 44 }}
               aria-label="Tovar havolasini ulashish"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -199,7 +199,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       </div>
 
       {/* ── Mobile content ── */}
-      <div className="lg:hidden flex flex-col bg-[#e8e8ed] px-[6px] pt-1 pb-[130px]">
+      <div className="lg:hidden flex flex-col gap-[3px] bg-[#e8e8ed] px-[6px] pt-[3px] pb-[3px]">
 
         {/* ── Card: Price ── */}
         <div className="bg-white rounded-2xl border border-[#e2e2e8] px-4 py-4">
@@ -276,7 +276,7 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       </div>
 
       {/* ── Mobile fixed bottom CTA ── */}
-      <div className="lg:hidden fixed bottom-[60px] left-0 right-0 z-40 bg-white border-t border-[#ebebeb] px-4 pt-2 pb-4 flex flex-col gap-2">
+      <div className="lg:hidden fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] left-0 right-0 z-40 bg-white border-t border-[#ebebeb] px-4 pt-2 pb-4 flex flex-col gap-2">
         {/* Price + delivery row */}
         <div className="flex items-center">
           <span className="text-[13px] font-bold text-[#E31E24] leading-none">
@@ -405,6 +405,9 @@ export default function ProductDetailsPage({ product }: ProductDetailsPageProps)
       <div className="hidden lg:block mx-auto w-full max-w-[1488px] px-6 pb-12 mt-4">
         <SimilarProducts product={product} />
       </div>
+
+      {/* Mobile scroll buffer — clears the fixed CTA bar (≈100px) + nav (72px) + safe area */}
+      <div className="lg:hidden h-[calc(env(safe-area-inset-bottom)+100px)] bg-[#e8e8ed]" />
 
       <FullPageLoader isOpen={isBuying} />
     </div>

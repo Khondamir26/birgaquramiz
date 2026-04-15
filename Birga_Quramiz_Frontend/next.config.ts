@@ -5,11 +5,11 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https: http://localhost:5000 http://127.0.0.1:5000`,
+  `img-src 'self' data: blob: https://media.birga-quramiz.uz https://api.birga-quramiz.uz http://localhost:5000 http://127.0.0.1:5000`,
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com",
+  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com https://cloudflareinsights.com",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
   "base-uri 'self'",
   "form-action 'self'",
@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'api.birga-quramiz.uz',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.birga-quramiz.uz',
       },
       {
         protocol: 'http',

@@ -122,6 +122,17 @@ export class UploadService {
         }
     }
 
+    async uploadBuffer(key: string, buffer: Buffer, contentType: string): Promise<string> {
+        await this.s3.send(new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType,
+            CacheControl: 'public, max-age=31536000, immutable',
+        }))
+        return `${this.publicUrl}/${key}`
+    }
+
     async deleteProductImage(url: string): Promise<void> {
         try {
             const key = url.replace(`${this.publicUrl}/`, '')

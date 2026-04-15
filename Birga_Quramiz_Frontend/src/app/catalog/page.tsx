@@ -11,6 +11,7 @@ import { Search, ChevronLeft, ChevronRight, X,
   SlidersHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { getProducts, getCategories } from "@/lib/api/products";
 import { expandSearchQuery } from "@/lib/search";
@@ -402,9 +403,15 @@ export default function CatalogPage() {
                       href={p.slug ? `/product/${p.slug}` : `/catalog/product/${p.id}`}
                       className="flex items-center gap-3 px-4 py-3 border-b border-[#f2f2f2] active:bg-[#f9f9fb]"
                     >
-                      <div className="size-12 shrink-0 rounded-xl overflow-hidden bg-[#f4f4f6]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={resolveImageUrl(p.imageUrl)} alt={p.name} className="w-full h-full object-cover" />
+                      <div className="size-12 shrink-0 rounded-xl overflow-hidden bg-[#f4f4f6] relative">
+                        <Image
+                          src={resolveImageUrl(p.imageUrl)}
+                          alt={p.name}
+                          fill
+                          loading="lazy"
+                          className="object-cover"
+                          sizes="48px"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] text-[#242424] line-clamp-2 leading-snug">{p.name}</p>
@@ -418,12 +425,12 @@ export default function CatalogPage() {
               {meta && meta.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-center gap-3 pb-4">
                   <button disabled={page <= 1} onClick={() => { setPage((p) => p - 1); if (categoryListRef.current) categoryListRef.current.scrollTop = 0; }}
-                    className={cn("flex size-10 items-center justify-center rounded-xl border-2 font-bold", page <= 1 ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
+                    className={cn("flex size-11 items-center justify-center rounded-xl border-2 font-bold", page <= 1 ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
                     <ChevronLeft className="size-5" />
                   </button>
                   <span className="rounded-xl border-2 border-[#1B4D91]/20 bg-white px-5 py-2 text-[13px] font-black text-[#1B4D91]">{page} / {meta.totalPages}</span>
                   <button disabled={page >= meta.totalPages} onClick={() => { setPage((p) => p + 1); if (categoryListRef.current) categoryListRef.current.scrollTop = 0; }}
-                    className={cn("flex size-10 items-center justify-center rounded-xl border-2 font-bold", page >= meta.totalPages ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
+                    className={cn("flex size-11 items-center justify-center rounded-xl border-2 font-bold", page >= meta.totalPages ? "border-slate-100 text-slate-300" : "border-[#1B4D91]/20 text-[#1B4D91]")}>
                     <ChevronRight className="size-5" />
                   </button>
                 </div>

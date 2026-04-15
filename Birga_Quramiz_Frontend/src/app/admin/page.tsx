@@ -17,20 +17,30 @@ import type { Order, OrderStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
 // ── Order status badge ────────────────────────────────────────────────────────
-const STATUS_STYLES: Record<OrderStatus, { label: string; className: string }> = {
-  NEW:       { label: "New",       className: "bg-blue-50 text-blue-600 border-blue-100" },
-  PAID:      { label: "Paid",      className: "bg-violet-50 text-violet-600 border-violet-100" },
-  CONFIRMED: { label: "Confirmed", className: "bg-cyan-50 text-cyan-600 border-cyan-100" },
-  SHIPPED:   { label: "Shipped",   className: "bg-amber-50 text-amber-700 border-amber-100" },
-  DELIVERED: { label: "Delivered", className: "bg-emerald-50 text-emerald-600 border-emerald-100" },
-  CANCELLED: { label: "Cancelled", className: "bg-red-50 text-red-500 border-red-100" },
+const STATUS_CLASS: Record<OrderStatus, string> = {
+  NEW:       "bg-blue-50 text-blue-600 border-blue-100",
+  PAID:      "bg-violet-50 text-violet-600 border-violet-100",
+  CONFIRMED: "bg-cyan-50 text-cyan-600 border-cyan-100",
+  SHIPPED:   "bg-amber-50 text-amber-700 border-amber-100",
+  DELIVERED: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  CANCELLED: "bg-red-50 text-red-500 border-red-100",
+};
+
+const STATUS_KEY: Record<OrderStatus, "statusNEW"|"statusPAID"|"statusCONFIRMED"|"statusSHIPPED"|"statusDELIVERED"|"statusCANCELLED"> = {
+  NEW:       "statusNEW",
+  PAID:      "statusPAID",
+  CONFIRMED: "statusCONFIRMED",
+  SHIPPED:   "statusSHIPPED",
+  DELIVERED: "statusDELIVERED",
+  CANCELLED: "statusCANCELLED",
 };
 
 function StatusBadge({ status }: { status: OrderStatus }) {
-  const s = STATUS_STYLES[status] ?? { label: status, className: "bg-slate-100 text-slate-500" };
+  const t = useTranslations("AdminOrders");
+  const className = STATUS_CLASS[status] ?? "bg-slate-100 text-slate-500";
   return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold border", s.className)}>
-      {s.label}
+    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold border", className)}>
+      {STATUS_KEY[status] ? t(STATUS_KEY[status]) : status}
     </span>
   );
 }
@@ -243,13 +253,13 @@ export default function AdminDashboardPage() {
   }
 
   const quickActions = [
-    { label: t("actionProducts") || "Products",           sub: t("actionProductsSub") || "Moderation",        icon: Package,       href: "/admin/products",          accent: "#1B4D91" },
-    { label: "Brands",                                     sub: "Manage catalog brands",                        icon: Tag,           href: "/admin/brands",            accent: "#8b5cf6" },
-    { label: "Категории",                                  sub: "Управление категориями",                        icon: Package,       href: "/admin/categories",        accent: "#0e9f6e" },
-    { label: t("actionUsers") || "Users",                  sub: t("actionUsersSub") || "Control",              icon: Users,         href: "/admin/users",             accent: "#10b981" },
-    { label: t("actionOrders") || "Orders",                sub: t("actionOrdersSub") || "Oversight",           icon: ClipboardList, href: "/admin/orders",            accent: "#f59e0b" },
-    { label: t("actionDeletionRequests") || "Deletions",  sub: t("actionDeletionRequestsSub") || "Review",    icon: Trash2,        href: "/admin/deletion-requests", accent: "#E31E24" },
-    { label: "Sellers",                                     sub: `${stats.pendingSellers} pending`,               icon: Store,         href: "/admin/sellers",           accent: "#0b3190" },
+    { label: t("actionProducts"),           sub: t("actionProductsSub"),        icon: Package,       href: "/admin/products",          accent: "#1B4D91" },
+    { label: t("actionBrands"),             sub: t("actionBrandsSub"),           icon: Tag,           href: "/admin/brands",            accent: "#8b5cf6" },
+    { label: t("actionCategories"),         sub: t("actionCategoriesSub"),       icon: Package,       href: "/admin/categories",        accent: "#0e9f6e" },
+    { label: t("actionUsers"),              sub: t("actionUsersSub"),            icon: Users,         href: "/admin/users",             accent: "#10b981" },
+    { label: t("actionOrders"),             sub: t("actionOrdersSub"),           icon: ClipboardList, href: "/admin/orders",            accent: "#f59e0b" },
+    { label: t("actionDeletionRequests"),   sub: t("actionDeletionRequestsSub"), icon: Trash2,        href: "/admin/deletion-requests", accent: "#E31E24" },
+    { label: t("actionSellers"),            sub: t("actionSellersSub", { count: stats.pendingSellers }), icon: Store, href: "/admin/sellers", accent: "#0b3190" },
   ];
 
   return (
@@ -300,7 +310,7 @@ export default function AdminDashboardPage() {
               {alerts.length === 0 && (
                 <div className="flex items-center gap-1.5 bg-emerald-400/20 rounded-xl px-3 py-1.5 text-[11px] font-bold text-emerald-200">
                   <CheckCircle2 className="size-3.5" />
-                  All clear
+                  {t("allClear")}
                 </div>
               )}
             </div>
@@ -308,28 +318,28 @@ export default function AdminDashboardPage() {
 
           {/* ── KPI stats ──────────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label={t("usersTotal") || "Total Users"}    value={stats.totalUsers}    icon={Users}        color="#10b981" loading={loadingStats} href="/admin/users" />
-            <StatCard label={t("ordersTotal") || "Total Orders"}  value={stats.totalOrders}   icon={ClipboardList} color="#3b82f6" loading={loadingStats} href="/admin/orders" />
-            <StatCard label={t("productsTotal") || "Products"}    value={stats.totalProducts} icon={Package}      color="#f59e0b" loading={loadingStats} href="/admin/products" />
-            <StatCard label="Brands"                               value={stats.totalBrands}   icon={Tag}          color="#8b5cf6" loading={loadingStats} href="/admin/brands" />
+            <StatCard label={t("usersTotal")}    value={stats.totalUsers}    icon={Users}        color="#10b981" loading={loadingStats} href="/admin/users" />
+            <StatCard label={t("ordersTotal")}  value={stats.totalOrders}   icon={ClipboardList} color="#3b82f6" loading={loadingStats} href="/admin/orders" />
+            <StatCard label={t("productsTotal")} value={stats.totalProducts} icon={Package}      color="#f59e0b" loading={loadingStats} href="/admin/products" />
+            <StatCard label={t("brandsTotal")}  value={stats.totalBrands}   icon={Tag}          color="#8b5cf6" loading={loadingStats} href="/admin/brands" />
           </div>
 
           {/* ── Needs attention ────────────────────────────────────────────── */}
           <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-slate-50 flex items-center justify-between">
               <p className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">
-                Needs Attention
+                {t("needsAttention")}
               </p>
               {alerts.length === 0 && (
                 <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
-                  <CheckCircle2 className="size-3.5" /> All clear
+                  <CheckCircle2 className="size-3.5" /> {t("allClear")}
                 </span>
               )}
             </div>
             <div className="p-2">
               {alerts.length === 0 ? (
                 <div className="py-4 px-3 text-center text-[13px] text-slate-400 font-medium">
-                  No pending actions — platform is running smoothly.
+                  {t("noPendingActions")}
                 </div>
               ) : (
                 alerts.map((a, i) => (
@@ -343,22 +353,22 @@ export default function AdminDashboardPage() {
                   <Link href="/admin/products" className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                     <Package className="size-4 text-slate-400" />
                     <div>
-                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingModeration} pending`}</p>
-                      <p className="text-[10px] text-slate-400">Moderation</p>
+                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingModeration} ${t("pending")}`}</p>
+                      <p className="text-[10px] text-slate-400">{t("moderation")}</p>
                     </div>
                   </Link>
                   <Link href="/admin/deletion-requests" className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                     <Trash2 className="size-4 text-slate-400" />
                     <div>
-                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingDeletion} pending`}</p>
-                      <p className="text-[10px] text-slate-400">Deletions</p>
+                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingDeletion} ${t("pending")}`}</p>
+                      <p className="text-[10px] text-slate-400">{t("deletions")}</p>
                     </div>
                   </Link>
                   <Link href="/admin/sellers" className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                     <Store className="size-4 text-slate-400" />
                     <div>
-                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingSellers} pending`}</p>
-                      <p className="text-[10px] text-slate-400">Sellers</p>
+                      <p className="text-[12px] font-bold text-slate-600">{loadingStats ? "—" : `${stats.pendingSellers} ${t("pending")}`}</p>
+                      <p className="text-[10px] text-slate-400">{t("sellers")}</p>
                     </div>
                   </Link>
                 </div>
@@ -372,7 +382,7 @@ export default function AdminDashboardPage() {
             {/* Quick Actions */}
             <div className="flex flex-col gap-3">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 px-1">
-                Quick Actions
+                {t("quickActions")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {quickActions.map((a) => (
@@ -385,13 +395,13 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-                  Recent Orders
+                  {t("recentOrders")}
                 </p>
                 <Link
                   href="/admin/orders"
                   className="text-[11px] font-bold text-[#1B4D91]/60 hover:text-[#1B4D91] transition-colors flex items-center gap-1"
                 >
-                  View all <ChevronRight className="size-3" />
+                  {t("viewAll")} <ChevronRight className="size-3" />
                 </Link>
               </div>
 
@@ -404,7 +414,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : recentOrders.length === 0 ? (
                   <div className="py-10 text-center text-[13px] text-slate-400 font-medium">
-                    No orders yet
+                    {t("noOrders")}
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-50">
@@ -438,7 +448,7 @@ export default function AdminDashboardPage() {
                     href="/admin/orders"
                     className="flex items-center justify-center gap-1.5 text-[12px] font-bold text-[#1B4D91]/60 hover:text-[#1B4D91] transition-colors"
                   >
-                    See all {stats.totalOrders > 0 ? `${stats.totalOrders.toLocaleString()} ` : ""}orders
+                    {t("seeAllOrders", { count: stats.totalOrders.toLocaleString() })}
                     <ChevronRight className="size-3.5" />
                   </Link>
                 </div>

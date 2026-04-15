@@ -70,7 +70,7 @@ export default function SidebarFilter({
             {/* Sidebar Container */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 right-0 z-[70] w-full max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-24 lg:z-0 lg:w-[280px] lg:translate-x-0 lg:bg-white lg:rounded-3xl lg:shadow-sm lg:border lg:border-slate-200/60 lg:h-fit flex flex-col pt-10 px-6 lg:pt-6 lg:px-6 pb-10 min-h-screen lg:min-h-0",
+                    "fixed inset-y-0 right-0 z-[70] w-[85vw] max-w-[320px] bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-24 lg:z-0 lg:w-[280px] lg:translate-x-0 lg:bg-white lg:rounded-3xl lg:shadow-sm lg:border lg:border-slate-200/60 lg:h-fit flex flex-col pt-10 px-6 lg:pt-6 lg:px-6 pb-[calc(env(safe-area-inset-bottom)+40px)] lg:pb-10 min-h-screen lg:min-h-0",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >

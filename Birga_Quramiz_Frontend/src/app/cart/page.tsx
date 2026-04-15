@@ -19,12 +19,22 @@ import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeItem, increment, decrement, clearCart } = useCartStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations("Cart");
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      router.push("/login?returnUrl=/checkout");
+      return;
+    }
+    router.push("/checkout");
+  };
 
   const [selectedItems, setSelectedItems] = useState<string[]>(items.map(i => i.id));
 
@@ -70,7 +80,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] pb-32 md:pb-20 pt-6 md:pt-10">
+    <div className="min-h-screen bg-[#F0F2F5] pb-[calc(env(safe-area-inset-bottom)+128px)] md:pb-20 pt-6 md:pt-10">
       <div className="max-w-[1488px] mx-auto px-4 md:px-10">
         <h1 className="text-[24px] md:text-[32px] font-bold text-black mb-6 md:mb-8 flex items-baseline gap-2">
           {t("title")}
@@ -268,7 +278,7 @@ export default function CartPage() {
             <div className="bg-white rounded-[24px] p-8 shadow-sm border border-slate-100">
               {/* Primary Action at the Top */}
               <button
-                onClick={() => router.push("/checkout")}
+                onClick={handleCheckout}
                 className="w-full flex items-center justify-center h-16 rounded-full bg-[#275fdb] hover:bg-[#1B4D91] text-[16px] font-bold text-white shadow-xl shadow-[#275fdb]/20 transition-all mb-6 group"
               >
                 <span>{t("proceed")}</span>
@@ -309,7 +319,7 @@ export default function CartPage() {
       </div>
 
       {/* --- Optimized Mobile Floating Bottom Bar --- */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-40 lg:hidden">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] left-0 right-0 z-40 lg:hidden">
         <div className="mx-4 mb-4 rounded-[32px] bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-[0_12px_48px_rgba(0,0,0,0.18)] px-5 py-4 flex items-center justify-between">
             <div className="flex flex-col">
               <p className="text-[10px] font-black uppercase tracking-widest text-[#275fdb] mb-0.5">{t("totalCost")}</p>
@@ -319,7 +329,7 @@ export default function CartPage() {
               </p>
             </div>
             <button
-              onClick={() => router.push("/checkout")}
+              onClick={handleCheckout}
               className="h-14 px-8 rounded-full bg-[#275fdb] flex items-center justify-center gap-2 text-[15px] font-black text-white shadow-lg shadow-[#275fdb]/25 active:scale-95 transition-all"
             >
               <span>{t("checkout")}</span>

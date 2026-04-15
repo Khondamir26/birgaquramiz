@@ -16,7 +16,6 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { join } from 'path'
-import { existsSync, unlinkSync } from 'fs'
 import type { Request } from 'express'
 import { UploadService } from '../upload/upload.service'
 import { ProductsService } from './products.service'
@@ -81,10 +80,7 @@ export class ProductsController {
     try {
       return await this.productsService.create({ ...body, imageUrls }, req.user)
     } catch (err) {
-      for (const url of imageUrls) {
-        const abs = join(process.cwd(), url)
-        if (existsSync(abs)) { try { unlinkSync(abs) } catch { /* ignore */ } }
-      }
+      await Promise.all(imageUrls.map(url => this.uploadService.deleteProductImage(url)))
       throw err
     }
   }

@@ -60,7 +60,7 @@ export default function BottomNavigation() {
                 "shadow-[0_-4px_24px_rgba(27,77,145,0.07)]"
             )}
         >
-            <div className="grid grid-cols-5 px-1">
+            <div className="grid grid-cols-5 px-2">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const isActive =
@@ -75,7 +75,7 @@ export default function BottomNavigation() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className="group relative flex flex-col items-center py-1 tap-highlight-none"
+                            className="group relative flex flex-col items-center py-1.5 min-h-[44px] justify-center tap-highlight-none"
                         >
                             {/* Active pill */}
                             <span

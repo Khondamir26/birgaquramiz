@@ -83,7 +83,7 @@ export default function BurgerSidebar({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50"
               aria-label="Close menu"
             >
               <X className="size-4" />
@@ -100,7 +100,7 @@ export default function BurgerSidebar({
                     key={item.id}
                     href={item.href}
                     onClick={onClose}
-                    className="flex items-center gap-3 rounded-2xl px-3 py-3 text-[14px] font-bold text-slate-700 transition hover:bg-slate-100"
+                    className="flex items-center gap-3 rounded-2xl px-3 py-3.5 min-h-[44px] text-[14px] font-bold text-slate-700 transition hover:bg-slate-100"
                   >
                     <Icon className="size-4 text-slate-500" />
                     <span>{item.label}</span>
@@ -120,7 +120,7 @@ export default function BurgerSidebar({
                     key={item.id}
                     href={item.href}
                     onClick={onClose}
-                    className="flex items-center gap-3 rounded-2xl px-3 py-3 text-[14px] font-bold text-slate-700 transition hover:bg-slate-100"
+                    className="flex items-center gap-3 rounded-2xl px-3 py-3.5 min-h-[44px] text-[14px] font-bold text-slate-700 transition hover:bg-slate-100"
                   >
                     <Icon className="size-4 text-slate-500" />
                     <span>{item.label}</span>
@@ -155,7 +155,7 @@ export default function BurgerSidebar({
                     onClose();
                     onLogout();
                   }}
-                  className="mt-2 w-full rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-left text-[14px] font-bold text-red-700 transition hover:bg-red-100"
+                  className="mt-2 w-full rounded-2xl border border-red-200 bg-red-50 px-3 py-3.5 min-h-[44px] text-left text-[14px] font-bold text-red-700 transition hover:bg-red-100"
                 >
                   {logoutLabel}
                 </button>

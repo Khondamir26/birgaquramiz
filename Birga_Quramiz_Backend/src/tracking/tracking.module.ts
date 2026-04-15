@@ -12,11 +12,13 @@ import { LocationHistoryService } from './services/location-history.service'
 import { PodPhotoService } from './services/pod-photo.service'
 import { MapsModule } from '../maps/maps.module'
 import { PrismaModule } from '../prisma/prisma.module'
+import { UploadModule } from '../upload/upload.module'
 import { WsJwtGuard } from './guards/ws-jwt.guard'
 
 @Module({
   imports: [
     PrismaModule,
+    UploadModule,
     MapsModule,
     ScheduleModule.forRoot(),
     JwtModule.register({

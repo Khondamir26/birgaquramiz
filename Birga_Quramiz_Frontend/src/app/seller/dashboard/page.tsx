@@ -145,7 +145,7 @@ export default function SellerDashboardPage() {
             <div className="flex flex-col items-end gap-2 relative z-10">
               <button
                 onClick={() => void fetchData()}
-                className="flex size-10 items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+                className="flex size-11 items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-colors"
                 title="Refresh"
               >
                 <RefreshCw className="size-4" />

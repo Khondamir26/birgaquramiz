@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
+import { useTranslations } from "next-intl"
 import { Pencil, Trash2, Plus, X } from "lucide-react"
 import { getBrands, createBrand, updateBrand, deleteBrand, type BrandInput } from "@/lib/api/brands"
 import type { Brand } from "@/types"
 import BrandLogo from "@/components/brand/BrandLogo"
 
 export default function AdminBrandsPage() {
+  const t = useTranslations("AdminBrands")
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -104,17 +105,17 @@ export default function AdminBrandsPage() {
       handleCloseModal()
       loadBrands()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при сохранении")
+      alert(err instanceof Error ? err.message : t("btnSave"))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Вы уверены, что хотите удалить этот бренд?")) return
+    if (!window.confirm(t("deleteConfirm"))) return
     try {
       await deleteBrand(id)
       loadBrands()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при удалении")
+      alert(err instanceof Error ? err.message : t("tooltipDelete"))
     }
   }
 
@@ -123,10 +124,10 @@ export default function AdminBrandsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-[#1B4D91]">
-            Управление Брендами
+            {t("title")}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Здесь вы можете добавлять, редактировать и удалять бренды.
+            {t("description")}
           </p>
         </div>
         <button
@@ -134,7 +135,7 @@ export default function AdminBrandsPage() {
           className="flex items-center gap-2 bg-[#1B4D91] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#123668] transition-colors active:scale-95"
         >
           <Plus className="w-5 h-5" />
-          Добавить бренд
+          {t("addBrand")}
         </button>
       </div>
 
@@ -150,19 +151,19 @@ export default function AdminBrandsPage() {
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
-                  Логотип
+                  {t("colLogo")}
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
-                  Название
+                  {t("colName")}
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
-                  Слаг (Slug)
+                  {t("colSlug")}
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider font-medium">
-                  Отображение
+                  {t("colFeatured")}
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider text-right">
-                  Действия
+                  {t("colActions")}
                 </th>
               </tr>
             </thead>
@@ -176,7 +177,7 @@ export default function AdminBrandsPage() {
               ) : brands.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
-                    Нет добавленных брендов
+                    {t("empty")}
                   </td>
                 </tr>
               ) : (
@@ -212,11 +213,11 @@ export default function AdminBrandsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                         {brand.featured ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Рекомендуемый
+                            {t("featuredBadge")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                            Обычный
+                            {t("regularBadge")}
                           </span>
                         )}
                     </td>
@@ -225,14 +226,14 @@ export default function AdminBrandsPage() {
                         <button
                           onClick={() => handleOpenModal(brand)}
                           className="p-2 text-slate-400 hover:text-[#1B4D91] hover:bg-[#1B4D91]/10 rounded-lg transition-colors"
-                          title="Редактировать"
+                          title={t("tooltipEdit")}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(brand.id)}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Удалить"
+                          title={t("tooltipDelete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -251,7 +252,7 @@ export default function AdminBrandsPage() {
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <h2 className="text-xl font-bold text-slate-800">
-                {editingBrand ? "Редактировать бренд" : "Новый бренд"}
+                {editingBrand ? t("modalEditTitle") : t("modalNewTitle")}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -265,7 +266,7 @@ export default function AdminBrandsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Название бренда <span className="text-red-500">*</span>
+                    {t("fieldName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -273,13 +274,13 @@ export default function AdminBrandsPage() {
                     value={formData.name}
                     onChange={handleNameChange}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all"
-                    placeholder="Например: Milwaukee"
+                    placeholder={t("namePlaceholder")}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Слаг (Slug) <span className="text-red-500">*</span>
+                    {t("fieldSlug")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -289,12 +290,12 @@ export default function AdminBrandsPage() {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all font-mono text-sm"
                     placeholder="milwaukee"
                   />
-                  <p className="text-xs text-slate-400 mt-1">Окончание URL: /brands/milwaukee</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("fieldSlugHint", { slug: "milwaukee" })}</p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    URL Логотипа
+                    {t("fieldLogo")}
                   </label>
                   <div className="flex gap-3">
                      <input
@@ -319,7 +320,7 @@ export default function AdminBrandsPage() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Веб-сайт
+                    {t("fieldWebsite")}
                   </label>
                   <input
                     type="text"
@@ -332,14 +333,14 @@ export default function AdminBrandsPage() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Описание
+                    {t("fieldDescription")}
                   </label>
                   <textarea
                     rows={4}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#1B4D91]/20 focus:border-[#1B4D91] transition-all resize-none"
-                    placeholder="Описание компании и ее особенностей..."
+                    placeholder={t("descriptionPlaceholder")}
                   />
                 </div>
                 
@@ -353,8 +354,8 @@ export default function AdminBrandsPage() {
                      />
                   </div>
                   <div>
-                     <div className="text-sm font-bold text-slate-700">Рекомендуемый бренд</div>
-                     <div className="text-xs text-slate-500 mt-0.5">Будет отображаться в списке популярных</div>
+                     <div className="text-sm font-bold text-slate-700">{t("fieldFeatured")}</div>
+                     <div className="text-xs text-slate-500 mt-0.5">{t("fieldFeaturedHint")}</div>
                   </div>
                 </label>
 
@@ -366,13 +367,13 @@ export default function AdminBrandsPage() {
                   onClick={handleCloseModal}
                   className="flex-1 bg-slate-100 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                 >
-                  Отмена
+                  {t("btnCancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 bg-[#1B4D91] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#123668] transition-colors shadow-sm shadow-[#1B4D91]/20"
                 >
-                  {editingBrand ? "Сохранить" : "Добавить"}
+                  {editingBrand ? t("btnSave") : t("btnAdd")}
                 </button>
               </div>
             </form>
