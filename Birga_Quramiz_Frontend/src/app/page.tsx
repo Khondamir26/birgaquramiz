@@ -18,7 +18,7 @@ export default async function HomePage() {
   const sections = [
     { title: t('newArrivals'),  items: products.slice(0, 8),  id: 'new' },
     { title: t('topProducts'),  items: products.slice(8, 16), id: 'top' },
-    { title: t('mightNeed'),    items: products.slice(16, 24),id: 'recommended' },
+    { title: t('mightNeed'),    items: products.slice(16, 24), id: 'recommended' },
     { title: t('allProducts'),  items: products.slice(24),    id: 'all' },
   ];
 

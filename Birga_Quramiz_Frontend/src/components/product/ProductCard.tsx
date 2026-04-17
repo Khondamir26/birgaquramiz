@@ -4,21 +4,25 @@ import { memo } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { useCart } from "@/hooks/useCart"
+import { useCartStore } from "@/store/cartStore"
+import { useFavoritesStore } from "@/store/favoritesStore"
 import { resolveImageUrl } from "@/lib/image"
 import type { Product } from "@/types"
 import { ShoppingCart } from "lucide-react"
-import { useFavorites } from "@/hooks/useFavorites"
 import ProductFrame from "@/components/ui/ProductFrame"
 
 const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const router = useRouter()
-  const { addItem, increment, decrement, getQuantity } = useCart()
   const t = useTranslations("ProductCard")
-  const quantity = getQuantity(product.id)
 
-  const { toggleFavorite, isFavorite } = useFavorites()
-  const liked = isFavorite(product.id)
+  // Granular selectors — only this card re-renders when its own quantity/favorite changes
+  const quantity = useCartStore(s => s.items.find(i => i.id === product.id)?.quantity ?? 0)
+  const addItem  = useCartStore(s => s.addItem)
+  const increment = useCartStore(s => s.increment)
+  const decrement = useCartStore(s => s.decrement)
+
+  const liked = useFavoritesStore(s => s.isFavorite(product.id))
+  const toggleFavorite = useFavoritesStore(s => s.toggleFavorite)
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement
