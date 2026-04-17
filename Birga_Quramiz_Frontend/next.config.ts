@@ -79,11 +79,19 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
         ],
       },
-      // HTML pages: always revalidate, security headers on everything
+      // Private/auth pages — never cache
+      {
+        source: '/(profile|orders|cart|checkout|admin|seller)(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          ...securityHeaders,
+        ],
+      },
+      // Public pages — cache at Cloudflare edge for 60s, revalidate in background
       {
         source: '/(.*)',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+          { key: 'Cache-Control', value: 'public, max-age=60, stale-while-revalidate=300' },
           ...securityHeaders,
         ],
       },
