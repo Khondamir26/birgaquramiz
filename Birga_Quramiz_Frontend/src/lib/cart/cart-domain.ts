@@ -32,6 +32,19 @@ export function addOrIncrementItem(items: CartItem[], product: CartProductInput)
   )
 }
 
+export const MAX_CART_QUANTITY = 999
+
+export function addItemWithQuantity(items: CartItem[], product: CartProductInput, quantity: number): CartItem[] {
+  const q = Math.min(Math.max(1, quantity), MAX_CART_QUANTITY)
+  const existing = items.find((item) => item.id === product.id)
+  if (!existing) {
+    return [...items, { ...product, quantity: q }]
+  }
+  return items.map((item) =>
+    item.id === product.id ? { ...item, quantity: q } : item,
+  )
+}
+
 export function setItemQuantity(items: CartItem[], productId: string, quantity: number): CartItem[] {
   if (quantity <= 0) {
     return items.filter((item) => item.id !== productId)

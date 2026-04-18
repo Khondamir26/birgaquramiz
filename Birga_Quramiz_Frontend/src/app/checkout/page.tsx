@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { createGuestOrder, createOrder } from "@/lib/api/orders";
+import { trackEvent } from "@/lib/analytics/track";
+import { useChatStore } from "@/store/chatStore";
 import { useTranslations } from "next-intl";
 import { resolveImageUrl } from "@/lib/image";
 import type { DeliveryType, PaymentMethod } from "@/types";
@@ -132,6 +134,10 @@ export default function CheckoutPage() {
         isAuthenticated && user?.role === "USER"
           ? await createOrder(payload)
           : await createGuestOrder(payload);
+      trackEvent('ORDER_PLACED', {
+        sessionId: useChatStore.getState().sessionId,
+        orderId: order.id,
+      });
       clearCart();
       setSuccessOrderId(order.id);
     } catch (err: unknown) {

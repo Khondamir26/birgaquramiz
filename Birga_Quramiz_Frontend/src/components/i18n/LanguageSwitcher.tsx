@@ -45,7 +45,7 @@ export default function LanguageSwitcher({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild suppressHydrationWarning>
         <button
           type="button"
           className={`inline-flex items-center bg-transparent font-bold transition-all tap-highlight-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none ${

@@ -1,0 +1,9 @@
+# Redis dump
+dump.rdb
+
+# Environment files
+.env
+
+# OS
+.DS_Store
+Thumbs.db

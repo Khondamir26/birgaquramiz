@@ -1,50 +1,84 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bot, SendHorizontal, Sparkles, Mic, Info } from "lucide-react";
-import { useState, useRef } from "react";
-
-type Message = { role: "ai" | "user"; text: string };
+import { Bot, SendHorizontal, Sparkles, Mic, Loader2, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useChat } from "@/hooks/useChat";
+import { useProject } from "@/hooks/useProject";
+import { useChatStore } from "@/store/chatStore";
+import { useProjectStore } from "@/store/projectStore";
+import { ChatContainer } from "@/components/chat/ChatContainer";
+import { ProjectPanel } from "@/components/project/ProjectPanel";
+import { QuotaNudge } from "@/components/chat/QuotaNudge";
 
 export default function AiChatPage() {
   const t = useTranslations("AiChat");
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", text: t("greeting") },
-  ]);
+  const { messages, loading, send, remaining } = useChat();
+  const { updateFromText } = useProject();
+  const { addMessage, clear } = useChatStore();
+  const resetProject = useProjectStore((s) => s.reset);
+
+  function handleClear() {
+    clear();
+    resetProject();
+    addMessage({ role: "ai", text: String(t("greeting")) });
+  }
+
   const [input, setInput] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   const prompts = [t("prompt1"), t("prompt2"), t("prompt3")];
 
-  const handleSend = (text: string) => {
+  useEffect(() => {
+    function init() {
+      if (useChatStore.getState().messages.length === 0) {
+        addMessage({ role: "ai", text: String(t("greeting")) });
+      }
+      setMounted(true);
+    }
+
+    if (useChatStore.persist.hasHydrated()) {
+      init();
+    } else {
+      const unsub = useChatStore.persist.onFinishHydration(init);
+      return unsub;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const INPUT_MAX = 2000;
+
+  async function handleSend(text: string) {
     const msg = text.trim();
-    if (!msg) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: msg },
-      { role: "ai", text: t("comingSoon") },
-    ]);
+    if (!msg || loading || msg.length > INPUT_MAX) return;
     setInput("");
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  };
+    updateFromText(msg);
+    await send(msg);
+  }
 
   return (
-    <div className="flex flex-col pb-44 bg-[#f4f6fa] md:pb-12">
+    <div className="flex flex-col pb-44 bg-background md:pb-12">
       <div className="mx-auto w-full md:max-w-[1488px]">
         <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
 
           {/* Hero */}
-          <div className="rounded-3xl bg-[#1B4D91] px-6 py-9 md:px-10 flex items-start justify-between">
+          <div className="rounded-3xl bg-primary px-6 py-9 md:px-10 flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/50">Birga Quramiz</p>
-                <span className="rounded-lg bg-[#E31E24] px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">{t("beta")}</span>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-foreground/50">
+                  Birga Quramiz
+                </p>
+                <span className="rounded-lg bg-accent px-2 py-0.5 text-[9px] font-black text-accent-foreground uppercase tracking-wider">
+                  {t("beta")}
+                </span>
               </div>
-              <h1 className="text-2xl font-black text-white md:text-3xl">{t("title")}</h1>
-              <p className="mt-2 max-w-xl text-[13px] text-white/70 md:text-[14px]">{t("subtitle")}</p>
+              <h1 className="text-2xl font-black text-primary-foreground md:text-3xl">{t("title")}</h1>
+              <p className="mt-2 max-w-xl text-[13px] text-primary-foreground/70 md:text-sm">
+                {t("subtitle")}
+              </p>
             </div>
-            <div className="hidden md:flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/10">
-              <Bot className="size-8 text-white" />
+            <div className="hidden md:flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary-foreground/10">
+              <Bot className="size-8 text-primary-foreground" />
             </div>
           </div>
 
@@ -52,62 +86,97 @@ export default function AiChatPage() {
           <div className="flex flex-col gap-4 md:flex-row md:gap-6 md:items-start">
 
             {/* Sidebar */}
-            <aside className="md:w-56 shrink-0">
-              <div className="rounded-3xl bg-white border border-slate-100 shadow-sm p-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t("quickPrompts")}</p>
+            <aside className="md:w-56 shrink-0 space-y-3">
+              <div className="surface-card p-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">
+                  {t("quickPrompts")}
+                </p>
                 <div className="space-y-2">
                   {prompts.map((p) => (
                     <button
                       key={p}
                       onClick={() => handleSend(p)}
-                      className="w-full flex items-start gap-2.5 rounded-2xl border border-[#1B4D91]/10 bg-[#f4f6fa] px-3.5 py-3 text-left text-[12px] font-semibold text-[#1B4D91] hover:bg-[#1B4D91]/5 active:bg-[#1B4D91]/10 transition-colors"
+                      disabled={loading}
+                      className="w-full flex items-start gap-2.5 rounded-2xl border border-border bg-background px-3.5 py-3 text-left text-xs font-medium text-primary hover:bg-secondary hover:border-primary/20 transition-colors disabled:opacity-50"
                     >
-                      <Sparkles className="size-3.5 mt-0.5 shrink-0 text-[#f9b41b]" />
+                      <Sparkles className="size-3.5 mt-0.5 shrink-0 text-amber-500" />
                       {p}
                     </button>
                   ))}
                 </div>
-                <div className="mt-4 flex items-start gap-2 rounded-2xl bg-[#E31E24]/5 border border-[#E31E24]/10 p-3">
-                  <Info className="size-3.5 text-[#E31E24] shrink-0 mt-0.5" />
-                  <p className="text-[11px] font-medium text-[#E31E24] leading-snug">{t("comingSoon")}</p>
-                </div>
               </div>
+              <ProjectPanel />
             </aside>
 
             {/* Chat area */}
-            <div className="flex flex-col flex-1 rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden" style={{ minHeight: 420 }}>
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    {msg.role === "ai" && (
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1B4D91]/10 text-[#1B4D91] mt-0.5">
-                        <Bot className="size-4" />
-                      </div>
-                    )}
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed font-medium ${msg.role === "ai" ? "rounded-tl-sm bg-[#1B4D91]/8 text-[#1B4D91]" : "rounded-tr-sm bg-[#1B4D91] text-white"}`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                <div ref={bottomRef} />
+            <div
+              className="flex flex-col flex-1 rounded-3xl bg-card border border-border shadow-sm overflow-hidden"
+              style={{ minHeight: 420 }}
+            >
+              <div className="flex items-center justify-between px-5 pt-4 pb-0">
+                <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                  {t("chatLabel")}
+                </span>
+                {messages.length > 1 && (
+                  <button
+                    onClick={handleClear}
+                    className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-colors"
+                  >
+                    <Trash2 className="size-3.5" />
+                    {t("clearChat")}
+                  </button>
+                )}
               </div>
-              <div className="border-t border-slate-100 px-4 py-4 flex items-center gap-3">
-                <button className="flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-[#1B4D91] hover:border-[#1B4D91]/30 transition-colors">
-                  <Mic className="size-[18px]" />
-                </button>
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
-                  placeholder={t("inputPlaceholder")}
-                  className="h-10 flex-1 rounded-2xl border-2 border-[#1B4D91]/15 bg-[#f4f6fa] px-4 text-[13px] font-semibold text-[#1B4D91] placeholder:font-normal placeholder:text-slate-400 focus:border-[#1B4D91]/40 focus:bg-white focus:outline-none transition-all"
+
+              {mounted && (
+                <ChatContainer
+                  messages={messages}
+                  loading={loading}
+                  thinkingLabel={String(t("thinking"))}
+                  onSuggestion={handleSend}
                 />
-                <button
-                  onClick={() => handleSend(input)}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#1B4D91] text-white hover:bg-[#163d73] active:scale-90 transition-all"
-                >
-                  <SendHorizontal className="size-[18px]" />
-                </button>
+              )}
+
+              {remaining !== null && remaining <= 5 && (
+                <QuotaNudge remaining={remaining} />
+              )}
+
+              {/* Input */}
+              <div className="border-t border-border px-4 py-4 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <button className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
+                    <Mic className="size-[18px]" />
+                  </button>
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend(input)}
+                    placeholder={String(t("inputPlaceholder"))}
+                    disabled={loading}
+                    maxLength={INPUT_MAX}
+                    className={`h-10 flex-1 rounded-2xl border bg-background px-4 text-sm font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground focus:outline-none transition-all disabled:opacity-60 ${
+                      input.length > INPUT_MAX * 0.9
+                        ? 'border-destructive/60 focus:border-destructive'
+                        : 'border-border focus:border-primary/40 focus:bg-card'
+                    }`}
+                  />
+                  <button
+                    onClick={() => handleSend(input)}
+                    disabled={loading || !input.trim() || input.length > INPUT_MAX}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <Loader2 className="size-[18px] animate-spin" />
+                    ) : (
+                      <SendHorizontal className="size-[18px]" />
+                    )}
+                  </button>
+                </div>
+                {input.length > INPUT_MAX * 0.9 && (
+                  <p className="text-[10px] text-right pr-14 text-destructive font-medium">
+                    {input.length} / {INPUT_MAX}
+                  </p>
+                )}
               </div>
             </div>
           </div>

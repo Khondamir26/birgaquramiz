@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import {
+  addItemWithQuantity,
   addOrIncrementItem,
   decrementItem,
   getItemQuantity,
@@ -15,6 +16,7 @@ import {
 type CartState = {
   items: CartItem[]
   addItem: (product: CartProductInput) => void
+  addItemWithQuantity: (product: CartProductInput, quantity: number) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   increment: (id: string) => void
@@ -32,6 +34,11 @@ export const useCartStore = create<CartState>()(
       addItem: (product) =>
         set((state) => ({
           items: addOrIncrementItem(state.items, product),
+        })),
+
+      addItemWithQuantity: (product, quantity) =>
+        set((state) => ({
+          items: addItemWithQuantity(state.items, product, quantity),
         })),
 
       removeItem: (id) =>

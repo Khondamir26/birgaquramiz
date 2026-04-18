@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics/track";
+import { useChatStore } from "@/store/chatStore";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useTranslations } from "next-intl";
@@ -29,6 +31,10 @@ export default function CartPage() {
   const t = useTranslations("Cart");
 
   const handleCheckout = () => {
+    trackEvent('CHECKOUT_STARTED', {
+      sessionId: useChatStore.getState().sessionId,
+      itemCount: items.length,
+    });
     if (!isAuthenticated) {
       router.push("/login?returnUrl=/checkout");
       return;
