@@ -9,7 +9,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https: http://localhost:5000 http://127.0.0.1:5000`,
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://www.google-analytics.com https://cloudflareinsights.com",
+  "connect-src 'self' http://localhost:5000 https://api.birga-quramiz.uz https://ai.birga-quramiz.uz https://www.google-analytics.com https://cloudflareinsights.com",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
   "base-uri 'self'",
   "form-action 'self'",
