@@ -74,6 +74,7 @@ jobs:
           CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
           COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_AI_URL: https://ai.birga-quramiz.uz
           BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -92,7 +93,7 @@ jobs:
           host: ${{ secrets.HETZNER_IP }}
           username: ${{ secrets.HETZNER_USERNAME }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
-          envs: IMAGE_TAG,DATABASE_URL,POSTGRES_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID,REMOVE_BG_API_KEY,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_ENDPOINT,R2_BUCKET,R2_PUBLIC_URL,GEMINI_API_KEY
+          envs: IMAGE_TAG,DATABASE_URL,POSTGRES_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,CORS_ORIGINS,COOKIE_DOMAIN,NEXT_PUBLIC_API_URL,NEXT_PUBLIC_AI_URL,BCRYPT_SALT_ROUNDS,GITHUB_TOKEN,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,PAYME_MERCHANT_KEY,CLICK_SECRET_KEY,CLICK_SERVICE_ID,REMOVE_BG_API_KEY,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_ENDPOINT,R2_BUCKET,R2_PUBLIC_URL,GEMINI_API_KEY
           script: |
             set -Eeuo pipefail
 
@@ -216,6 +217,7 @@ jobs:
               printf 'CORS_ORIGINS=%s\n'         "${EFFECTIVE_CORS_ORIGINS}"
               printf 'COOKIE_DOMAIN=%s\n'        "${EFFECTIVE_COOKIE_DOMAIN}"
               printf 'NEXT_PUBLIC_API_URL=%s\n'  "${EFFECTIVE_API_URL}"
+              printf 'NEXT_PUBLIC_AI_URL=%s\n'   "${NEXT_PUBLIC_AI_URL:-https://ai.birga-quramiz.uz}"
               printf 'BCRYPT_SALT_ROUNDS=%s\n'   "${EFFECTIVE_BCRYPT_ROUNDS}"
               printf 'TELEGRAM_BOT_TOKEN=%s\n'   "${TELEGRAM_BOT_TOKEN}"
               printf 'TELEGRAM_CHAT_ID=%s\n'     "${TELEGRAM_CHAT_ID}"
@@ -243,7 +245,7 @@ jobs:
             # Build containers
             ############################################
 
-            docker compose build --pull backend frontend
+            docker compose build --pull backend frontend ai
 
             ############################################
             # Run database migrations

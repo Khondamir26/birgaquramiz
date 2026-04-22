@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AnalyticsController } from './analytics/analytics.controller';
 import { UploadModule } from './upload/upload.module';
-import { AiModule } from './ai/ai.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -37,7 +36,6 @@ import { MapsModule } from './maps/maps.module';
     ReviewsModule,
     BrandsModule,
     TrackingModule,
-    AiModule,
   ],
   controllers: [AppController, AnalyticsController],
   providers: [AppService],

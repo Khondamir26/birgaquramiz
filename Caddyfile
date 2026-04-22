@@ -32,6 +32,17 @@ birga-quramiz.uz {
   }
 }
 
+# AI Service
+ai.birga-quramiz.uz {
+  import site_security
+
+  reverse_proxy ai:8000 {
+    health_uri /health
+    health_interval 10s
+    health_timeout 5s
+  }
+}
+
 # API
 api.birga-quramiz.uz {
   import site_security

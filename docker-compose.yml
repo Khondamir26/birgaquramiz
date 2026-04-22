@@ -53,7 +53,6 @@ services:
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
       REMOVE_BG_API_KEY: ${REMOVE_BG_API_KEY}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
@@ -92,6 +91,37 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  ai:
+    image: birga-ai:${APP_IMAGE_TAG:-latest}
+    build:
+      context: ./Birga_AI_Service
+      dockerfile: Dockerfile
+    container_name: birga-ai
+    restart: unless-stopped
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - app_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
   frontend:
     image: birga-frontend:${APP_IMAGE_TAG:-latest}
     build:
@@ -99,6 +129,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_AI_URL: ${NEXT_PUBLIC_AI_URL:-https://ai.birga-quramiz.uz}
         NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-G-T853TX7K3C}
         NEXT_PUBLIC_YANDEX_MAPS_KEY: ${NEXT_PUBLIC_YANDEX_MAPS_KEY:-}
     container_name: birga-frontend
@@ -106,6 +137,7 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_AI_URL: ${NEXT_PUBLIC_AI_URL:-https://ai.birga-quramiz.uz}
       NEXT_PUBLIC_YANDEX_MAPS_KEY: ${NEXT_PUBLIC_YANDEX_MAPS_KEY:-}
       API_INTERNAL_URL: http://backend:5000
       JWT_SECRET: ${JWT_SECRET}
@@ -147,6 +179,8 @@ services:
       frontend:
         condition: service_healthy
       backend:
+        condition: service_healthy
+      ai:
         condition: service_healthy
     networks:
       - app_net
