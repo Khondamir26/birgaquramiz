@@ -6,45 +6,10 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import { usePathname } from "next/navigation";
 import { getCategoryName } from "@/lib/categoryName";
-import {
-  Menu, X, ChevronRight,
-  Hammer, Wrench, Flame, Zap, Droplets, Wind,
-  Building2, Package, Settings2, Paintbrush, TreePine,
-  Grid3x3, DoorOpen, Layers, FlaskConical, Waves,
-  ShieldAlert, Cog, LayoutGrid, ThermometerSun,
-  Boxes, Drill, Cable, Warehouse, HardHat,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Menu, X, ChevronRight } from "lucide-react";
 import { getCategories } from "@/lib/api/products";
 import type { Category } from "@/types";
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  MIX: FlaskConical,
-  ROF: Warehouse,
-  INS: ThermometerSun,
-  DRW: Layers,
-  PNT: Paintbrush,
-  MTL: Settings2,
-  FAS: Wrench,
-  TOL: Hammer,
-  PLM: Droplets,
-  ELC: Zap,
-  BLK: Building2,
-  FLR: LayoutGrid,
-  WOD: TreePine,
-  VNT: Wind,
-  DOR: DoorOpen,
-  RPR: Package,
-  MSH: Grid3x3,
-  HTG: Flame,
-  FPR: ShieldAlert,
-  PMP: Waves,
-  FIN: Drill,
-  MCH: Cog,
-  DRN: Boxes,
-  GEN: HardHat,
-  DEFAULT: Cable,
-};
+import { CATEGORY_ICONS } from "@/lib/constants/categoryIcons";
 
 export default function CatalogBurgerMenu() {
   const locale = useLocale();
@@ -92,8 +57,8 @@ export default function CatalogBurgerMenu() {
   // Close on any navigation — clicking the logo bypasses the overlay and
   // leaves the menu open with overflow:hidden stuck on body
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     close();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {

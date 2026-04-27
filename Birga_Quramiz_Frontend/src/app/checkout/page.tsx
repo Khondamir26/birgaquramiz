@@ -17,22 +17,12 @@ import { useChatStore } from "@/store/chatStore";
 import { useTranslations } from "next-intl";
 import { resolveImageUrl } from "@/lib/image";
 import type { DeliveryType, PaymentMethod } from "@/types";
+import { formatPhone } from "@/lib/formatPhone";
 
 // ── Phone helpers ──────────────────────────────────────────────────────────────
 function getDigits(value: string | undefined | null) {
   if (!value) return "";
   return value.replace(/\D/g, "");
-}
-
-function formatPhoneInput(value: string | undefined | null) {
-  const digits = getDigits(value).slice(0, 12);
-  const local = digits.startsWith("998") ? digits.slice(3) : digits.slice(-9);
-  const p1 = local.slice(0, 2);
-  const p2 = local.slice(2, 5);
-  const p3 = local.slice(5, 7);
-  const p4 = local.slice(7, 9);
-  const parts = [p1, p2, p3, p4].filter(Boolean);
-  return parts.length ? `+998 ${parts.join(" ")}` : "+998 ";
 }
 
 function normalizePhone(value: string | undefined | null) {
@@ -87,7 +77,7 @@ export default function CheckoutPage() {
         customerName: prev.customerName || user.name,
         customerPhone:
           prev.customerPhone.trim() === "+998" || prev.customerPhone.trim() === "+998 "
-            ? formatPhoneInput(user.phone)
+            ? formatPhone(user.phone)
             : prev.customerPhone,
       }));
     }
@@ -327,7 +317,7 @@ export default function CheckoutPage() {
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-300 pointer-events-none" />
                     <input
                       value={form.customerPhone}
-                      onChange={(e) => updateField("customerPhone", formatPhoneInput(e.target.value))}
+                      onChange={(e) => updateField("customerPhone", formatPhone(e.target.value))}
                       inputMode="tel"
                       required
                       aria-invalid={Boolean(fieldErrors.customerPhone)}

@@ -384,7 +384,7 @@ export default function SellerProductDetailPage() {
                         {isApproved && (
                             <>
                                 <Link
-                                    href={`/catalog/product/${id}`}
+                                    href={product?.slug ? `/product/${product.slug}` : `/product/${id}`}
                                     className="flex-1 sm:flex-none h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[14px] gap-2 px-8 transition-all shadow-sm inline-flex items-center justify-center"
                                 >
                                     <ExternalLink className="size-4" />

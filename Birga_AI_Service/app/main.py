@@ -5,11 +5,13 @@ import logging
 from contextlib import asynccontextmanager
 
 import jwt
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .cache import cache_key, get as cache_get, set as cache_set
-from .chat import run_chat
+from .chat import fallback_response, run_chat
 from .config import settings
 from .database import close_pool, init_quota_table
 from .models import AiStructuredResponse, ChatRequest
@@ -22,7 +24,7 @@ from .quota import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
 logger = logging.getLogger("ai.main")
 
@@ -45,6 +47,13 @@ app.add_middleware(
     allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"validation_error | path={request.url.path} err={exc.errors()[:2]}")
+    response = fallback_response("ru")
+    return JSONResponse(status_code=200, content=response.model_dump())
 
 
 def _extract_user_id(request: Request) -> str | None:
@@ -84,59 +93,68 @@ async def health():
 
 @app.post("/ai/chat", response_model=AiStructuredResponse)
 async def chat(body: ChatRequest, request: Request):
-    if not settings.gemini_api_key:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI service not configured")
-
-    tracking_key, is_auth = _get_tracking_key(request)
-    session = body.sessionId or "unknown"
-    logger.info(f"session={session} key={tracking_key} msgs={len(body.messages)} locale={body.locale}")
-
-    if check_soft_ban(tracking_key):
-        raise HTTPException(status_code=429, detail="Too many requests. Please slow down.")
-
-    allowed, remaining = await check_and_increment(tracking_key, is_auth)
-    if not allowed:
-        raise HTTPException(
-            status_code=429,
-            detail="Daily AI request limit reached. Please try again tomorrow.",
-        )
-
-    # Progressive slow-down for guests nearing daily limit
-    if not is_auth and remaining < DAILY_GUEST_LIMIT - 20:
-        used = DAILY_GUEST_LIMIT - remaining
-        delay = min(0.3 + (used - 20) * 0.05, 0.8)
-        await asyncio.sleep(delay)
-
-    key = cache_key(body.messages, body.locale or "ru")
-    cached = cache_get(key)
-    if cached:
-        logger.info(f"cache_hit key={tracking_key}")
-        return cached.model_copy(update={"remaining": remaining})
+    locale = body.locale or "ru"
+    tracking_key = "unknown"
+    remaining: int | None = None
 
     try:
+        if not settings.gemini_api_key:
+            logger.error("chat_unconfigured | missing GEMINI_API_KEY")
+            return fallback_response(locale)
+
+        tracking_key, is_auth = _get_tracking_key(request)
+        session = body.sessionId or "unknown"
+        logger.info(f"session={session} key={tracking_key} msgs={len(body.messages)} locale={locale}")
+
+        if check_soft_ban(tracking_key):
+            logger.warning(f"soft_banned | key={tracking_key}")
+            response = fallback_response(locale, "Too many requests. Please slow down.")
+            return JSONResponse(status_code=429, content=response.model_dump())
+
+        allowed, remaining = await check_and_increment(tracking_key, is_auth)
+        if not allowed:
+            logger.warning(f"quota_exceeded | key={tracking_key}")
+            response = fallback_response(locale, "Daily AI request limit reached. Please try again tomorrow.")
+            return JSONResponse(status_code=429, content=response.model_dump())
+
+        # Progressive slow-down for guests nearing daily limit.
+        if not is_auth and remaining < DAILY_GUEST_LIMIT - 20:
+            used = DAILY_GUEST_LIMIT - remaining
+            delay = min(0.3 + (used - 20) * 0.05, 0.8)
+            await asyncio.sleep(delay)
+
+        key = cache_key(body.messages, locale)
+        cached = cache_get(key)
+        if cached:
+            logger.info(f"cache_hit | key={tracking_key}")
+            return cached.model_copy(update={"remaining": remaining})
+
+        logger.info(f"calling_run_chat | key={tracking_key} msg_len={len(body.messages[-1].content)}")
         result = await run_chat(
             messages=body.messages,
-            locale=body.locale or "ru",
+            locale=locale,
             project_context=body.projectContext,
             tracking_key=tracking_key,
             is_auth=is_auth,
         )
+
+        last_len = len(body.messages[-1].content)
+        if last_len > 1500 and len(body.messages) >= 4:
+            last = body.messages[-1].content.lower().strip()
+            repeats = sum(1 for m in body.messages[-4:] if m.content.lower().strip() == last)
+            if repeats >= 3:
+                apply_soft_ban(tracking_key)
+                logger.warning(f"applied_soft_ban | key={tracking_key} repeats={repeats}")
+
+        if result.products or result.materials:
+            pass
+        elif result.message:
+            cache_set(key, result)
+
+        return result.model_copy(update={"remaining": remaining})
     except Exception as e:
-        logger.error(f"chat_error | key={tracking_key} err={e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-    # Detect abuse: if run_chat logged >= 2 abuse signals, soft-ban
-    # (abuse detection happens inside run_chat; here we check a simple heuristic)
-    last_len = len(body.messages[-1].content)
-    if last_len > 1500 and len(body.messages) >= 4:
-        last = body.messages[-1].content.lower().strip()
-        repeats = sum(1 for m in body.messages[-4:] if m.content.lower().strip() == last)
-        if repeats >= 3:
-            apply_soft_ban(tracking_key)
-
-    if result.products or result.materials:
-        pass  # don't cache product/material results — they change
-    elif result.message:
-        cache_set(key, result)
-
-    return result.model_copy(update={"remaining": remaining})
+        logger.error(f"chat_error | key={tracking_key} err={type(e).__name__}: {e}", exc_info=True)
+        fallback = fallback_response(locale)
+        if remaining is not None:
+            fallback.remaining = remaining
+        return fallback

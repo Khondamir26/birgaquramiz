@@ -24,8 +24,9 @@ export function formatPhone(raw: string): string {
   const local = digits.slice(4).replace(/\D/g, '').slice(0, 9)
 
   // Format: +998 XX XXX XX XX
-  let formatted = '+998'
-  if (local.length > 0) formatted += ' ' + local.slice(0, 2)
+  if (local.length === 0) return '+998 '
+
+  let formatted = '+998 ' + local.slice(0, 2)
   if (local.length > 2) formatted += ' ' + local.slice(2, 5)
   if (local.length > 5) formatted += ' ' + local.slice(5, 7)
   if (local.length > 7) formatted += ' ' + local.slice(7, 9)

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    gemini_api_key: str
+    gemini_api_key: str = ""
     database_url: str
     jwt_secret: str
     cors_origins: str = "https://birga-quramiz.uz"

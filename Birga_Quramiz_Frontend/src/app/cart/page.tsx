@@ -138,7 +138,7 @@ export default function CartPage() {
                       <div className="flex items-center gap-6 flex-1">
                         {/* Image with Checkbox Overlay (Top-Left) */}
                         <div className="shrink-0 relative">
-                          <Link href={`/catalog/product/${item.id}`}>
+                          <Link href={`/product/${item.id}`}>
                             <div className="size-20 md:size-24 flex items-center justify-center p-1 mt-1">
                             <Image 
                                 src={resolveImageUrl(item.image)} 
@@ -165,7 +165,7 @@ export default function CartPage() {
 
                         {/* Details Area */}
                         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                          <Link href={`/catalog/product/${item.id}`}>
+                          <Link href={`/product/${item.id}`}>
                             <h3 className="text-[16px] md:text-[18px] font-bold text-black leading-tight line-clamp-2 md:line-clamp-1">
                               {item.name}
                             </h3>

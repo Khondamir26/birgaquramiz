@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getProductBySlug } from "@/lib/api/products"
+import { getProductBySlug, getProductById } from "@/lib/api/products"
 import { resolveImageUrl } from "@/lib/image"
 import ProductDetailsPage from "@/components/product/ProductDetailsPage"
 import type { Product } from "@/types"
@@ -15,7 +15,12 @@ export default async function ProductSlugRoute({ params }: Props) {
   try {
     product = await getProductBySlug(slug)
   } catch {
-    notFound()
+    // slug may actually be a UUID (e.g. from cart or legacy links)
+    try {
+      product = await getProductById(slug)
+    } catch {
+      notFound()
+    }
   }
 
   const firstImage =

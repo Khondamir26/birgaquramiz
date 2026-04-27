@@ -27,7 +27,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement
     if (target.closest("button")) return
-    router.push(product.slug ? `/product/${product.slug}` : `/catalog/product/${product.id}`)
+    router.push(product.slug ? `/product/${product.slug}` : `/product/${product.id}`)
   }
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {

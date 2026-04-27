@@ -2,7 +2,7 @@ import type { AiStructuredResponse, ProjectContext } from '@/lib/chat/types';
 
 export type { AiMaterial, AiProduct, AiAction, AiStructuredResponse } from '@/lib/chat/types';
 
-const API = process.env.NEXT_PUBLIC_AI_URL ?? 'https://ai.birga-quramiz.uz';
+const API = '/api/ai';
 
 export interface ApiChatMessage {
   role: 'user' | 'assistant';
@@ -22,7 +22,7 @@ export async function sendChatMessage(
   projectContext?: ProjectContext,
   sessionId?: string,
 ): Promise<AiStructuredResponse> {
-  const res = await fetch(`${API}/ai/chat`, {
+  const res = await fetch(`${API}/chat`, {
     credentials: 'include',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

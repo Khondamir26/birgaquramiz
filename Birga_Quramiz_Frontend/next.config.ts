@@ -79,6 +79,13 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
         ],
       },
+      // API routes — never cache
+      {
+        source: '/api/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store' },
+        ],
+      },
       // Private/auth pages — never cache
       {
         source: '/(profile|orders|cart|checkout|admin|seller)(.*)',

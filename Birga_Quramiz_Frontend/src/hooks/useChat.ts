@@ -7,7 +7,7 @@ import { useChatStore } from '@/store/chatStore';
 import { useProjectStore } from '@/store/projectStore';
 import type { ChatMessage } from '@/lib/chat/types';
 
-const MAX_HISTORY = 20;
+const MAX_HISTORY = 8;
 
 function toApiMessages(messages: ChatMessage[]): ApiChatMessage[] {
   return messages
@@ -64,7 +64,6 @@ const ERROR_MESSAGES: Record<string, { message: string; suggestions: string[] }>
 export function useChat() {
   const locale = useLocale();
   const { messages, loading, addMessage, setLoading } = useChatStore();
-  const { context } = useProjectStore();
   const [remaining, setRemaining] = useState<number | null>(null);
 
   async function send(text: string) {

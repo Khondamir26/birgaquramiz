@@ -13,12 +13,16 @@ from .config import settings
 from .models import (
     AiAction, AiMaterial, AiProduct, AiStructuredResponse, ChatMessage, InputRequest,
 )
+from .product_resolver import resolve_products
 from .prompt import build_system_prompt
 from .tools import execute_tool
 
 logger = logging.getLogger("ai.chat")
 
 _client: genai.Client | None = None
+CHAT_GLOBAL_TIMEOUT_MS = 35_000  # Increased from 20s to 35s for complex conversations with tools
+LLM_CALL_TIMEOUT_MS = 15_000  # Increased from 10s to 15s
+TOOL_TIMEOUT_MS = 8_000  # Increased from 4s to 8s for external API calls
 
 FUNCTION_DECLARATIONS = [
     types.FunctionDeclaration(
@@ -72,6 +76,27 @@ def _estimate_cost(input_chars: int, output_chars: int) -> str:
     return f"{cost:.6f}"
 
 
+def fallback_response(locale: str, message: str | None = None) -> AiStructuredResponse:
+    suggestions = {
+        "ru": ["Попробовать снова", "Найти товары", "Найти строителя"],
+        "uz": ["Qayta urinish", "Mahsulot qidirish", "Quruvchi topish"],
+        "en": ["Try again", "Search products", "Find a builder"],
+    }
+    messages = {
+        "ru": "Что-то пошло не так. Попробуйте ещё раз.",
+        "uz": "Xatolik yuz berdi. Qaytadan urinib ko'ring.",
+        "en": "Something went wrong. Please try again.",
+    }
+    lang = locale if locale in suggestions else "ru"
+    return AiStructuredResponse(
+        message=message or messages[lang],
+        materials=[],
+        products=[],
+        actions=[],
+        suggestions=suggestions[lang],
+    )
+
+
 def _parse_response(raw: str, locale: str) -> AiStructuredResponse:
     fallback_suggestions = {
         "ru": ["Рассчитать материалы", "Найти товары", "Найти строителя"],
@@ -106,10 +131,16 @@ def _parse_response(raw: str, locale: str) -> AiStructuredResponse:
             suggestions=fallback,
         )
 
-    message = parsed.get("message", "").strip() or fallback_msg
+    message_raw = parsed.get("message", "")
+    message = message_raw.strip() if isinstance(message_raw, str) else ""
+    if not message:
+        message = fallback_msg
 
     materials = []
-    for m in parsed.get("materials", []) or []:
+    raw_materials = parsed.get("materials", [])
+    if not isinstance(raw_materials, list):
+        raw_materials = []
+    for m in raw_materials:
         if not isinstance(m, dict) or not m.get("name"):
             continue
         try:
@@ -125,7 +156,10 @@ def _parse_response(raw: str, locale: str) -> AiStructuredResponse:
         ))
 
     products = []
-    for p in parsed.get("products", []) or []:
+    raw_products = parsed.get("products", [])
+    if not isinstance(raw_products, list):
+        raw_products = []
+    for p in raw_products:
         if not isinstance(p, dict) or not p.get("name") or not p.get("slug"):
             continue
         qty = p.get("quantity")
@@ -143,13 +177,18 @@ def _parse_response(raw: str, locale: str) -> AiStructuredResponse:
             stockCount=stock_count if isinstance(stock_count, (int, float)) and stock_count >= 0 else None,
         ))
 
+    raw_actions = parsed.get("actions", [])
+    if not isinstance(raw_actions, list):
+        raw_actions = []
     actions = [
         AiAction(type=str(a.get("type", "")), label=str(a.get("label", "")))
-        for a in (parsed.get("actions", []) or [])
+        for a in raw_actions
         if isinstance(a, dict) and a.get("type") and a.get("label")
     ]
 
     raw_suggestions = parsed.get("suggestions", []) or []
+    if not isinstance(raw_suggestions, list):
+        raw_suggestions = []
     suggestions = [
         s if isinstance(s, str) else str(s.get("label", "") if isinstance(s, dict) else s)
         for s in raw_suggestions
@@ -190,7 +229,25 @@ def _detect_abuse(messages: list[ChatMessage], key: str, tool_iterations: int) -
     return reasons
 
 
-async def run_chat(
+async def _execute_tool_safe(fc: Any, locale: str) -> tuple[str, dict, dict]:
+    name = fc.name or ""
+    args = dict(fc.args or {})
+    try:
+        result = await asyncio.wait_for(
+            execute_tool(
+                name=name,
+                args=args,
+                locale=locale,
+            ),
+            timeout=TOOL_TIMEOUT_MS / 1000,
+        )
+        return name, args, result
+    except Exception as e:
+        logger.warning(f"tool_error | name={name} err={type(e).__name__}: {e}")
+        return name, args, {"error": "Tool failed"}
+
+
+async def _run_chat_inner(
     messages: list[ChatMessage],
     locale: str,
     project_context: dict | None,
@@ -203,29 +260,40 @@ async def run_chat(
     history = [
         types.Content(
             role="model" if m.role == "assistant" else "user",
-            parts=[types.Part.from_text(m.content)],
+            parts=[types.Part.from_text(text=m.content)],
         )
         for m in messages[:-1]
     ]
     last_msg = messages[-1].content
 
-    chat = client.aio.chats.create(
-        model="gemini-2.5-flash",
-        config=types.GenerateContentConfig(
-            system_instruction=build_system_prompt(project_context),
-            tools=TOOLS,
-            max_output_tokens=2048,
-        ),
-        history=history,
-    )
+    def _make_chat(hist):
+        return client.aio.chats.create(
+            model="gemini-2.5-flash",
+            config=types.GenerateContentConfig(
+                system_instruction=build_system_prompt(project_context),
+                tools=TOOLS,
+                max_output_tokens=2048,
+            ),
+            history=hist,
+        )
 
-    async def with_timeout(coro, ms: int):
+    async def with_timeout(coro, ms: int = LLM_CALL_TIMEOUT_MS):
         return await asyncio.wait_for(coro, timeout=ms / 1000)
 
-    response = await with_timeout(chat.send_message(last_msg), 12_000)
+    chat = _make_chat(history)
+    try:
+        response = await with_timeout(chat.send_message(last_msg))
+    except Exception as e:
+        if history:
+            logger.warning(f"chat_history_error | key={tracking_key} err={type(e).__name__}: {e} — retrying without history")
+            chat = _make_chat([])
+            response = await with_timeout(chat.send_message(last_msg))
+        else:
+            raise
 
     iterations = 0
     timed_out = False
+    search_results: list[dict] = []
 
     try:
         while response.function_calls:
@@ -233,39 +301,51 @@ async def run_chat(
             if iterations > 5:
                 break
 
+            tool_results = await asyncio.gather(
+                *[_execute_tool_safe(fc, locale) for fc in response.function_calls],
+            )
+
             parts = []
-            for fc in response.function_calls:
-                tool_result = await execute_tool(
-                    name=fc.name or "",
-                    args=dict(fc.args or {}),
-                    locale=locale,
-                )
+            for name, args, tool_result in tool_results:
+                if name == "search_products" and isinstance(tool_result, dict) and tool_result.get("found", 0) > 0:
+                    search_results.append({
+                        "query": str(args.get("query", "")),
+                        "result": tool_result,
+                    })
                 sanitized = json.dumps(tool_result, default=str)
                 parts.append(
                     types.Part.from_function_response(
-                        name=fc.name or "",
+                        name=name,
                         response={"output": sanitized},
                     )
                 )
 
-            response = await with_timeout(chat.send_message(parts), 12_000)
+            response = await with_timeout(chat.send_message(parts))
 
     except asyncio.TimeoutError:
         timed_out = True
         logger.warning(f"timeout | key={tracking_key} iterations={iterations}")
+        if iterations == 0:
+            logger.warning(f"tool_timeout_no_results | key={tracking_key}")
     except Exception as e:
         logger.error(f"tool_loop_error | key={tracking_key} err={e}")
 
-    raw_text = response.text or ""
+    try:
+        raw_text = response.text or ""
+    except Exception as e:
+        logger.warning(f"response_text_error | key={tracking_key} err={type(e).__name__}: {e}")
+        raw_text = ""
 
     if not raw_text.strip() and iterations > 0 and not timed_out:
         try:
+            logger.info(f"retry_response | key={tracking_key}")
             retry = await with_timeout(
                 chat.send_message("Provide your final response now in the required JSON format."),
-                10_000,
+                LLM_CALL_TIMEOUT_MS,
             )
             raw_text = retry.text or ""
-        except Exception:
+        except Exception as e:
+            logger.warning(f"retry_failed | key={tracking_key} err={type(e).__name__}: {e}")
             pass
 
     abuse_reasons = _detect_abuse(messages, tracking_key, iterations)
@@ -275,7 +355,38 @@ async def run_chat(
     if not raw_text.strip() or "{" not in raw_text:
         logger.error(f"bad_response | key={tracking_key} locale={locale} len={len(raw_text)} raw={raw_text[:200]}")
 
-    result = _parse_response(raw_text, locale)
+    try:
+        result = _parse_response(raw_text, locale)
+    except Exception as e:
+        logger.error(f"parse_error | key={tracking_key} err={type(e).__name__}: {e}")
+        result = fallback_response(locale)
+
+    backend_products = resolve_products(
+        search_results=search_results,
+        ai_products=result.products,
+        materials=result.materials,
+        locale=locale,
+    )
+    result.products = backend_products
+    if backend_products:
+        if not any(a.type in {"add_to_cart", "compare"} for a in result.actions):
+            action_labels = {
+                "ru": "Добавить в корзину",
+                "uz": "Savatga qo'shish",
+                "en": "Add to cart",
+            }
+            result.actions.append(
+                AiAction(
+                    type="add_to_cart",
+                    label=action_labels.get(locale, action_labels["ru"]),
+                )
+            )
+    else:
+        result.actions = [
+            action
+            for action in result.actions
+            if action.type not in {"add_to_cart", "compare"}
+        ]
     elapsed = round((time.time() - start) * 1000)
     input_chars = sum(len(m.content) for m in messages) + 3000
     cost = _estimate_cost(input_chars, len(raw_text))
@@ -285,3 +396,29 @@ async def run_chat(
     )
 
     return result
+
+
+async def run_chat(
+    messages: list[ChatMessage],
+    locale: str,
+    project_context: dict | None,
+    tracking_key: str,
+    is_auth: bool,
+) -> AiStructuredResponse:
+    try:
+        return await asyncio.wait_for(
+            _run_chat_inner(
+                messages=messages,
+                locale=locale,
+                project_context=project_context,
+                tracking_key=tracking_key,
+                is_auth=is_auth,
+            ),
+            timeout=CHAT_GLOBAL_TIMEOUT_MS / 1000,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(f"global_timeout | key={tracking_key} budget={CHAT_GLOBAL_TIMEOUT_MS}ms")
+        return fallback_response(locale)
+    except Exception as e:
+        logger.error(f"run_chat_error | key={tracking_key} err={type(e).__name__}: {e}")
+        return fallback_response(locale)
