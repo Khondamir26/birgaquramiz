@@ -77,6 +77,8 @@ export function getMySellerProducts() {
 
 export function getMySellerProduct(id: string) {
   return apiFetch<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    slug: any
     id: string
     sku?: string | null
     title: string

@@ -1,6 +1,12 @@
 "use client";
 
-import "@/types/ymaps.d";
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ymaps: any;
+  }
+}
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { io, type Socket } from "socket.io-client";
