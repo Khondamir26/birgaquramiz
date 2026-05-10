@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
-import { unlinkSync } from 'fs'
+import { unlinkSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { readFileSync } from 'fs'
-import { extname } from 'path'
+import { join, extname } from 'path'
 import sharp from 'sharp'
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 
@@ -123,6 +123,16 @@ export class UploadService {
     }
 
     async uploadBuffer(key: string, buffer: Buffer, contentType: string): Promise<string> {
+        // Fall back to local disk when R2 is not configured
+        if (!process.env.R2_ENDPOINT) {
+            const localPath = join(process.cwd(), 'uploads', key)
+            const dir = join(localPath, '..')
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+            writeFileSync(localPath, buffer)
+            const baseUrl = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 5000}`
+            return `${baseUrl}/uploads/${key}`
+        }
+
         await this.s3.send(new PutObjectCommand({
             Bucket: this.bucket,
             Key: key,

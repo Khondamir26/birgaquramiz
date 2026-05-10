@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'SELLER' | 'ADMIN'
+export type Role = 'USER' | 'SELLER' | 'ADMIN' | 'DISPATCHER' | 'DRIVER'
 export type ProductStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type OrderStatus = 'NEW' | 'PAID' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 export type DeliveryType = 'DELIVERY' | 'PICKUP'

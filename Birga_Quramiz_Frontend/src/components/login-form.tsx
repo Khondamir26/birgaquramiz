@@ -29,6 +29,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   useEffect(() => {
     if (!isInitialized || !isAuthenticated) return
     if (user?.role === 'ADMIN') { router.replace('/admin'); return }
+    if (user?.role === 'DISPATCHER') { router.replace('/dispatcher'); return }
     if (user?.role === 'SELLER') { router.replace('/seller/dashboard'); return }
     router.replace(safeReturn)
   }, [isInitialized, isAuthenticated, user, router, safeReturn])
@@ -49,6 +50,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
       setUser(user)
       setInitialized(true)
       if (user.role === 'ADMIN') { router.push('/admin'); return }
+      if (user.role === 'DISPATCHER') { router.push('/dispatcher'); return }
       if (user.role === 'SELLER') { router.push('/seller/dashboard'); return }
       router.push(safeReturn)
     } catch (err: unknown) {

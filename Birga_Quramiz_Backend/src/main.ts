@@ -96,9 +96,13 @@ async function bootstrap() {
   });
   const uploadsDir = join(process.cwd(), 'uploads');
   const productsUploadsDir = join(uploadsDir, 'products');
+  const podUploadsDir = join(uploadsDir, 'pod');
 
   if (!existsSync(productsUploadsDir)) {
     mkdirSync(productsUploadsDir, { recursive: true });
+  }
+  if (!existsSync(podUploadsDir)) {
+    mkdirSync(podUploadsDir, { recursive: true });
   }
 
   const expressApp = app.getHttpAdapter().getInstance() as express.Express;
