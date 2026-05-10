@@ -85,9 +85,9 @@ export default function AdminUsersPage() {
 
   const getRoleBadge = (r: Role) => {
     switch (r) {
-      case "ADMIN": return { icon: Shield, bg: "bg-red-100", text: "text-red-700", label: t("roleAdmin") };
-      case "SELLER": return { icon: Store, bg: "bg-orange-100", text: "text-orange-700", label: t("roleSeller") };
-      case "USER": return { icon: UserIcon, bg: "bg-blue-100", text: "text-blue-700", label: t("roleUser") };
+      case "ADMIN":  return { icon: Shield,   bg: "bg-red-100",    text: "text-red-700",    label: t("roleAdmin") };
+      case "SELLER": return { icon: Store,    bg: "bg-orange-100", text: "text-orange-700", label: t("roleSeller") };
+      default:       return { icon: UserIcon, bg: "bg-blue-100",   text: "text-blue-700",   label: t("roleUser") };
     }
   };
 

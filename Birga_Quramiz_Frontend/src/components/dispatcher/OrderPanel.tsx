@@ -280,8 +280,10 @@ export default function OrderPanel({ selectedDriverId }: Props) {
 
   useEffect(() => {
     if (orders.length > prevCountRef.current && prevCountRef.current > 0) {
-      setNewFlash(true);
-      setTimeout(() => setNewFlash(false), 3_000);
+      const on  = setTimeout(() => setNewFlash(true),  0);
+      const off = setTimeout(() => setNewFlash(false), 3_000);
+      prevCountRef.current = orders.length;
+      return () => { clearTimeout(on); clearTimeout(off); };
     }
     prevCountRef.current = orders.length;
   }, [orders.length]);

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTrackingStore } from "@/store/trackingStore";
-import { getSocket, disconnectSocket as _disconnect } from "@/lib/tracking/socket";
+import { getSocket } from "@/lib/tracking/socket";
 import { trackingApi } from "@/services/trackingApi";
 import type { DriverLocation } from "@/types/tracking";
 import {

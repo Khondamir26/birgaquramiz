@@ -4,16 +4,11 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { DriverStatus } from "@/types/tracking";
 import type { DriverLocation } from "@/types/tracking";
 import type { ExtendedDriver } from "@/store/trackingStore";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 import { Maximize2, AlertTriangle, MapPin } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global { interface Window { google?: any; } }
 
-function cn(...inputs: Parameters<typeof clsx>) {
-  return twMerge(clsx(inputs));
-}
 
 const DEFAULT_CENTER = { lat: 41.2995, lng: 69.2401 };
 
