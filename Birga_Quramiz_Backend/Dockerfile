@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g pnpm@9 --quiet
 
 # Install dependencies first (better Docker caching)
 COPY package.json pnpm-lock.yaml ./
@@ -29,7 +29,7 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g pnpm@9 --quiet
 
 COPY package.json pnpm-lock.yaml ./
 
@@ -46,7 +46,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5000
 
-RUN corepack enable
+RUN npm install -g pnpm@9 --quiet
 RUN apk add --no-cache openssl
 
 # Copy production dependencies
