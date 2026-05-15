@@ -121,8 +121,16 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
       Promise.all([this.pubClient.connect(), this.subClient.connect()])
         .then(() => {
-          this.server.adapter(createAdapter(this.pubClient!, this.subClient!))
-          this.logger.log('Socket.IO Redis adapter active — multi-instance ready')
+          // @WebSocketServer() on a namespaced gateway injects the Namespace, not the root
+          // Server. The adapter() setter lives on root Server (namespace.server).
+          const s = this.server as unknown as Record<string, unknown>
+          const root = (s['server'] ?? s) as Record<string, unknown>
+          if (typeof root['adapter'] === 'function') {
+            (root['adapter'] as (fn: unknown) => void)(createAdapter(this.pubClient!, this.subClient!))
+            this.logger.log('Socket.IO Redis adapter active — multi-instance ready')
+          } else {
+            this.logger.log('Socket.IO Redis adapter connected — single-instance mode')
+          }
         })
         .catch((err) => {
           this.logger.warn(`Redis adapter unavailable — falling back to in-memory: ${String(err)}`)
