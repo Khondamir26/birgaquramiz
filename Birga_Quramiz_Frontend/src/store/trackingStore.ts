@@ -3,7 +3,7 @@ import type { StateCreator } from "zustand";
 import type { DriverListItem, DriverLocation } from "@/types/tracking";
 import { DriverStatus } from "@/types/tracking";
 
-export type AlertType = "stuck" | "signal_lost" | "delayed";
+export type AlertType = "stuck" | "signal_lost" | "delayed" | "issue";
 
 export interface DriverAlert {
   type:    AlertType;
@@ -25,9 +25,10 @@ interface TrackingState {
   isReconnecting:   boolean;
   lastSyncAt:       number | null;
 
-  setDrivers:          (drivers: DriverListItem[]) => void;
-  updateLocation:      (loc: DriverLocation) => void;
-  updateDriverStatus:  (driverId: string, status: DriverStatus) => void;
+  setDrivers:             (drivers: DriverListItem[]) => void;
+  updateLocation:         (loc: DriverLocation) => void;
+  batchUpdateLocations:   (locs: DriverLocation[]) => void;
+  updateDriverStatus:     (driverId: string, status: DriverStatus) => void;
   updateETA:           (driverId: string, etaMinutes: number) => void;
   addAlert:            (driverId: string, alert: DriverAlert) => void;
   clearAlert:          (driverId: string, type: AlertType) => void;
@@ -77,6 +78,25 @@ const creator: StateCreator<TrackingState> = (set, get) => ({
           },
         },
       };
+    }),
+
+  batchUpdateLocations: (locs) =>
+    set((state) => {
+      if (!locs.length) return state;
+      const nextLocations = { ...state.locations };
+      const nextDrivers   = { ...state.drivers };
+      for (const loc of locs) {
+        const driver = state.drivers[loc.driverId];
+        if (!driver) continue;
+        nextLocations[loc.driverId] = loc;
+        nextDrivers[loc.driverId]   = {
+          ...driver,
+          liveLocation: loc,
+          lastLocation: { lat: loc.lat, lng: loc.lng, heading: loc.heading, timestamp: loc.timestamp },
+          alerts: driver.alerts.filter((a) => a.type !== "signal_lost"),
+        };
+      }
+      return { locations: nextLocations, drivers: nextDrivers };
     }),
 
   updateDriverStatus: (driverId, status) =>

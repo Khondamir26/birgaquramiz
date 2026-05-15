@@ -9,8 +9,10 @@ import {
   MessageBody,
   WsException,
 } from '@nestjs/websockets'
-import { UseGuards, Logger } from '@nestjs/common'
+import { UseGuards, Logger, BeforeApplicationShutdown } from '@nestjs/common'
 import { Server, Socket } from 'socket.io'
+import { createAdapter } from '@socket.io/redis-adapter'
+import Redis from 'ioredis'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
 import { TrackingService } from './tracking.service'
@@ -19,6 +21,7 @@ import { DriverStatus, Role, AssignmentStatus } from '@prisma/client'
 import type { AuthUser } from '../auth/auth.types'
 import { FraudService } from './services/fraud.service'
 import { LocationHistoryService } from './services/location-history.service'
+import { CustomerNotificationService } from './services/customer-notification.service'
 
 // ─── Event name constants (dot-notation) ──────────────────────────────────────
 export const EVENTS = {
@@ -26,6 +29,7 @@ export const EVENTS = {
   DRIVER_LOCATION_UPDATE:    'driver.location.updated',
   DRIVER_STATUS_CHANGE:      'driver.status.changed',
   DRIVER_ASSIGNMENT_STATUS:  'driver.assignment.status',
+  DRIVER_ISSUE_REPORT:       'driver.issue.report',
   CLIENT_SUBSCRIBE_ORDER:    'client.order.subscribe',
   CLIENT_SUBSCRIBE_DRIVER:   'client.driver.subscribe',
   CLIENT_SYNC_REQUEST:       'client.sync.request',
@@ -47,6 +51,7 @@ export const EVENTS = {
   // Server → All
   ASSIGNMENT_STATUS_CHANGED: 'assignment.status.changed',
   ORDER_DRIVER_LOCATION:     'order.driver.location',
+  ORDER_DRIVER_ARRIVING:     'order.driver.arriving',
   ORDER_DELIVERED:           'order.delivered',
   SYNC_STATE:                'sync.state',
   SERVER_ERROR:              'server.error',
@@ -65,7 +70,7 @@ interface AuthSocket extends Socket {
     credentials: true,
   },
 })
-export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, BeforeApplicationShutdown {
   @WebSocketServer()
   server!: Server
 
@@ -82,20 +87,55 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   private readonly HEARTBEAT_TIMEOUT_MS = 60_000
   private readonly HEARTBEAT_INTERVAL_MS = 30_000
 
+  /** Per-driver location update rate limit — min 2s between updates */
+  private readonly lastLocationUpdate = new Map<string, number>()
+  private readonly LOCATION_RATE_LIMIT_MS = 2_000
+
+  /** Redis pub/sub clients for Socket.IO cross-instance broadcasting */
+  private pubClient: Redis | null = null
+  private subClient: Redis | null = null
+
   constructor(
-    private readonly trackingService: TrackingService,
-    private readonly fraudService: FraudService,
+    private readonly trackingService:        TrackingService,
+    private readonly fraudService:           FraudService,
     private readonly locationHistoryService: LocationHistoryService,
-    private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+    private readonly customerNotification:   CustomerNotificationService,
+    private readonly jwtService:             JwtService,
+    private readonly prisma:                 PrismaService,
   ) {}
 
   // ─── Heartbeat + dead socket cleanup ──────────────────────────────────────
 
   afterInit() {
+    // ── Redis adapter for multi-instance broadcasting ──────────────────────
+    const redisOpts = {
+      host:     process.env.REDIS_HOST     ?? 'localhost',
+      port:     Number(process.env.REDIS_PORT ?? 6379),
+      password: process.env.REDIS_PASSWORD,
+      lazyConnect: true,
+    }
+
+    try {
+      this.pubClient = new Redis(redisOpts)
+      this.subClient = this.pubClient.duplicate()
+
+      Promise.all([this.pubClient.connect(), this.subClient.connect()])
+        .then(() => {
+          this.server.adapter(createAdapter(this.pubClient!, this.subClient!))
+          this.logger.log('Socket.IO Redis adapter active — multi-instance ready')
+        })
+        .catch((err) => {
+          this.logger.warn(`Redis adapter unavailable — falling back to in-memory: ${String(err)}`)
+        })
+    } catch (err) {
+      this.logger.warn(`Redis adapter init failed — single-instance mode: ${String(err)}`)
+    }
+
     this.heartbeatInterval = setInterval(async () => {
       const now = Date.now()
-      const sockets = await this.server.fetchSockets()
+      // Use .local so we only operate on sockets owned by THIS instance —
+      // lastPing is per-instance memory and must not touch remote sockets.
+      const sockets = await this.server.local.fetchSockets()
 
       for (const socket of sockets) {
         const last = this.lastPing.get(socket.id)
@@ -121,11 +161,29 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }, this.HEARTBEAT_INTERVAL_MS)
   }
 
+  /** Gracefully notify all connected clients before the process exits. */
+  async beforeApplicationShutdown(signal?: string) {
+    const sockets = await this.server.fetchSockets().catch(() => [])
+    this.logger.log(
+      `[gateway] graceful shutdown (${signal ?? 'unknown'}) — notifying ${sockets.length} client(s)`,
+    )
+    // Tell clients to reconnect in 3s (after the new instance is up)
+    this.server.emit(EVENTS.SERVER_ERROR, {
+      code: 'SERVER_SHUTDOWN',
+      message: 'Server restarting — please reconnect in 3 seconds',
+      reconnectIn: 3_000,
+    })
+    // Give the event time to flush before sockets are closed
+    await new Promise<void>((resolve) => setTimeout(resolve, 1_500))
+  }
+
   onGatewayDestroy() {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval)
       this.heartbeatInterval = null
     }
+    this.pubClient?.quit().catch(() => {})
+    this.subClient?.quit().catch(() => {})
   }
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -191,6 +249,7 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     if (!user) return
 
     if (user.role === Role.DRIVER) {
+      this.lastLocationUpdate.delete(user.id)
       await this.trackingService.setDriverStatus(user.id, DriverStatus.OFFLINE)
       this.server.to('dispatchers').emit(EVENTS.MAP_DRIVER_STATUS, {
         driverId: user.id,
@@ -220,6 +279,14 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     if (user.role !== Role.DRIVER) {
       return { status: 'error', message: 'Only drivers can send location' }
     }
+
+    // ── Per-driver rate limit — discard updates faster than 2s ───────────────
+    const now = Date.now()
+    const lastUpdate = this.lastLocationUpdate.get(user.id) ?? 0
+    if (now - lastUpdate < this.LOCATION_RATE_LIMIT_MS) {
+      return { status: 'ok', timestamp: now }
+    }
+    this.lastLocationUpdate.set(user.id, now)
 
     // ── Fraud / accuracy check ────────────────────────────────────────────────
     const prevLocation = await this.trackingService.getDriverLocation(user.id)
@@ -286,6 +353,18 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       this.server
         .to(`order:${assignment.orderId}`)
         .emit(EVENTS.ORDER_DRIVER_LOCATION, locationEvent)
+
+      // Check if driver just crossed the 800m approaching threshold
+      const justArriving = await this.customerNotification.checkApproaching(
+        payload.lat,
+        payload.lng,
+        assignment.orderId,
+      )
+      if (justArriving) {
+        this.server
+          .to(`order:${assignment.orderId}`)
+          .emit(EVENTS.ORDER_DRIVER_ARRIVING, { orderId: assignment.orderId })
+      }
     }
 
     // Acknowledge receipt
@@ -438,6 +517,41 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     )
 
     client.emit(EVENTS.SYNC_STATE, { drivers: enriched })
+    return { status: 'ok' }
+  }
+
+  // ─── Driver → issue report ─────────────────────────────────────────────────
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage(EVENTS.DRIVER_ISSUE_REPORT)
+  async onIssueReport(
+    @ConnectedSocket() client: AuthSocket,
+    @MessageBody() payload: { assignmentId?: string; issue?: string; type?: string; description?: string },
+  ) {
+    const user = client.data.user
+    if (user.role !== Role.DRIVER) return { status: 'error', message: 'Forbidden' }
+
+    // Driver app sends `issue`; accept both `issue` and legacy `type`
+    const issueText = payload.issue ?? payload.type ?? 'Unknown issue'
+
+    this.logger.warn(
+      `[issue] driver=${user.id} issue="${issueText}" assignment=${payload.assignmentId ?? 'none'}`,
+    )
+
+    // Forward to dispatchers so they can act
+    this.server.to('dispatchers').emit('driver.issue.reported', {
+      driverId: user.id,
+      driverName: user.name,
+      assignmentId: payload.assignmentId,
+      issue: issueText,
+      reportedAt: new Date().toISOString(),
+    })
+
+    if (payload.assignmentId) {
+      this.trackingService.logAssignmentEvent(payload.assignmentId, 'ISSUE_REPORTED', issueText)
+      void this.customerNotification.notifyByAssignment(payload.assignmentId, 'ISSUE_REPORTED')
+    }
+
     return { status: 'ok' }
   }
 

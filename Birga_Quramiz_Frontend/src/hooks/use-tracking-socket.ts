@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useTrackingStore } from "@/store/trackingStore";
 import { getSocket } from "@/lib/tracking/socket";
 import { trackingApi } from "@/services/trackingApi";
@@ -17,6 +17,7 @@ import {
   ASSIGNMENT_STATUS_CHANGED,
   SYNC_STATE,
   CLIENT_SYNC_REQUEST,
+  DRIVER_ISSUE_REPORTED,
 } from "@/types/tracking";
 
 class Backoff {
@@ -35,12 +36,13 @@ class Backoff {
 }
 
 export function useTrackingSocket() {
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const backoff        = useRef(new Backoff());
+  const reconnectTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backoff         = useRef(new Backoff());
+  const pendingLocs     = useRef<Map<string, DriverLocation>>(new Map());
+  const rafHandle       = useRef<number | null>(null);
 
   const {
     setDrivers,
-    updateLocation,
     updateDriverStatus,
     updateETA,
     addAlert,
@@ -48,6 +50,15 @@ export function useTrackingSocket() {
     setConnected,
     setReconnecting,
   } = useTrackingStore();
+
+  // Flush all buffered location updates in one store write per animation frame
+  const flushLocations = useCallback(() => {
+    rafHandle.current = null;
+    const pending = pendingLocs.current;
+    if (!pending.size) return;
+    useTrackingStore.getState().batchUpdateLocations(Array.from(pending.values()));
+    pending.clear();
+  }, []);
 
   useEffect(() => {
     const socket = getSocket();
@@ -83,7 +94,11 @@ export function useTrackingSocket() {
     });
 
     socket.on(MAP_DRIVER_LOCATION, (payload: DriverLocation) => {
-      updateLocation(payload);
+      // Buffer by driverId — last update wins if multiple arrive before next frame
+      pendingLocs.current.set(payload.driverId, payload);
+      if (!rafHandle.current) {
+        rafHandle.current = requestAnimationFrame(flushLocations);
+      }
     });
 
     socket.on(MAP_DRIVER_STATUS, (payload: { driverId: string; status: DriverStatus }) => {
@@ -104,6 +119,16 @@ export function useTrackingSocket() {
 
     socket.on(ORDER_DELAYED, (payload: { orderId: string; minutesWaiting: number }) => {
       window.dispatchEvent(new CustomEvent("birga:order_delayed", { detail: payload }));
+      // Also add to the driver's alert feed if we can find which driver owns this order
+      const state = useTrackingStore.getState();
+      const driver = Object.values(state.drivers).find((d) => d.activeOrderId === payload.orderId);
+      if (driver) {
+        addAlert(driver.id, {
+          type:    "delayed",
+          message: `Waiting ${payload.minutesWaiting}m for pickup`,
+          since:   Date.now(),
+        });
+      }
     });
 
     socket.on(ETA_UPDATED, (payload: { orderId: string; driverId: string; etaMinutes: number }) => {
@@ -114,8 +139,14 @@ export function useTrackingSocket() {
       window.dispatchEvent(new CustomEvent("birga:assignment_status", { detail: payload }));
     });
 
+    socket.on(DRIVER_ISSUE_REPORTED, (payload: { driverId: string; driverName: string; assignmentId?: string; issue: string; reportedAt: string }) => {
+      addAlert(payload.driverId, { type: "issue", message: payload.issue, since: new Date(payload.reportedAt).getTime() });
+      window.dispatchEvent(new CustomEvent("birga:driver_issue", { detail: payload }));
+    });
+
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (rafHandle.current) cancelAnimationFrame(rafHandle.current);
       socket.off("connect");
       socket.off("disconnect");
       socket.off("connect_error");
@@ -128,6 +159,7 @@ export function useTrackingSocket() {
       socket.off(ORDER_DELAYED);
       socket.off(ETA_UPDATED);
       socket.off(ASSIGNMENT_STATUS_CHANGED);
+      socket.off(DRIVER_ISSUE_REPORTED);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,3 +1,6 @@
+// ⚠ instrument.ts MUST be the first import — Sentry requires this
+import './instrument';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -10,17 +13,15 @@ import express, {
 } from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { SafeHttpExceptionFilter } from './common/filters/safe-http-exception.filter';
+import { Logger } from 'nestjs-pino';
+import { RedisRateLimiter } from './common/middleware/redis-rate-limiter';
 
 const GLOBAL_RATE_WINDOW_MS = 60_000;
 const GLOBAL_RATE_MAX_REQUESTS = 180;
 const AUTH_RATE_WINDOW_MS = 60_000;
 const AUTH_RATE_MAX_REQUESTS = 30;
-const MAX_BUCKET_ENTRIES = 10_000;
-
-type RateBucket = { count: number; resetAt: number };
-const globalIpBuckets = new Map<string, RateBucket>();
-const authIpBuckets = new Map<string, RateBucket>();
 
 const AUTH_RATE_PATHS = new Set([
   '/auth/login',
@@ -33,12 +34,11 @@ const AUTH_RATE_PATHS = new Set([
   '/auth/change-password',
 ]);
 
-function cleanupExpiredBuckets(store: Map<string, RateBucket>, now: number) {
-  for (const [key, bucket] of store.entries()) {
-    if (bucket.resetAt <= now) {
-      store.delete(key);
-    }
-  }
+// Single Redis-backed limiter instance (falls back to in-memory when Redis unavailable)
+const rateLimiter = new RedisRateLimiter();
+
+function shouldApplyAuthRateLimit(path: string) {
+  return AUTH_RATE_PATHS.has(path);
 }
 
 function getAllowedOrigins() {
@@ -61,39 +61,12 @@ function getAllowedOrigins() {
   ];
 }
 
-function shouldApplyAuthRateLimit(path: string) {
-  return AUTH_RATE_PATHS.has(path);
-}
-
-function applyRateLimit(
-  store: Map<string, RateBucket>,
-  key: string,
-  now: number,
-  maxRequests: number,
-  windowMs: number,
-) {
-  const bucket = store.get(key);
-
-  if (!bucket || bucket.resetAt <= now) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (bucket.count >= maxRequests) {
-    return false;
-  }
-
-  bucket.count += 1;
-  return true;
-}
-
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger:
-      process.env.NODE_ENV === 'production'
-        ? ['error', 'warn', 'log']
-        : ['error', 'warn', 'log', 'debug', 'verbose'],
-  });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  // Replace NestJS default logger with Pino (structured JSON in prod, pretty in dev)
+  app.useLogger(app.get(Logger));
+  // Required for BeforeApplicationShutdown / OnApplicationShutdown lifecycle hooks
+  app.enableShutdownHooks();
   const uploadsDir = join(process.cwd(), 'uploads');
   const productsUploadsDir = join(uploadsDir, 'products');
   const podUploadsDir = join(uploadsDir, 'pod');
@@ -133,47 +106,36 @@ async function bootstrap() {
   });
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const now = Date.now();
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const normalizedPath = req.path || req.url || '';
 
-    if (globalIpBuckets.size > MAX_BUCKET_ENTRIES) {
-      cleanupExpiredBuckets(globalIpBuckets, now);
-    }
-    if (authIpBuckets.size > MAX_BUCKET_ENTRIES) {
-      cleanupExpiredBuckets(authIpBuckets, now);
-    }
+    rateLimiter
+      .allow(`global:${ip}`, GLOBAL_RATE_MAX_REQUESTS, GLOBAL_RATE_WINDOW_MS)
+      .then((allowed) => {
+        if (!allowed) {
+          res.status(429).json({ message: 'Too many requests' });
+          return;
+        }
+        if (!shouldApplyAuthRateLimit(normalizedPath)) {
+          next();
+          return;
+        }
 
-    const isAllowedGlobally = applyRateLimit(
-      globalIpBuckets,
-      ip,
-      now,
-      GLOBAL_RATE_MAX_REQUESTS,
-      GLOBAL_RATE_WINDOW_MS,
-    );
-    if (!isAllowedGlobally) {
-      res.status(429).json({ message: 'Too many requests' });
-      return;
-    }
-
-    if (!shouldApplyAuthRateLimit(normalizedPath)) {
-      next();
-      return;
-    }
-
-    const isAllowedForAuth = applyRateLimit(
-      authIpBuckets,
-      `${ip}:${normalizedPath}`,
-      now,
-      AUTH_RATE_MAX_REQUESTS,
-      AUTH_RATE_WINDOW_MS,
-    );
-    if (!isAllowedForAuth) {
-      res.status(429).json({ message: 'Too many requests' });
-      return;
-    }
-
-    next();
+        return rateLimiter
+          .allow(
+            `auth:${ip}:${normalizedPath}`,
+            AUTH_RATE_MAX_REQUESTS,
+            AUTH_RATE_WINDOW_MS,
+          )
+          .then((authAllowed) => {
+            if (!authAllowed) {
+              res.status(429).json({ message: 'Too many requests' });
+              return;
+            }
+            next();
+          });
+      })
+      .catch(() => next()); // fail open — never block legitimate traffic on Redis errors
   });
 
   app.use('/uploads', express.static(uploadsDir));
@@ -186,13 +148,16 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
-  app.useGlobalFilters(new SafeHttpExceptionFilter());
+  // SentryGlobalFilter catches + reports, then re-throws so SafeHttpExceptionFilter formats the response
+  app.useGlobalFilters(new SentryGlobalFilter(), new SafeHttpExceptionFilter());
 
   await app.listen(process.env.PORT || 5000, '0.0.0.0');
 
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.on(signal, () => {
-      void app.close().then(() => process.exit(0));
+      void Promise.all([app.close(), rateLimiter.quit()]).then(() =>
+        process.exit(0),
+      );
     });
   }
 }

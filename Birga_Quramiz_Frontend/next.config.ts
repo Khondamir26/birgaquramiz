@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
@@ -9,7 +10,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: blob: https: http://localhost:5000 http://127.0.0.1:5000 https://maps.googleapis.com https://maps.gstatic.com`,
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' http://localhost:5000 ws://localhost:5000 https://api.birga-quramiz.uz wss://api.birga-quramiz.uz https://ai.birga-quramiz.uz https://maps.googleapis.com https://www.google-analytics.com https://cloudflareinsights.com",
+  "connect-src 'self' http://localhost:5000 ws://localhost:5000 https://api.birga-quramiz.uz wss://api.birga-quramiz.uz https://ai.birga-quramiz.uz https://maps.googleapis.com https://www.google-analytics.com https://cloudflareinsights.com https://o*.ingest.sentry.io",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
   "base-uri 'self'",
   "form-action 'self'",
@@ -106,4 +107,11 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withNextIntl(nextConfig)
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Sentry org/project — override via SENTRY_ORG / SENTRY_PROJECT env vars
+  silent:              !process.env.CI,    // suppress build output locally
+  disableLogger:       true,
+  tunnelRoute:         '/monitoring',      // proxy Sentry events through our domain
+  sourcemaps:          { disable: true },  // don't upload source maps unless SENTRY_AUTH_TOKEN is set
+  automaticVercelMonitors: false,
+})

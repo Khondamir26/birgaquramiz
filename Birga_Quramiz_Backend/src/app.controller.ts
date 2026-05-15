@@ -10,8 +10,15 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  /** Liveness probe — process is alive */
   @Get('health')
   getHealth() {
     return this.appService.getHealth();
+  }
+
+  /** Readiness probe — process is ready to receive traffic (503 during shutdown) */
+  @Get('health/ready')
+  getReadiness() {
+    return this.appService.getReadiness();
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import Redis from 'ioredis'
-import { LatLng, toGridCell } from './geo.utils'
+import { LatLng, toGridCell, haversineMeters } from './geo.utils'
 import axios from 'axios'
 
 export interface RouteResult {
@@ -21,6 +21,33 @@ export class RouteCacheService implements OnModuleInit, OnModuleDestroy {
    * ETA is cached separately with a shorter 90s TTL.
    */
   private readonly ROUTE_TTL = 600
+
+  // ── Circuit breaker state (in-memory per instance) ────────────────────────
+  private cbFailures     = 0
+  private cbOpenUntil    = 0
+  private readonly CB_THRESHOLD  = 5     // open after 5 consecutive failures
+  private readonly CB_RESET_MS   = 30_000 // stay open 30s, then half-open
+
+  private circuitIsOpen(): boolean {
+    if (this.cbOpenUntil === 0) return false
+    if (Date.now() < this.cbOpenUntil) return true
+    // Half-open: allow one probe through
+    this.cbOpenUntil = 0
+    return false
+  }
+
+  private recordSuccess(): void {
+    this.cbFailures  = 0
+    this.cbOpenUntil = 0
+  }
+
+  private recordFailure(): void {
+    this.cbFailures++
+    if (this.cbFailures >= this.CB_THRESHOLD) {
+      this.cbOpenUntil = Date.now() + this.CB_RESET_MS
+      this.logger.warn(`[circuit-breaker] Routes API opened — falling back to haversine for ${this.CB_RESET_MS / 1000}s`)
+    }
+  }
 
   onModuleInit() {
     this.redis = new Redis({
@@ -51,6 +78,11 @@ export class RouteCacheService implements OnModuleInit, OnModuleDestroy {
       const r = JSON.parse(cached) as RouteResult
       r.arrivalTime = new Date(r.arrivalTime) // rehydrate date
       return r
+    }
+
+    if (this.circuitIsOpen()) {
+      this.logger.warn('[circuit-breaker] Routes API circuit open — using haversine fallback')
+      return this.haversineFallback(origin, destination)
     }
 
     await this.trackApiCall('routes_api')
@@ -84,6 +116,7 @@ export class RouteCacheService implements OnModuleInit, OnModuleDestroy {
       const route = data.routes?.[0]
       if (!route) return null
 
+      this.recordSuccess()
       const durationSeconds = parseInt(route.duration?.replace('s', '') ?? '0', 10)
       const result: RouteResult = {
         durationSeconds,
@@ -96,7 +129,24 @@ export class RouteCacheService implements OnModuleInit, OnModuleDestroy {
       return result
     } catch (err) {
       this.logger.error('Routes API error', err)
-      return null
+      this.recordFailure()
+      return this.haversineFallback(origin, destination)
+    }
+  }
+
+  /**
+   * Dead-reckoning ETA when the Routes API is unavailable.
+   * Uses straight-line distance × 1.35 road factor at 30 km/h average urban speed.
+   * Marked with polyline = "" so callers know it's an estimate.
+   */
+  private haversineFallback(origin: LatLng, destination: LatLng): RouteResult {
+    const distanceMeters = haversineMeters(origin, destination) * 1.35
+    const durationSeconds = Math.round(distanceMeters / 8.33) // 30 km/h ≈ 8.33 m/s
+    return {
+      durationSeconds,
+      distanceMeters: Math.round(distanceMeters),
+      polyline: '',
+      arrivalTime: new Date(Date.now() + durationSeconds * 1_000),
     }
   }
 

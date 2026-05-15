@@ -146,12 +146,19 @@ function MapErrorOverlay({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+interface AnimState { fromLat: number; fromLng: number; toLat: number; toLng: number; startMs: number }
+const ANIM_MS = 600; // marker glide duration
+
+function easeOut(t: number) { return 1 - (1 - t) * (1 - t); }
+
 export default function MapView({ drivers, locations, selectedDriverId, onSelectDriver }: Props) {
   const containerRef  = useRef<HTMLDivElement>(null);
   const mapRef        = useRef<any>(null);
   const markersRef    = useRef<Map<string, any>>(new Map());
   const infoWindowRef = useRef<any>(null);
   const scriptLoadRef = useRef(false);
+  const animStateRef  = useRef<Map<string, AnimState>>(new Map());
+  const animRafRef    = useRef<number | null>(null);
 
   const [loadState, setLoadState] = useState<LoadState>("idle");
 
@@ -197,7 +204,10 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
 
   useEffect(() => {
     loadScript();
-    return () => { mapRef.current = null; };
+    return () => {
+      mapRef.current = null;
+      if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
+    };
   }, [loadScript]);
 
   const handleRetry = () => {
@@ -206,6 +216,35 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
     setLoadState("idle");
     loadScript();
   };
+
+  // Animation loop — runs while any marker is still mid-glide
+  const runAnimLoop = useCallback(() => {
+    animRafRef.current = null;
+    const now    = Date.now();
+    let   active = false;
+
+    for (const [driverId, anim] of animStateRef.current) {
+      const marker = markersRef.current.get(driverId);
+      if (!marker) { animStateRef.current.delete(driverId); continue; }
+
+      const elapsed = now - anim.startMs;
+      if (elapsed >= ANIM_MS) {
+        marker.setPosition({ lat: anim.toLat, lng: anim.toLng });
+        animStateRef.current.delete(driverId);
+      } else {
+        const t = easeOut(elapsed / ANIM_MS);
+        marker.setPosition({
+          lat: anim.fromLat + (anim.toLat - anim.fromLat) * t,
+          lng: anim.fromLng + (anim.toLng - anim.fromLng) * t,
+        });
+        active = true;
+      }
+    }
+
+    if (active) {
+      animRafRef.current = requestAnimationFrame(runAnimLoop);
+    }
+  }, []);
 
   // Sync markers
   useEffect(() => {
@@ -216,7 +255,11 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
     const activeIds = new Set(drivers.map((d) => d.id));
 
     markersRef.current.forEach((marker, id) => {
-      if (!activeIds.has(id)) { marker.setMap(null); markersRef.current.delete(id); }
+      if (!activeIds.has(id)) {
+        marker.setMap(null);
+        markersRef.current.delete(id);
+        animStateRef.current.delete(id);
+      }
     });
 
     drivers.forEach((driver) => {
@@ -227,9 +270,25 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
 
       if (markersRef.current.has(driver.id)) {
         const marker = markersRef.current.get(driver.id)!;
-        if (loc) marker.setPosition({ lat: loc.lat, lng: loc.lng });
         marker.setIcon(icon);
         marker.setZIndex(zIndex);
+
+        if (loc) {
+          const cur = marker.getPosition();
+          if (cur) {
+            // Start smooth glide to new position
+            animStateRef.current.set(driver.id, {
+              fromLat: cur.lat(), fromLng: cur.lng(),
+              toLat: loc.lat,     toLng: loc.lng,
+              startMs: Date.now(),
+            });
+            if (!animRafRef.current) {
+              animRafRef.current = requestAnimationFrame(runAnimLoop);
+            }
+          } else {
+            marker.setPosition({ lat: loc.lat, lng: loc.lng });
+          }
+        }
       } else if (loc) {
         const marker = new gmaps.maps.Marker({ position: { lat: loc.lat, lng: loc.lng }, map, icon, title: driver.name, zIndex });
         marker.addListener("click", () => {
@@ -241,7 +300,7 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
         markersRef.current.set(driver.id, marker);
       }
     });
-  }, [drivers, locations, selectedDriverId, onSelectDriver]);
+  }, [drivers, locations, selectedDriverId, onSelectDriver, runAnimLoop]);
 
   // Pan to selected driver
   useEffect(() => {
