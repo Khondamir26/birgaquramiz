@@ -31,6 +31,10 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
   /** Max points kept per driver in Redis buffer (prevents unbounded growth) */
   private readonly MAX_BUFFER_SIZE = 30
 
+  /** Redis Set that tracks which drivers currently have buffered locations.
+   *  Avoids KEYS 'loc_buf:*' which is O(N) over the entire keyspace. */
+  private readonly DRIVER_SET_KEY = 'loc_buf_drivers'
+
   constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit() {
@@ -61,9 +65,10 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
 
     await this.redis
       .multi()
+      .sadd(this.DRIVER_SET_KEY, location.driverId) // register driver in flush index
       .rpush(key, value)
-      .ltrim(key, -this.MAX_BUFFER_SIZE, -1) // keep only last N points
-      .expire(key, 120)                        // auto-expire if driver goes offline
+      .ltrim(key, -this.MAX_BUFFER_SIZE, -1)         // keep only last N points
+      .expire(key, 120)                               // auto-expire if driver goes offline
       .exec()
       .catch(() => {})
   }
@@ -96,8 +101,9 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
    */
   @Cron('*/30 * * * * *')
   async flush(): Promise<void> {
-    const keys = await this.redis.keys('loc_buf:*').catch(() => [] as string[])
-    if (!keys.length) return
+    // O(1) lookup — no keyspace scan
+    const driverIds = await this.redis.smembers(this.DRIVER_SET_KEY).catch(() => [] as string[])
+    if (!driverIds.length) return
 
     const allRows: {
       driverId: string; lat: number; lng: number
@@ -105,9 +111,13 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
       createdAt: Date
     }[] = []
 
-    for (const key of keys) {
+    for (const driverId of driverIds) {
+      const key = `loc_buf:${driverId}`
       const items = await this.redis.lrange(key, 0, -1).catch(() => [] as string[])
-      if (!items.length) continue
+      if (!items.length) {
+        await this.redis.srem(this.DRIVER_SET_KEY, driverId).catch(() => {})
+        continue
+      }
 
       for (const raw of items) {
         try {
@@ -126,8 +136,8 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
-      // Clear the buffer after reading
-      await this.redis.del(key).catch(() => {})
+      // Clear buffer and remove from set atomically
+      await this.redis.multi().del(key).srem(this.DRIVER_SET_KEY, driverId).exec().catch(() => {})
     }
 
     if (!allRows.length) return
@@ -155,21 +165,65 @@ export class LocationHistoryService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Cron: delete location rows older than 30 days every day at 3 AM.
+   *  Deletes in 2 000-row batches to avoid long-running table locks. */
+  @Cron('0 3 * * *')
+  async cleanup(): Promise<void> {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 30)
+    const BATCH = 2_000
+    let totalDeleted = 0
+
+    try {
+      let deleted: number
+      do {
+        // Find the oldest IDs in this batch, then delete them
+        const ids = await this.prisma.locationHistory.findMany({
+          where: { createdAt: { lt: cutoff } },
+          select: { id: true },
+          take: BATCH,
+          orderBy: { createdAt: 'asc' },
+        })
+        if (!ids.length) break
+
+        const result = await this.prisma.locationHistory.deleteMany({
+          where: { id: { in: ids.map((r) => r.id) } },
+        })
+        deleted = result.count
+        totalDeleted += deleted
+      } while (deleted === BATCH)
+
+      if (totalDeleted > 0) {
+        this.logger.log(`[location-history] cleaned ${totalDeleted} rows older than 30 days`)
+      }
+    } catch (err) {
+      this.logger.error('[location-history] cleanup failed', err)
+    }
+  }
+
+  /** Max window for a single route-replay query — prevents full-table scans */
+  private readonly MAX_HISTORY_WINDOW_MS = 24 * 60 * 60 * 1_000 // 24 hours
+
   /**
    * Get location history for route replay analytics.
-   * Returns points ordered by time ascending.
+   * Returns points ordered by time ascending, capped at a 24h window.
    */
   async getHistory(
     driverId: string,
     from: Date,
     to: Date,
-  ): Promise<{ lat: number; lng: number; heading: number | null; createdAt: Date }[]> {
+  ): Promise<{ lat: number; lng: number; heading: number | null; speed: number | null; createdAt: Date }[]> {
+    // Clamp the window to protect against unbounded scans
+    const effectiveTo = to.getTime() - from.getTime() > this.MAX_HISTORY_WINDOW_MS
+      ? new Date(from.getTime() + this.MAX_HISTORY_WINDOW_MS)
+      : to
+
     return this.prisma.locationHistory.findMany({
       where: {
         driverId,
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lte: effectiveTo },
       },
-      select: { lat: true, lng: true, heading: true, createdAt: true },
+      select: { lat: true, lng: true, heading: true, speed: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     })
   }

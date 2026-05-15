@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bot, SendHorizontal, Sparkles, Mic, Loader2, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Bot, SendHorizontal, Sparkles, Mic, MicOff, Loader2, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useProject } from "@/hooks/useProject";
 import { useChatStore } from "@/store/chatStore";
@@ -47,6 +47,46 @@ export default function AiChatPage() {
   }, []);
 
   const INPUT_MAX = 2000;
+
+  // ── Voice input ────────────────────────────────────────────────────────────
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const toggleVoice = useCallback(() => {
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: typeof globalThis.SpeechRecognition; webkitSpeechRecognition?: typeof globalThis.SpeechRecognition })
+        .SpeechRecognition ??
+      (window as unknown as { webkitSpeechRecognition?: typeof globalThis.SpeechRecognition }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) return; // unsupported — button is hidden below
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const rec = new SpeechRecognition();
+    rec.lang = "ru-RU"; // Works for Russian, Uzbek, and English simultaneously
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (e) => {
+      const transcript = e.results[0]?.[0]?.transcript ?? "";
+      if (transcript) setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+
+    rec.start();
+    recognitionRef.current = rec;
+    setListening(true);
+  }, [listening]);
+
+  // Detect browser support so we can hide the button on unsupported browsers
+  const speechSupported =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  // ───────────────────────────────────────────────────────────────────────────
 
   async function handleSend(text: string) {
     const msg = text.trim();
@@ -144,9 +184,19 @@ export default function AiChatPage() {
               {/* Input */}
               <div className="border-t border-border px-4 py-4 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
-                  <button className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
-                    <Mic className="size-[18px]" />
-                  </button>
+                  {speechSupported && (
+                    <button
+                      onClick={toggleVoice}
+                      aria-label={listening ? "Stop voice input" : "Start voice input"}
+                      className={`flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                        listening
+                          ? "border-destructive bg-destructive/10 text-destructive animate-pulse"
+                          : "border-border text-muted-foreground hover:text-primary hover:border-primary/30"
+                      }`}
+                    >
+                      {listening ? <MicOff className="size-[18px]" /> : <Mic className="size-[18px]" />}
+                    </button>
+                  )}
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
