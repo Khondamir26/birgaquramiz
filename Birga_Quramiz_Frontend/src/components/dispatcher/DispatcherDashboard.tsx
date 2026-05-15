@@ -10,6 +10,9 @@ import { twMerge } from "tailwind-merge";
 import { queryKeys } from "@/lib/tracking/queryKeys";
 import { trackingApi, type FraudFlag } from "@/services/trackingApi";
 import DriverPanel from "./DriverPanel";
+import DriverDetailModal from "./DriverDetailModal";
+import AlertCenter from "./AlertCenter";
+import RoutePlayback from "./RoutePlayback";
 import OrderPanel from "./OrderPanel";
 import MapView from "./map/MapView";
 import TopBar from "./TopBar";
@@ -211,10 +214,12 @@ export default function DispatcherDashboard() {
     isReconnecting,
   } = useTrackingStore();
 
-  const [toasts,    setToasts]    = useState<AlertToast[]>([]);
-  const [leftOpen,  setLeftOpen]  = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
-  const [mobileTab, setMobileTab] = useState<MobileTab>("map");
+  const [toasts,          setToasts]          = useState<AlertToast[]>([]);
+  const [leftOpen,        setLeftOpen]        = useState(true);
+  const [rightOpen,       setRightOpen]       = useState(true);
+  const [mobileTab,       setMobileTab]       = useState<MobileTab>("map");
+  const [alertCenterOpen,  setAlertCenterOpen]  = useState(false);
+  const [playbackDriverId, setPlaybackDriverId] = useState<string | null>(null);
 
   const toastTimers = useRef<globalThis.Map<string, ReturnType<typeof setTimeout>>>(new globalThis.Map());
 
@@ -274,11 +279,22 @@ export default function DispatcherDashboard() {
       }
     };
 
+    const handleDriverIssue = (e: Event) => {
+      const { driverName, issue } = (e as CustomEvent<{ driverName: string; issue: string }>).detail;
+      addToast({
+        kind:  "warning",
+        title: `Issue: ${driverName}`,
+        body:  issue,
+      });
+    };
+
     window.addEventListener("birga:order_delayed",     handleDelayed);
     window.addEventListener("birga:assignment_status", handleStatus);
+    window.addEventListener("birga:driver_issue",      handleDriverIssue);
     return () => {
       window.removeEventListener("birga:order_delayed",     handleDelayed);
       window.removeEventListener("birga:assignment_status", handleStatus);
+      window.removeEventListener("birga:driver_issue",      handleDriverIssue);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drivers]);
@@ -293,7 +309,7 @@ export default function DispatcherDashboard() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <TopBar user={user} />
+      <TopBar user={user} onOpenAlertCenter={() => setAlertCenterOpen(true)} />
 
       {isReconnecting && (
         <div role="status" className="flex items-center justify-center gap-2 bg-amber-500 py-1.5 text-[12px] font-bold text-white">
@@ -377,14 +393,17 @@ export default function DispatcherDashboard() {
           aria-label="Map"
           className={cn("relative flex-1 overflow-hidden", mobileTab !== "map" && "hidden md:block")}
         >
-          {hasAlerts && (
-            <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2" aria-hidden>
-              <div className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 shadow-md">
+          {hasAlerts && !selectedDriverId && (
+            <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2">
+              <button
+                onClick={() => setAlertCenterOpen(true)}
+                className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 shadow-md transition hover:bg-red-100"
+              >
                 <AlertTriangle className="size-3 text-red-500" />
                 <span className="text-[11px] font-bold text-red-600">
-                  {alertCount} active alert{alertCount !== 1 ? "s" : ""} — check driver panel
+                  {alertCount} active alert{alertCount !== 1 ? "s" : ""} — tap to review
                 </span>
-              </div>
+              </button>
             </div>
           )}
           <MapView
@@ -393,6 +412,16 @@ export default function DispatcherDashboard() {
             selectedDriverId={selectedDriverId}
             onSelectDriver={selectDriver}
           />
+          {/* Driver detail overlay — slides in from left when driver selected */}
+          {selectedDriverId && (
+            <div className="absolute left-0 top-0 z-20 h-full w-[280px] overflow-hidden border-r border-slate-200 bg-white shadow-xl">
+              <DriverDetailModal
+                driverId={selectedDriverId}
+                onClose={() => selectDriver(null)}
+                onOpenPlayback={(id) => { setPlaybackDriverId(id); selectDriver(null); }}
+              />
+            </div>
+          )}
         </main>
 
         {/* Desktop collapsed right */}
@@ -466,6 +495,23 @@ export default function DispatcherDashboard() {
       <MobileTabBar active={mobileTab} onChange={setMobileTab} />
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
+      {alertCenterOpen && (
+        <AlertCenter
+          onClose={() => setAlertCenterOpen(false)}
+          onFocusDriver={(id) => {
+            selectDriver(id);
+            setMobileTab("map");
+          }}
+        />
+      )}
+
+      {playbackDriverId && (
+        <RoutePlayback
+          driverId={playbackDriverId}
+          onClose={() => setPlaybackDriverId(null)}
+        />
+      )}
     </div>
   );
 }

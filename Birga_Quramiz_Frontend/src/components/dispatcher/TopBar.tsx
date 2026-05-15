@@ -10,7 +10,8 @@ import { useTrackingStore } from "@/store/trackingStore";
 import { DriverStatus } from "@/types/tracking";
 
 interface TopBarProps {
-  user: { name: string; role: string } | null;
+  user:               { name: string; role: string } | null;
+  onOpenAlertCenter?: () => void;
 }
 
 function LiveClock() {
@@ -38,7 +39,7 @@ function StatPill({ dot, icon, label }: { dot?: string; icon?: React.ReactNode; 
   );
 }
 
-export default function TopBar({ user }: TopBarProps) {
+export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
   const router      = useRouter();
   const storeLogout = useAuthStore((s) => s.logout);
   const { drivers, isConnected, isReconnecting, lastSyncAt } = useTrackingStore();
@@ -85,12 +86,16 @@ export default function TopBar({ user }: TopBarProps) {
         {alertCount > 0 && (
           <>
             <div className="h-3 w-px bg-white/20" />
-            <div className="flex items-center gap-1.5 rounded-full bg-red-500/25 px-2.5 py-1">
+            <button
+              onClick={onOpenAlertCenter}
+              className="flex items-center gap-1.5 rounded-full bg-red-500/25 px-2.5 py-1 transition hover:bg-red-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+              aria-label={`Open alert center — ${alertCount} active alerts`}
+            >
               <AlertTriangle className="size-3 text-red-300" />
               <span className="text-[12px] font-bold text-red-200">
                 {alertCount} alert{alertCount !== 1 ? "s" : ""}
               </span>
-            </div>
+            </button>
           </>
         )}
 

@@ -2,17 +2,22 @@ import { Module, OnModuleInit } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
 import { TrackingController } from './tracking.controller'
+import { PublicTrackingController } from './public-tracking.controller'
 import { TrackingGateway } from './tracking.gateway'
 import { TrackingService } from './tracking.service'
 import { FraudService } from './services/fraud.service'
 import { AlertService } from './services/alert.service'
 import { DriverRecommendationService } from './services/driver-recommendation.service'
 import { OtpService } from './services/otp.service'
+import { SmsService } from './services/sms.service'
 import { LocationHistoryService } from './services/location-history.service'
 import { PodPhotoService } from './services/pod-photo.service'
+import { PushNotificationService } from './services/push-notification.service'
+import { CustomerNotificationService } from './services/customer-notification.service'
 import { MapsModule } from '../maps/maps.module'
 import { PrismaModule } from '../prisma/prisma.module'
 import { UploadModule } from '../upload/upload.module'
+import { TelegramModule } from '../telegram/telegram.module'
 import { WsJwtGuard } from './guards/ws-jwt.guard'
 
 @Module({
@@ -20,12 +25,13 @@ import { WsJwtGuard } from './guards/ws-jwt.guard'
     PrismaModule,
     UploadModule,
     MapsModule,
+    TelegramModule,
     ScheduleModule.forRoot(),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
     }),
   ],
-  controllers: [TrackingController],
+  controllers: [TrackingController, PublicTrackingController],
   providers: [
     TrackingGateway,
     TrackingService,
@@ -33,8 +39,11 @@ import { WsJwtGuard } from './guards/ws-jwt.guard'
     AlertService,
     DriverRecommendationService,
     OtpService,
+    SmsService,
     LocationHistoryService,
     PodPhotoService,
+    PushNotificationService,
+    CustomerNotificationService,
     WsJwtGuard,
   ],
   exports: [TrackingService, TrackingGateway, FraudService],

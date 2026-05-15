@@ -11,6 +11,8 @@ export interface ETAResult {
   /** The driver location at time of calculation — used to skip recalc if not moved */
   calculatedAtLat: number
   calculatedAtLng: number
+  /** True when ETA was computed via haversine fallback (Google Routes API was unavailable) */
+  fallback: boolean
 }
 
 @Injectable()
@@ -82,6 +84,7 @@ export class EtaService implements OnModuleInit, OnModuleDestroy {
       arrivalTime: route.arrivalTime,
       calculatedAtLat: driverLocation.lat,
       calculatedAtLng: driverLocation.lng,
+      fallback: route.polyline === '',
     }
 
     await this.redis.setex(key, this.ETA_TTL, JSON.stringify(result)).catch(() => {})

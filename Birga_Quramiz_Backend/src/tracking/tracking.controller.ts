@@ -28,6 +28,7 @@ import { DriverRecommendationService } from './services/driver-recommendation.se
 import { OtpService } from './services/otp.service'
 import { LocationHistoryService } from './services/location-history.service'
 import { PodPhotoService } from './services/pod-photo.service'
+import { PushNotificationService } from './services/push-notification.service'
 import { EtaService } from '../maps/eta.service'
 import { GeocodingService } from '../maps/geocoding.service'
 import { Roles } from '../auth/roles.decorator'
@@ -45,6 +46,7 @@ export class TrackingController {
     private readonly recommendationService: DriverRecommendationService,
     private readonly otpService: OtpService,
     private readonly podPhotoService: PodPhotoService,
+    private readonly pushNotificationService: PushNotificationService,
     private readonly etaService: EtaService,
     private readonly geocodingService: GeocodingService,
     private readonly locationHistoryService: LocationHistoryService,
@@ -57,6 +59,27 @@ export class TrackingController {
   @Roles('DISPATCHER', 'ADMIN')
   getDrivers() {
     return this.trackingService.getDrivers()
+  }
+
+  /** GET /tracking/drivers/:driverId/detail */
+  @Get('drivers/:driverId/detail')
+  @Roles('DISPATCHER', 'ADMIN')
+  getDriverDetail(@Param('driverId') driverId: string) {
+    return this.trackingService.getDriverDetail(driverId)
+  }
+
+  /** GET /tracking/drivers/:driverId/stats — 30-day performance analytics */
+  @Get('drivers/:driverId/stats')
+  @Roles('DISPATCHER', 'ADMIN')
+  getDriverStats(@Param('driverId') driverId: string) {
+    return this.trackingService.getDriverStats(driverId)
+  }
+
+  /** GET /tracking/drivers/:driverId/rating-summary — customer rating aggregate */
+  @Get('drivers/:driverId/rating-summary')
+  @Roles('DISPATCHER', 'ADMIN')
+  getDriverRatingSummary(@Param('driverId') driverId: string) {
+    return this.trackingService.getDriverRatingSummary(driverId)
   }
 
   /** GET /tracking/orders/assignable */
@@ -91,7 +114,26 @@ export class TrackingController {
     }
     this.trackingGateway.pushNewAssignment(dto.driverId, payload)
 
+    // Fire-and-forget push notification (driver may be offline)
+    void this.pushNotificationService.notifyDriver(
+      dto.driverId,
+      'Yangi buyurtma 📦',
+      `Manzil: ${(assignment.order as any).deliveryAddress ?? 'Nomaʼlum'}`,
+      { assignmentId: assignment.id },
+    )
+
     return assignment
+  }
+
+  /** PATCH /tracking/push-token — driver registers their Expo push token */
+  @Patch('push-token')
+  @Roles('DRIVER')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async savePushToken(
+    @Body() body: { token: string | null },
+    @Req() req: AuthedRequest,
+  ) {
+    await this.pushNotificationService.savePushToken(req.user.id, body.token ?? null)
   }
 
   // ─── Driver endpoints ───────────────────────────────────────────────────────
@@ -141,6 +183,8 @@ export class TrackingController {
     if (!body.code) throw new BadRequestException('OTP code required')
     const valid = await this.otpService.verifyOTP(orderId, body.code)
     if (!valid) throw new BadRequestException('Invalid OTP code')
+    const assignment = await this.trackingService.getAssignmentByOrder(orderId)
+    if (assignment) this.trackingService.logAssignmentEvent(assignment.id, 'OTP_VERIFIED')
     return { valid: true }
   }
 
@@ -250,7 +294,32 @@ export class TrackingController {
       gps,
     )
 
+    this.trackingService.logAssignmentEvent(assignmentId, 'POD_UPLOADED', url)
     return { podPhotoUrl: url }
+  }
+
+  // ─── Assignment timeline + driver history ──────────────────────────────────
+
+  /** GET /tracking/assignments/:id/events */
+  @Get('assignments/:id/events')
+  @Roles('DISPATCHER', 'ADMIN')
+  getAssignmentEvents(@Param('id') assignmentId: string) {
+    return this.trackingService.getAssignmentEvents(assignmentId)
+  }
+
+  /** GET /tracking/drivers/:driverId/assignments?limit=10&cursor=<id> */
+  @Get('drivers/:driverId/assignments')
+  @Roles('DISPATCHER', 'ADMIN')
+  getDriverAssignmentHistory(
+    @Param('driverId') driverId: string,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.trackingService.getDriverAssignmentHistory(
+      driverId,
+      limit ? Math.min(parseInt(limit, 10), 50) : 10,
+      cursor,
+    )
   }
 
   // ─── Route replay analytics ──────────────────────────────────────────────────

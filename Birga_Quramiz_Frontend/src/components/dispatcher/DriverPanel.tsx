@@ -12,6 +12,7 @@ import {
   Clock,
   Radio,
   Shield,
+  MessageCircleWarning,
 } from "lucide-react";
 import { DriverStatus } from "@/types/tracking";
 import type { DriverLocation } from "@/types/tracking";
@@ -80,6 +81,11 @@ const ALERT_CFG: Record<AlertType, { label: string; cls: string; icon: React.Rea
     label: "Delivery late",
     cls:   "bg-orange-50 text-orange-600 border border-orange-100",
     icon:  <Clock className="size-2.5" />,
+  },
+  issue: {
+    label: "Driver issue",
+    cls:   "bg-purple-50 text-purple-700 border border-purple-100",
+    icon:  <MessageCircleWarning className="size-2.5" />,
   },
 };
 

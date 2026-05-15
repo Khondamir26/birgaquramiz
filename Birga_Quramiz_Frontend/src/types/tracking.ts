@@ -46,10 +46,12 @@ export interface Driver {
 }
 
 export interface DriverListItem extends Driver {
-  assignmentsToday: number;
-  minutesStuck?:    number;
-  signalLost?:      boolean;
-  etaMinutes?:      number;
+  assignmentsToday:    number;
+  minutesStuck?:       number;
+  signalLost?:         boolean;
+  etaMinutes?:         number;
+  activeAssignmentId?: string;
+  activeOrderId?:      string;
 }
 
 export interface DriverRecommendation {
@@ -78,3 +80,6 @@ export const ORDER_CREATED              = "order.created";
 export const ORDER_UNASSIGNED           = "order.unassigned";
 export const ETA_UPDATED                = "order.eta.updated";
 export const ASSIGNMENT_STATUS_CHANGED  = "assignment.status.changed";
+
+/** Server → Dispatcher: driver reported a delivery problem */
+export const DRIVER_ISSUE_REPORTED      = "driver.issue.reported";

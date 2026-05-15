@@ -21,13 +21,15 @@ import {
   Clock,
   AlertTriangle,
   ChevronRight,
-  User,
   Truck,
   X,
   RefreshCcw,
   Loader2,
   WifiOff,
+  Star,
+  Navigation,
 } from "lucide-react";
+import type { DriverRecommendation } from "@/types/tracking";
 
 function cn(...inputs: Parameters<typeof clsx>) {
   return twMerge(clsx(inputs));
@@ -87,26 +89,42 @@ function OrderCard({
 }: {
   order:            AssignableOrder;
   selectedDriverId: string | null;
-  onAssign:         (orderId: string, note: string) => Promise<void>;
+  onAssign:         (orderId: string, driverId: string, note: string) => Promise<void>;
   isAssigning:      boolean;
 }) {
   const { drivers } = useTrackingStore();
-  const selectedDriver = selectedDriverId ? drivers[selectedDriverId] : null;
 
-  const [expanded, setExpanded] = useState(false);
-  const [note,     setNote]     = useState("");
-  const [success,  setSuccess]  = useState(false);
+  const [expanded,       setExpanded]       = useState(false);
+  const [note,           setNote]           = useState("");
+  const [success,        setSuccess]        = useState(false);
+  const [pickedDriverId, setPickedDriverId] = useState<string | null>(null);
+
+  // When collapsed, treat pickedDriverId as null without needing an effect
+  const effectivePickedDriverId = expanded ? pickedDriverId : null;
+
+  // Fetch recommendations when expanded
+  const { data: recommendations = [], isLoading: recsLoading } = useQuery<DriverRecommendation[]>({
+    queryKey: ["driver-recommendations", order.id],
+    queryFn:  () => trackingApi.recommendDrivers(order.id),
+    enabled:  expanded,
+    staleTime: 30_000,
+  });
+
+  const effectiveDriverId = effectivePickedDriverId ?? selectedDriverId;
+  const effectiveDriver   = effectiveDriverId ? drivers[effectiveDriverId] : null;
 
   const mins = waitMinutes(order.createdAt);
   const tier = urgencyTier(mins);
 
   const handleConfirm = async () => {
+    if (!effectiveDriverId) return;
     try {
-      await onAssign(order.id, note);
+      await onAssign(order.id, effectiveDriverId, note);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2_200);
       setExpanded(false);
       setNote("");
+      setPickedDriverId(null);
     } catch {
       setExpanded(false);
       setNote("");
@@ -122,7 +140,7 @@ function OrderCard({
         <div>
           <p className="text-[13px] font-bold text-emerald-700">Assigned!</p>
           <p className="text-[11px] text-emerald-500">
-            {selectedDriver?.name ?? "Driver"} received the order
+            {effectiveDriver?.name ?? "Driver"} received the order
           </p>
         </div>
       </div>
@@ -184,34 +202,92 @@ function OrderCard({
 
       {expanded ? (
         <div className="border-t border-slate-50 bg-slate-50/70 px-4 pb-3 pt-2.5">
-          {selectedDriver ? (
+
+          {/* ── Recommended drivers ── */}
+          {recsLoading ? (
+            <div className="mb-2.5 flex items-center gap-2 py-1">
+              <Loader2 className="size-3.5 animate-spin text-slate-400" aria-hidden />
+              <p className="text-[11px] text-slate-400">Finding best drivers…</p>
+            </div>
+          ) : recommendations.length > 0 ? (
+            <div className="mb-2.5">
+              <p className="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <Star className="size-2.5" aria-hidden />
+                Recommended
+              </p>
+              <div className="flex flex-col gap-1">
+                {recommendations.slice(0, 3).map((rec, i) => {
+                  const isPicked = pickedDriverId === rec.driverId;
+                  return (
+                    <button
+                      key={rec.driverId}
+                      onClick={() => setPickedDriverId(isPicked ? null : rec.driverId)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition",
+                        isPicked
+                          ? "border-[#1B4D91]/30 bg-[#1B4D91]/[0.07]"
+                          : "border-slate-100 bg-white hover:border-[#1B4D91]/20 hover:bg-[#1B4D91]/[0.03]"
+                      )}
+                    >
+                      <span className={cn(
+                        "flex size-5 shrink-0 items-center justify-center rounded-full text-[9px] font-black",
+                        i === 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"
+                      )}>
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[12px] font-bold text-slate-800">{rec.name}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span className="flex items-center gap-0.5">
+                            <Navigation className="size-2.5" aria-hidden />
+                            {rec.distanceKm.toFixed(1)} km
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="size-2.5" aria-hidden />
+                            ~{rec.etaMinutes}m
+                          </span>
+                          {rec.currentLoad > 0 && (
+                            <span className="text-amber-600">{rec.currentLoad} active</span>
+                          )}
+                        </div>
+                      </div>
+                      {isPicked && <Check className="size-3.5 shrink-0 text-[#1B4D91]" aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {/* ── Selected driver (from panel or recommendation) ── */}
+          {effectiveDriver ? (
             <div className="mb-2.5 flex items-center gap-2.5 rounded-lg border border-slate-100 bg-white px-3 py-2">
               <div
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
-                  selectedDriver.status === DriverStatus.ON_DELIVERY
+                  effectiveDriver.status === DriverStatus.ON_DELIVERY
                     ? "bg-blue-100 text-blue-700"
                     : "bg-emerald-100 text-emerald-700"
                 )}
                 aria-hidden
               >
-                {initials(selectedDriver.name)}
+                {initials(effectiveDriver.name)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-bold text-slate-800">{selectedDriver.name}</p>
+                <p className="truncate text-[12px] font-bold text-slate-800">{effectiveDriver.name}</p>
                 <p className="text-[10px] text-slate-500">
-                  {selectedDriver.status === DriverStatus.ONLINE ? "Available" : "On delivery"}
-                  {selectedDriver.assignmentsToday > 0 ? ` · ${selectedDriver.assignmentsToday} today` : ""}
+                  {effectiveDriver.status === DriverStatus.ONLINE ? "Available" : "On delivery"}
+                  {effectiveDriver.assignmentsToday > 0 ? ` · ${effectiveDriver.assignmentsToday} today` : ""}
                 </p>
               </div>
               <Truck className="size-3.5 shrink-0 text-slate-300" aria-hidden />
             </div>
-          ) : (
+          ) : recommendations.length === 0 && !recsLoading ? (
             <div className="mb-2.5 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2">
               <AlertTriangle className="size-3.5 text-amber-500" aria-hidden />
-              <p className="text-[11px] text-amber-700">Select a driver from the left panel</p>
+              <p className="text-[11px] text-amber-700">Select a driver above or from the left panel</p>
             </div>
-          )}
+          ) : null}
 
           <input
             value={note}
@@ -224,7 +300,7 @@ function OrderCard({
           <div className="mt-2 flex gap-2">
             <button
               onClick={() => void handleConfirm()}
-              disabled={!selectedDriverId || isAssigning}
+              disabled={!effectiveDriverId || isAssigning}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1B4D91] py-2 text-[12px] font-bold text-white transition hover:bg-[#163b92] disabled:opacity-40"
             >
               {isAssigning
@@ -245,11 +321,7 @@ function OrderCard({
       ) : (
         <button
           onClick={() => setExpanded(true)}
-          disabled={!selectedDriverId}
-          className={cn(
-            "flex w-full items-center justify-between border-t border-slate-50 px-4 py-2 text-[12px] font-bold transition hover:bg-slate-50 disabled:cursor-not-allowed",
-            selectedDriverId ? "text-[#1B4D91]" : "text-slate-300"
-          )}
+          className="flex w-full items-center justify-between border-t border-slate-50 px-4 py-2 text-[12px] font-bold text-[#1B4D91] transition hover:bg-slate-50"
         >
           <span>Assign driver</span>
           <ChevronRight className="size-3.5" aria-hidden />
@@ -300,9 +372,8 @@ export default function OrderPanel({ selectedDriverId }: Props) {
   }, [qc]);
 
   const assign = useMutation({
-    mutationFn: ({ orderId, note }: { orderId: string; note: string }) => {
-      if (!selectedDriverId) return Promise.reject(new Error("No driver selected"));
-      return trackingApi.createAssignment(orderId, selectedDriverId, note);
+    mutationFn: ({ orderId, driverId, note }: { orderId: string; driverId: string; note: string }) => {
+      return trackingApi.createAssignment(orderId, driverId, note);
     },
 
     onMutate: async ({ orderId }) => {
@@ -325,9 +396,9 @@ export default function OrderPanel({ selectedDriverId }: Props) {
     },
   });
 
-  const handleAssign = (orderId: string, note: string): Promise<void> => {
+  const handleAssign = (orderId: string, driverId: string, note: string): Promise<void> => {
     setAssignErrMsg(null);
-    return assign.mutateAsync({ orderId, note }).then(() => undefined);
+    return assign.mutateAsync({ orderId, driverId, note }).then(() => undefined);
   };
 
   const sorted = [...orders].sort(
@@ -387,14 +458,6 @@ export default function OrderPanel({ selectedDriverId }: Props) {
         </div>
       )}
 
-      {!selectedDriverId && !isLoading && orders.length > 0 && (
-        <div className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5">
-          <User className="size-3.5 shrink-0 text-amber-500" aria-hidden />
-          <p className="text-[12px] font-medium text-amber-700">
-            Select a driver on the left to assign
-          </p>
-        </div>
-      )}
 
       {assignErrMsg && (
         <div role="alert" className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2">
