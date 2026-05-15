@@ -64,6 +64,10 @@ services:
       PAYME_MERCHANT_KEY: ${PAYME_MERCHANT_KEY}
       CLICK_SECRET_KEY: ${CLICK_SECRET_KEY}
       CLICK_SERVICE_ID: ${CLICK_SERVICE_ID}
+      ESKIZ_EMAIL: ${ESKIZ_EMAIL}
+      ESKIZ_PASSWORD: ${ESKIZ_PASSWORD}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      SENTRY_DSN: ${SENTRY_DSN:-}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
@@ -134,6 +138,8 @@ services:
         NEXT_PUBLIC_AI_URL: ${NEXT_PUBLIC_AI_URL:-https://ai.birga-quramiz.uz}
         NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-G-T853TX7K3C}
         NEXT_PUBLIC_YANDEX_MAPS_KEY: ${NEXT_PUBLIC_YANDEX_MAPS_KEY:-}
+        NEXT_PUBLIC_GOOGLE_MAPS_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_KEY}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     container_name: birga-frontend
     restart: unless-stopped
     environment:
