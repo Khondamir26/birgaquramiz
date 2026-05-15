@@ -109,7 +109,7 @@ export class AuthController {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user, accessToken: tokens.accessToken }
+    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken }
   }
 
   @Post('telegram')
@@ -126,7 +126,10 @@ export class AuthController {
 
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.[REFRESH_COOKIE]
+    // Accept refresh token from cookie (web) or request body (mobile)
+    const refreshToken =
+      req.cookies?.[REFRESH_COOKIE] ??
+      (req.body as { refreshToken?: string } | undefined)?.refreshToken
 
     if (!refreshToken) {
       throw new UnauthorizedException('Missing refresh token')
@@ -138,7 +141,7 @@ export class AuthController {
     })
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user }
+    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken }
   }
 
   @Post('refresh/logout')

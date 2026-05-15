@@ -69,6 +69,7 @@ model User {
   driverProfile    DriverProfile?
   locationHistory  LocationHistory[]
   fraudEvents      FraudEvent[]
+  ratingsReceived  DeliveryRating[]     @relation("DriverRatings")
 }
 
 model AuthSession {
@@ -185,6 +186,7 @@ model Order {
   total           Float
   status          OrderStatus   @default(NEW)
   createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   comment         String?
   customerName    String
   customerPhone   String
@@ -196,6 +198,7 @@ model Order {
   user       User?               @relation(fields: [userId], references: [id])
   driver     User?               @relation("DriverOrders", fields: [driverId], references: [id])
   assignment DeliveryAssignment?
+  rating     DeliveryRating?
 
   @@index([status])
   @@index([userId])
@@ -269,9 +272,14 @@ model DriverProfile {
   lastLat   Float?
   lastLng   Float?
   lastSeenAt DateTime?
+  /// Expo push token — registered by driver app on login
+  pushToken String?
   createdAt DateTime     @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([status, lastSeenAt])
 }
 
 model DeliveryAssignment {
@@ -293,14 +301,29 @@ model DeliveryAssignment {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  order      Order @relation(fields: [orderId], references: [id])
-  driver     User  @relation("DriverAssignments", fields: [driverId], references: [id])
-  dispatcher User  @relation("DispatcherAssignments", fields: [dispatcherId], references: [id])
+  order      Order             @relation(fields: [orderId], references: [id])
+  driver     User              @relation("DriverAssignments", fields: [driverId], references: [id])
+  dispatcher User              @relation("DispatcherAssignments", fields: [dispatcherId], references: [id])
+  events     AssignmentEvent[]
+  rating     DeliveryRating?
 
   @@index([driverId])
   @@index([dispatcherId])
   @@index([status])
   @@index([createdAt])
+}
+
+/// Append-only log of significant events for a delivery assignment
+model AssignmentEvent {
+  id           String   @id @default(uuid())
+  assignmentId String
+  event        String   // CREATED | ACCEPTED | PICKED_UP | DELIVERED | CANCELLED | OTP_VERIFIED | POD_UPLOADED | ISSUE_REPORTED
+  note         String?  // free-text context (issue text, photo url, etc.)
+  createdAt    DateTime @default(now())
+
+  assignment DeliveryAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, createdAt])
 }
 
 /// Batched GPS location history — written every 30s for route replay
@@ -316,6 +339,36 @@ model LocationHistory {
 
   driver User @relation(fields: [driverId], references: [id], onDelete: Cascade)
 
+  @@index([driverId, createdAt]) // route replay queries: driver + time range
+  @@index([createdAt])           // cleanup cron: WHERE createdAt < cutoff (no leading driverId)
+}
+
+/// AI service quota tracking — managed by the Python AI service, do not modify
+model ai_quota {
+  key   String
+  day   DateTime @db.Date
+  count Int      @default(0)
+
+  @@id([key, day])
+  @@index([key, day], map: "idx_ai_quota_key_day")
+}
+
+/// Customer rating submitted after delivery is confirmed
+model DeliveryRating {
+  id           String   @id @default(uuid())
+  orderId      String   @unique
+  assignmentId String   @unique
+  driverId     String
+  rating       Int      // 1–5
+  comment      String?
+  tags         String[] // e.g. ["fast", "friendly", "late"]
+  createdAt    DateTime @default(now())
+
+  order      Order              @relation(fields: [orderId], references: [id])
+  assignment DeliveryAssignment @relation(fields: [assignmentId], references: [id])
+  driver     User               @relation("DriverRatings", fields: [driverId], references: [id])
+
+  @@index([driverId])
   @@index([driverId, createdAt])
 }
 

@@ -116,58 +116,88 @@ def calculate_materials(project_type: str, area: float, wall_material: str, loca
     wall_material = wall_material or "brick"
 
     labels = {
-        "ru": dict(cement="Цемент", bricks="Кирпич", blocks="Блоки", sand="Песок",
-                   gravel="Щебень", bags="мешков", pcs="шт", tons="тонн", m3="м³"),
-        "uz": dict(cement="Sement", bricks="G'isht", blocks="Bloklar", sand="Qum",
-                   gravel="Shag'al", bags="qop", pcs="dona", tons="tonna", m3="m³"),
-        "en": dict(cement="Cement", bricks="Bricks", blocks="Blocks", sand="Sand",
-                   gravel="Gravel", bags="bags", pcs="pcs", tons="tons", m3="m³"),
+        "ru": dict(
+            cement="Цемент", bricks="Кирпич", blocks="Блоки", sand="Песок",
+            gravel="Щебень", bags="мешков", pcs="шт", tons="тонн", m3="м³",
+            r_foundation="Фундамент и стяжка", r_walls="Кладка стен (с учётом 10% запаса)",
+            r_screed="Стяжка пола 50 мм", r_base="Подготовка основания",
+            r_plaster="Штукатурка и стяжка", r_mortar="Кладочный раствор",
+        ),
+        "uz": dict(
+            cement="Sement", bricks="G'isht", blocks="Bloklar", sand="Qum",
+            gravel="Shag'al", bags="qop", pcs="dona", tons="tonna", m3="m³",
+            r_foundation="Poydevor va qoplama", r_walls="Devor uchun (10% zaxira bilan)",
+            r_screed="50 mm pol qoplamasi", r_base="Asos tayyorlash",
+            r_plaster="Suvash va qoplama", r_mortar="Kichik eritmasi",
+        ),
+        "en": dict(
+            cement="Cement", bricks="Bricks", blocks="Blocks", sand="Sand",
+            gravel="Gravel", bags="bags", pcs="pcs", tons="tons", m3="m³",
+            r_foundation="Foundation and screed", r_walls="Wall masonry (incl. 10% waste)",
+            r_screed="50 mm floor screed", r_base="Base preparation",
+            r_plaster="Plaster and screed", r_mortar="Mortar mix",
+        ),
     }
     l = labels.get(locale, labels["ru"])
 
+    # Perimeter assumes square footprint; wall height 3 m
     perimeter = math.ceil(4 * math.sqrt(area))
-    wall_area = perimeter * 3  # 3m ceiling
+    wall_area = perimeter * 3
+
+    # 10% waste factor applied to masonry units
+    WASTE = 1.10
 
     materials = []
 
     if project_type == "house":
-        cement = math.ceil(area * 2.5 + wall_area * (0.25 if wall_material == "brick" else 0.15))
-        bricks = math.ceil(wall_area * 110) if wall_material == "brick" else 0
-        blocks = math.ceil(wall_area * 28) if wall_material == "block" else 0
-        sand   = math.ceil(area * 0.35 + wall_area * 0.05)
-        gravel = math.ceil(area * 0.2)
+        # Cement: foundation + wall mortar joints
+        cement = math.ceil(area * 2.5 + wall_area * (0.28 if wall_material == "brick" else 0.18))
+        # Bricks: 102 pcs/m² for 250 mm wall × 1.10 waste ≈ 112 → use 110 (industry standard)
+        bricks = math.ceil(wall_area * 110 * WASTE / WASTE) if wall_material == "brick" else 0  # 110 already includes wastage
+        # Blocks: 12.5 pcs/m² for 400×200×200 block × 1.10 waste ≈ 14
+        blocks = math.ceil(wall_area * 14) if wall_material == "block" else 0
+        # Sand: foundation + mortar
+        sand   = math.ceil(area * 0.40 + wall_area * 0.06)
+        gravel = math.ceil(area * 0.25)  # crushed stone for foundation sub-base
         materials = [
-            {"name": l["cement"], "quantity": cement, "unit": l["bags"]},
-            *([ {"name": l["bricks"], "quantity": bricks, "unit": l["pcs"]} ] if bricks else []),
-            *([ {"name": l["blocks"], "quantity": blocks, "unit": l["pcs"]} ] if blocks else []),
-            {"name": l["sand"],   "quantity": sand,   "unit": l["tons"]},
-            {"name": l["gravel"], "quantity": gravel, "unit": l["tons"]},
+            {"name": l["cement"], "quantity": cement, "unit": l["bags"], "reason": l["r_foundation"]},
+            *([ {"name": l["bricks"], "quantity": bricks, "unit": l["pcs"], "reason": l["r_walls"]} ] if bricks else []),
+            *([ {"name": l["blocks"], "quantity": blocks, "unit": l["pcs"], "reason": l["r_walls"]} ] if blocks else []),
+            {"name": l["sand"],   "quantity": sand,   "unit": l["tons"], "reason": l["r_foundation"]},
+            {"name": l["gravel"], "quantity": gravel, "unit": l["tons"], "reason": l["r_base"]},
         ]
     elif project_type == "wall":
-        cement = math.ceil(area * 0.3)
-        bricks = math.ceil(area * 110) if wall_material == "brick" else 0
-        blocks = math.ceil(area * 28)  if wall_material == "block" else 0
-        sand   = math.ceil(area * 0.05)
+        # Cement for mortar: ~0.3 bags/m² for 1-brick wall
+        cement = math.ceil(area * 0.35)
+        # Bricks: 102 pcs/m² (1-brick / 250 mm wall) + 10% waste
+        bricks = math.ceil(area * 102 * WASTE) if wall_material == "brick" else 0
+        # Blocks: 12.5 pcs/m² (400×200×200) + 10% waste
+        blocks = math.ceil(area * 12.5 * WASTE) if wall_material == "block" else 0
+        # Sand for mortar
+        sand   = math.ceil(area * 0.06)
         materials = [
-            {"name": l["cement"], "quantity": cement, "unit": l["bags"]},
-            *([ {"name": l["bricks"], "quantity": bricks, "unit": l["pcs"]} ] if bricks else []),
-            *([ {"name": l["blocks"], "quantity": blocks, "unit": l["pcs"]} ] if blocks else []),
-            {"name": l["sand"], "quantity": sand, "unit": l["tons"]},
+            {"name": l["cement"], "quantity": cement, "unit": l["bags"], "reason": l["r_mortar"]},
+            *([ {"name": l["bricks"], "quantity": bricks, "unit": l["pcs"], "reason": l["r_walls"]} ] if bricks else []),
+            *([ {"name": l["blocks"], "quantity": blocks, "unit": l["pcs"], "reason": l["r_walls"]} ] if blocks else []),
+            {"name": l["sand"], "quantity": sand, "unit": l["tons"], "reason": l["r_mortar"]},
         ]
     elif project_type == "floor":
+        # 50 mm screed: cement ~0.35 bags/m², sand ~0.08 t/m², gravel ~0.06 t/m²
         materials = [
-            {"name": l["cement"], "quantity": math.ceil(area * 0.4), "unit": l["bags"]},
-            {"name": l["sand"],   "quantity": math.ceil(area * 0.06), "unit": l["tons"]},
+            {"name": l["cement"], "quantity": math.ceil(area * 0.35), "unit": l["bags"], "reason": l["r_screed"]},
+            {"name": l["sand"],   "quantity": math.ceil(area * 0.08), "unit": l["tons"], "reason": l["r_screed"]},
+            {"name": l["gravel"], "quantity": math.ceil(area * 0.06), "unit": l["tons"], "reason": l["r_base"]},
         ]
     elif project_type == "renovation":
+        # Full renovation: plaster + screed + adhesive — 0.9 bags cement, 0.12 t sand per m²
         materials = [
-            {"name": l["cement"], "quantity": math.ceil(area * 0.9),  "unit": l["bags"]},
-            {"name": l["sand"],   "quantity": math.ceil(area * 0.12), "unit": l["tons"]},
+            {"name": l["cement"], "quantity": math.ceil(area * 0.9),  "unit": l["bags"], "reason": l["r_plaster"]},
+            {"name": l["sand"],   "quantity": math.ceil(area * 0.12), "unit": l["tons"], "reason": l["r_plaster"]},
         ]
-    else:  # room
+    else:  # room — generic finish (plaster + screed)
         materials = [
-            {"name": l["cement"], "quantity": math.ceil(area * 1.2),  "unit": l["bags"]},
-            {"name": l["sand"],   "quantity": math.ceil(area * 0.15), "unit": l["tons"]},
+            {"name": l["cement"], "quantity": math.ceil(area * 1.0),  "unit": l["bags"], "reason": l["r_plaster"]},
+            {"name": l["sand"],   "quantity": math.ceil(area * 0.14), "unit": l["tons"], "reason": l["r_plaster"]},
         ]
 
     return {

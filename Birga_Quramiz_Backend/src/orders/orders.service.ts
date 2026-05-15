@@ -4,6 +4,7 @@ import type { CreateOrderDto } from './dto/create-order.dto'
 import type { AuthUser } from '../auth/auth.types'
 import type { OrderStatus, Prisma, ProductStatus } from '@prisma/client'
 import { TelegramService } from '../telegram/telegram.service'
+import { SmsService } from '../tracking/services/sms.service'
 
 interface OrderItemInput {
   productId: string
@@ -15,7 +16,23 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private telegramService: TelegramService,
+    private smsService: SmsService,
   ) { }
+
+  private async notifyOrderUser(
+    telegramId: string | null | undefined,
+    phone: string | null | undefined,
+    telegramText: string,
+    smsText: string,
+  ): Promise<void> {
+    try {
+      if (telegramId) {
+        await this.telegramService.sendMessage(telegramId, telegramText)
+      } else if (phone) {
+        await this.smsService.send(phone, smsText)
+      }
+    } catch {}
+  }
 
   private async getSellerProfile(
     user: AuthUser,
@@ -226,7 +243,7 @@ export class OrdersService {
           include: { product: true },
         },
         user: {
-          select: { telegramId: true }
+          select: { telegramId: true, phone: true }
         }
       },
     })
@@ -243,19 +260,21 @@ export class OrdersService {
 
       if (status === 'CONFIRMED' && order.status === 'PAID') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } })
-        if (order.user?.telegramId) {
-          const text = `✅ *Order Confirmed*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been confirmed.`
-          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
-        }
+        void this.notifyOrderUser(
+          order.user?.telegramId, order.user?.phone,
+          `✅ *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} tasdiqlandi. Yaqinda jo'natiladi.`,
+          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} tasdiqlandi!`,
+        )
         return updated
       }
 
       if (status === 'SHIPPED' && order.status === 'CONFIRMED') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED' } })
-        if (order.user?.telegramId) {
-          const text = `🚚 *Order Shipped*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been shipped.`
-          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
-        }
+        void this.notifyOrderUser(
+          order.user?.telegramId, order.user?.phone,
+          `🚚 *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} yo'lga chiqdi. Tez orada yetkaziladi!`,
+          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} jo'natildi!`,
+        )
         return updated
       }
     }
@@ -265,10 +284,11 @@ export class OrdersService {
 
       if (status === 'DELIVERED' && order.status === 'SHIPPED') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'DELIVERED' } })
-        if (order.user?.telegramId) {
-          const text = `📦 *Order Delivered*\n\nOrder #${order.id.slice(0, 8)}\n\nYour order has been delivered.`
-          this.telegramService.sendMessage(order.user.telegramId, text).catch(e => console.error(e))
-        }
+        void this.notifyOrderUser(
+          order.user?.telegramId, order.user?.phone,
+          `📦 *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} yetkazildi. Xarid qilganingiz uchun rahmat!`,
+          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} yetkazildi! Rahmat.`,
+        )
         return updated
       }
     }
@@ -345,7 +365,10 @@ export class OrdersService {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: true },
+        include: {
+          items: true,
+          user: { select: { telegramId: true, phone: true } },
+        },
       })
 
       if (!order) throw new BadRequestException('Order not found')
@@ -403,6 +426,15 @@ export class OrdersService {
           }),
         ),
       )
+
+      // Notify customer when seller cancels their order
+      if (user.role === 'SELLER') {
+        void this.notifyOrderUser(
+          order.user?.telegramId, order.user?.phone ?? order.customerPhone,
+          `❌ *Birga Quramiz*\n\nAfsuski, zakaz #${order.id.slice(0, 8)} sotuvchi tomonidan bekor qilindi. Boshqa mahsulot tanlashingiz mumkin.`,
+          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} bekor qilindi.`,
+        )
+      }
 
       return { message: 'Order cancelled successfully' }
     })

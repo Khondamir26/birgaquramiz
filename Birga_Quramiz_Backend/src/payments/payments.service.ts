@@ -38,7 +38,10 @@ export class PaymentsService {
         const myString = `${click_trans_id}${service_id}${this.CLICK_SECRET_KEY}${merchant_trans_id}${merchant_prepare_id || ''}${amount}${action}${sign_time}`;
         const myHash = crypto.createHash('md5').update(myString).digest('hex');
 
-        if (myHash !== sign_string) {
+        const hashBuf = Buffer.from(myHash);
+        const signBuf = Buffer.from((sign_string ?? '').padEnd(hashBuf.length, '\0').slice(0, hashBuf.length));
+        const signOk  = hashBuf.length === signBuf.length && crypto.timingSafeEqual(hashBuf, signBuf);
+        if (!signOk) {
             return { error: -1, error_note: 'Sign check error' };
         }
 
@@ -103,7 +106,12 @@ export class PaymentsService {
         const decoded = Buffer.from(token, 'base64').toString('utf-8');
         const [login, password] = decoded.split(':');
 
-        if (login !== 'Paycom' || password !== this.PAYME_MERCHANT_KEY) {
+        const keyBuf = Buffer.from(this.PAYME_MERCHANT_KEY);
+        const pwBuf  = Buffer.from(password.padEnd(keyBuf.length, '\0').slice(0, keyBuf.length));
+        const authOk = login === 'Paycom' &&
+          keyBuf.length === pwBuf.length &&
+          crypto.timingSafeEqual(keyBuf, pwBuf);
+        if (!authOk) {
             return this.paymeError(body.id, -32504, 'Auth failed');
         }
 
@@ -115,7 +123,12 @@ export class PaymentsService {
             case 'CreateTransaction':
             case 'PerformTransaction':
                 return this.paymePerformTransaction(params, id);
-            // Additional methods like CancelTransaction are omitted for brevity
+            case 'CancelTransaction':
+                return this.paymeCancelTransaction(params, id);
+            case 'CheckTransaction':
+                return this.paymeCheckTransaction(params, id);
+            case 'GetStatement':
+                return { result: { transactions: [] } };
             default:
                 return this.paymeError(id, -32601, 'Method not found');
         }
@@ -167,6 +180,55 @@ export class PaymentsService {
                 state: 2 // State 2 = Done
             }
         }
+    }
+
+    private async paymeCancelTransaction(params: any, id: number) {
+        const orderId = params.account?.order_id;
+        const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+
+        if (!order) return this.paymeError(id, -31050, 'Order not found');
+
+        const cancelTime = Date.now();
+
+        if (order.status === 'PAID') {
+            // Already paid — cannot cancel without a refund flow
+            return this.paymeError(id, -31008, 'Order already completed, cannot cancel');
+        }
+
+        if (order.status === 'CANCELLED') {
+            // Already cancelled — idempotent success
+            return { result: { transaction: `payme_trx_${order.id}`, cancel_time: cancelTime, state: -1 } };
+        }
+
+        // Cancel the pending order
+        await this.prisma.order.update({ where: { id: order.id }, data: { status: 'CANCELLED' } });
+
+        return { result: { transaction: `payme_trx_${order.id}`, cancel_time: cancelTime, state: -1 } };
+    }
+
+    private async paymeCheckTransaction(params: any, id: number) {
+        const orderId = params.account?.order_id;
+        const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+
+        if (!order) return this.paymeError(id, -31050, 'Order not found');
+
+        const stateMap: Record<string, number> = {
+            NEW:       1,  // pending
+            PAID:      2,  // completed
+            CANCELLED: -1, // cancelled before completion
+        };
+        const state = stateMap[order.status] ?? -1;
+
+        return {
+            result: {
+                transaction:  `payme_trx_${order.id}`,
+                create_time:  order.createdAt.getTime(),
+                perform_time: order.status === 'PAID' ? order.updatedAt.getTime() : 0,
+                cancel_time:  order.status === 'CANCELLED' ? order.updatedAt.getTime() : 0,
+                state,
+                reason:       null,
+            },
+        };
     }
 
     private paymeError(id: number, code: number, message: string) {

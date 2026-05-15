@@ -1,10 +1,40 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import type { OrderStatus, Prisma, Role } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
+import { TelegramService } from '../telegram/telegram.service'
+import { SmsService } from '../tracking/services/sms.service'
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminService.name)
+
+  constructor(
+    private prisma: PrismaService,
+    private telegram: TelegramService,
+    private sms: SmsService,
+  ) {}
+
+  private async notifyUser(
+    userId: string,
+    message: string,
+    smsMessage: string,
+  ): Promise<void> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { telegramId: true, phone: true },
+      })
+      if (!user) return
+
+      if (user.telegramId) {
+        await this.telegram.sendMessage(user.telegramId, message)
+      } else if (user.phone) {
+        await this.sms.send(user.phone, smsMessage)
+      }
+    } catch (err) {
+      this.logger.error(`[notify] failed for user=${userId}: ${err}`)
+    }
+  }
 
   async getUsers(page = 1, limit = 20, role?: 'USER' | 'SELLER' | 'ADMIN', q?: string) {
     const safePage = page < 1 ? 1 : page
@@ -301,14 +331,22 @@ export class AdminService {
   }
 
   async verifySeller(sellerId: string) {
-    const seller = await this.prisma.seller.findUnique({ where: { id: sellerId } })
+    const seller = await this.prisma.seller.findUnique({
+      where: { id: sellerId },
+      include: { user: { select: { id: true, name: true } } },
+    })
     if (!seller) throw new NotFoundException('Seller not found')
 
-    // Verify seller and grant SELLER role atomically
     await this.prisma.$transaction([
       this.prisma.seller.update({ where: { id: sellerId }, data: { verified: true } }),
       this.prisma.user.update({ where: { id: seller.userId }, data: { role: 'SELLER' } }),
     ])
+
+    void this.notifyUser(
+      seller.userId,
+      `✅ *Birga Quramiz*\n\nPozdravlyaem, ${seller.user.name}! Ваш аккаунт продавца *"${seller.company}"* подтверждён. Теперь вы можете добавлять товары.`,
+      `Birga Quramiz: Ваш akkaunt prodavtsa "${seller.company}" tasdiqlandi! Endi tovar qo'sha olasiz.`,
+    )
 
     return { message: 'Seller verified' }
   }
@@ -316,7 +354,10 @@ export class AdminService {
   async rejectSeller(sellerId: string) {
     const seller = await this.prisma.seller.findUnique({
       where: { id: sellerId },
-      include: { _count: { select: { products: true } } },
+      include: {
+        _count: { select: { products: true } },
+        user: { select: { id: true, name: true } },
+      },
     })
     if (!seller) throw new NotFoundException('Seller not found')
 
@@ -329,11 +370,20 @@ export class AdminService {
       await tx.user.update({ where: { id: seller.userId }, data: { role: 'USER' } })
     })
 
+    void this.notifyUser(
+      seller.userId,
+      `❌ *Birga Quramiz*\n\n${seller.user.name}, к сожалению заявка магазина *"${seller.company}"* отклонена. Свяжитесь с поддержкой для уточнения.`,
+      `Birga Quramiz: "${seller.company}" do'kon arizangiz rad etildi. Qo'shimcha ma'lumot uchun qo'llab-quvvatlash bilan bog'laning.`,
+    )
+
     return { message: 'Seller rejected and role reverted to USER' }
   }
 
   async approveProduct(productId: string, adminId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } })
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { seller: { include: { user: { select: { id: true } } } } },
+    })
     if (!product) throw new NotFoundException('Product not found')
 
     await this.prisma.$transaction([
@@ -353,6 +403,12 @@ export class AdminService {
       }),
     ])
 
+    void this.notifyUser(
+      product.seller.user.id,
+      `✅ *Birga Quramiz*\n\nВаш товар *"${product.name}"* одобрен модератором и теперь виден покупателям.`,
+      `Birga Quramiz: "${product.name}" mahsulotingiz tasdiqlandi va xaridorlarga ko'rinadi.`,
+    )
+
     return { message: 'Product approved' }
   }
 
@@ -361,7 +417,10 @@ export class AdminService {
       throw new BadRequestException('Rejection reason is required')
     }
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } })
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { seller: { include: { user: { select: { id: true } } } } },
+    })
     if (!product) throw new NotFoundException('Product not found')
 
     await this.prisma.$transaction([
@@ -381,6 +440,12 @@ export class AdminService {
         },
       }),
     ])
+
+    void this.notifyUser(
+      product.seller.user.id,
+      `❌ *Birga Quramiz*\n\nТовар *"${product.name}"* отклонён по причине: ${reason.trim()}. Исправьте и отправьте на повторную проверку.`,
+      `Birga Quramiz: "${product.name}" mahsulotingiz rad etildi. Sabab: ${reason.trim()}.`,
+    )
 
     return { message: 'Product rejected' }
   }
