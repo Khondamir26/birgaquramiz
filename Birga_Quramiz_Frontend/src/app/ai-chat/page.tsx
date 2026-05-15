@@ -53,10 +53,7 @@ export default function AiChatPage() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const toggleVoice = useCallback(() => {
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: typeof globalThis.SpeechRecognition; webkitSpeechRecognition?: typeof globalThis.SpeechRecognition })
-        .SpeechRecognition ??
-      (window as unknown as { webkitSpeechRecognition?: typeof globalThis.SpeechRecognition }).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) return; // unsupported — button is hidden below
 
