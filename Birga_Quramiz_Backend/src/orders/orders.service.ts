@@ -357,6 +357,19 @@ export class OrdersService {
     }
   }
 
+  async findOne(orderId: string, userId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
+    })
+    if (!order || order.userId !== userId) throw new NotFoundException('Order not found')
+    return order
+  }
+
   async cancelOrder(orderId: string, user: AuthUser) {
     if (user.role !== 'USER' && user.role !== 'SELLER') {
       throw new BadRequestException('Only users and sellers can cancel orders')

@@ -136,6 +136,7 @@ export default function OrderTrackingPage() {
       if (payload.orderId !== orderId) return;
       const st = payload.status;
       setAssignmentStatus(st);
+      if (st === "ACCEPTED")  addMilestone("ACCEPTED");
       if (st === "PICKED_UP") addMilestone("PICKED_UP");
       if (st === "DELIVERED") { addMilestone("DELIVERED"); setEtaMinutes(null); setTimeout(loadTracking, 1_500); }
     });

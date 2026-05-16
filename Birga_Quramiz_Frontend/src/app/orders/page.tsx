@@ -117,7 +117,7 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="surface-card rounded-[32px] p-6 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col gap-6">
+            <Link key={order.id} href={`/orders/${order.id}`} className="block surface-card rounded-[32px] p-6 md:p-8 shadow-[0_4px_30px_rgb(0,0,0,0.03)] border-slate-100 flex flex-col gap-6 hover:shadow-[0_8px_40px_rgb(0,0,0,0.07)] transition-shadow cursor-pointer">
 
               {/* Header */}
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-100 pb-6">
@@ -151,7 +151,7 @@ export default function OrdersPage() {
               )}
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
                 {order.status === "NEW" && (
                   <>
                     <button
@@ -191,7 +191,7 @@ export default function OrdersPage() {
                   </button>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -62,3 +62,7 @@ export function shipOrder(id: string) {
 export function cancelOrder(id: string) {
   return apiFetch<{ message: string }>(`/orders/${id}/cancel`, { method: 'POST' })
 }
+
+export function getOrderById(id: string) {
+  return apiFetch<Order>(`/orders/${id}`)
+}

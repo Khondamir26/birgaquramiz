@@ -72,6 +72,13 @@ export class OrdersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('USER')
+  @Get(':id')
+  findOne(@Param('id') id: string, @Req() req: AuthedRequest) {
+    return this.ordersService.findOne(id, req.user.id)
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @Post(':id/confirm')
   confirm(@Param('id') id: string, @Req() req: AuthedRequest) {
