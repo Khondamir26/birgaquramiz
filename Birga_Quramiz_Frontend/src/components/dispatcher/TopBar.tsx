@@ -8,6 +8,8 @@ import { logout as apiLogout } from "@/lib/api/auth";
 import { disconnectSocket } from "@/lib/tracking/socket";
 import { useTrackingStore } from "@/store/trackingStore";
 import { DriverStatus } from "@/types/tracking";
+import { useT } from "@/store/dispatcherLocaleStore";
+import DispatcherLocaleSwitcher from "./DispatcherLocaleSwitcher";
 
 interface TopBarProps {
   user:               { name: string; role: string } | null;
@@ -18,14 +20,12 @@ function LiveClock() {
   const [time, setTime] = useState(() =>
     new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
   );
-
   useEffect(() => {
     const id = setInterval(() => {
       setTime(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }));
     }, 10_000);
     return () => clearInterval(id);
   }, []);
-
   return <span className="text-[12px] font-bold tabular-nums text-white/50">{time}</span>;
 }
 
@@ -43,6 +43,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
   const router      = useRouter();
   const storeLogout = useAuthStore((s) => s.logout);
   const { drivers, isConnected, isReconnecting, lastSyncAt } = useTrackingStore();
+  const t = useT();
 
   const driversArr    = Object.values(drivers);
   const onlineCount   = driversArr.filter((d) => d.status === DriverStatus.ONLINE).length;
@@ -57,10 +58,10 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
   };
 
   const connState = isReconnecting
-    ? { label: "Переподключение…", icon: <RefreshCcw className="size-3 animate-spin text-amber-300" />, text: "text-amber-200" }
+    ? { label: t.topbar_reconnecting, icon: <RefreshCcw className="size-3 animate-spin text-amber-300" />, text: "text-amber-200" }
     : isConnected
-    ? { label: "Онлайн",           icon: <Wifi       className="size-3 text-emerald-300" />,           text: "text-emerald-200" }
-    : { label: "Оффлайн",          icon: <WifiOff    className="size-3 text-red-300" />,               text: "text-red-200" };
+    ? { label: t.topbar_online,       icon: <Wifi       className="size-3 text-emerald-300" />,           text: "text-emerald-200" }
+    : { label: t.topbar_offline,      icon: <WifiOff    className="size-3 text-red-300" />,               text: "text-red-200" };
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#1B4D91] px-5">
@@ -72,16 +73,16 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           birga tracking
         </span>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/60">
-          диспетчер
+          {t.topbar_badge}
         </span>
       </div>
 
       <div className="hidden items-center gap-4 md:flex">
-        <StatPill dot="bg-emerald-400" label={`${onlineCount} свободно`} />
+        <StatPill dot="bg-emerald-400" label={t.topbar_available(onlineCount)} />
 
         <div className="h-3 w-px bg-white/20" />
 
-        <StatPill icon={<Truck className="size-3 text-white/50" />} label={`${deliveryCount} в доставке`} />
+        <StatPill icon={<Truck className="size-3 text-white/50" />} label={t.topbar_delivering(deliveryCount)} />
 
         {alertCount > 0 && (
           <>
@@ -93,7 +94,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
             >
               <AlertTriangle className="size-3 text-red-300" />
               <span className="text-[12px] font-bold text-red-200">
-                {alertCount} {alertCount === 1 ? "тревога" : "тревог"}
+                {t.topbar_alerts(alertCount)}
               </span>
             </button>
           </>
@@ -110,7 +111,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           <>
             <div className="h-3 w-px bg-white/20" />
             <span className="text-[10px] text-white/35">
-              синхр. {new Date(lastSyncAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+              {t.topbar_synced} {new Date(lastSyncAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
             </span>
           </>
         )}
@@ -119,7 +120,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
         <LiveClock />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <span
           className={`size-2.5 rounded-full md:hidden ${
             isReconnecting ? "animate-pulse bg-amber-400" :
@@ -134,13 +135,15 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           </span>
         )}
 
+        <DispatcherLocaleSwitcher />
+
         <button
           onClick={handleLogout}
           aria-label="Sign out"
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
         >
           <LogOut className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Выйти</span>
+          <span className="hidden sm:inline">{t.topbar_logout}</span>
         </button>
       </div>
     </header>

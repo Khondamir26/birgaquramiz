@@ -10,6 +10,8 @@ import { queryKeys } from "@/lib/tracking/queryKeys";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { formatDistanceToNow, format } from "date-fns";
+import { ru as ruLocale } from "date-fns/locale";
+import { useT, useDispatcherLocaleStore } from "@/store/dispatcherLocaleStore";
 import {
   X,
   Phone,
@@ -61,38 +63,28 @@ const STATUS_RING: Record<DriverStatus, string> = {
   [DriverStatus.OFFLINE]:     "ring-slate-200   bg-slate-100   text-slate-400",
 };
 
-const STATUS_LABEL: Record<DriverStatus, string> = {
-  [DriverStatus.ONLINE]:      "Свободен",
-  [DriverStatus.ON_DELIVERY]: "На доставке",
-  [DriverStatus.OFFLINE]:     "Оффлайн",
-};
-
 const STATUS_DOT: Record<DriverStatus, string> = {
   [DriverStatus.ONLINE]:      "bg-emerald-400",
   [DriverStatus.ON_DELIVERY]: "bg-blue-500",
   [DriverStatus.OFFLINE]:     "bg-slate-300",
 };
 
-const ALERT_CFG: Record<AlertType, { label: string; cls: string; icon: React.ReactNode }> = {
+const ALERT_CFG: Record<AlertType, { cls: string; icon: React.ReactNode }> = {
   stuck: {
-    label: "Застрял",
-    cls:   "bg-red-50 text-red-600 ring-red-100",
-    icon:  <AlertTriangle className="size-3 shrink-0" />,
+    cls:  "bg-red-50 text-red-600 ring-red-100",
+    icon: <AlertTriangle className="size-3 shrink-0" />,
   },
   signal_lost: {
-    label: "Нет сигнала",
-    cls:   "bg-amber-50 text-amber-600 ring-amber-100",
-    icon:  <Radio className="size-3 shrink-0" />,
+    cls:  "bg-amber-50 text-amber-600 ring-amber-100",
+    icon: <Radio className="size-3 shrink-0" />,
   },
   delayed: {
-    label: "Опаздывает",
-    cls:   "bg-orange-50 text-orange-600 ring-orange-100",
-    icon:  <Clock className="size-3 shrink-0" />,
+    cls:  "bg-orange-50 text-orange-600 ring-orange-100",
+    icon: <Clock className="size-3 shrink-0" />,
   },
   issue: {
-    label: "Проблема",
-    cls:   "bg-purple-50 text-purple-700 ring-purple-100",
-    icon:  <MessageCircleWarning className="size-3 shrink-0" />,
+    cls:  "bg-purple-50 text-purple-700 ring-purple-100",
+    icon: <MessageCircleWarning className="size-3 shrink-0" />,
   },
 };
 
@@ -107,6 +99,11 @@ interface Props {
 export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { drivers, locations, clearAlert } = useTrackingStore();
+  const t      = useT();
+  const locale = useDispatcherLocaleStore((s) => s.locale);
+  const fnsLocale  = locale === "ru" ? ruLocale : undefined;
+  const dateLocale = locale === "ru" ? "ru-RU" : locale === "uz" ? "uz-UZ" : "en-US";
+
   const driver = drivers[driverId];
   const loc    = locations[driverId];
 
@@ -126,6 +123,19 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
   const phone = data?.phone ?? driver?.phone ?? "";
 
   const speedKmh = loc?.speed != null ? Math.round(loc.speed * 3.6) : null;
+
+  const STATUS_LABEL_T: Record<DriverStatus, string> = {
+    [DriverStatus.ONLINE]:      t.drv_status_free,
+    [DriverStatus.ON_DELIVERY]: t.drv_status_delivering,
+    [DriverStatus.OFFLINE]:     t.drv_status_offline,
+  };
+
+  const ALERT_LABEL_T: Record<AlertType, string> = {
+    stuck:       t.alert_type_stuck,
+    signal_lost: t.alert_type_signal,
+    delayed:     t.alert_type_delayed,
+    issue:       t.alert_type_issue,
+  };
 
   return (
     <div className="flex h-full flex-col bg-white">
@@ -169,7 +179,7 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
             {status === DriverStatus.ONLINE      && <Wifi    className="size-2.5" />}
             {status === DriverStatus.ON_DELIVERY && <Truck   className="size-2.5" />}
             {status === DriverStatus.OFFLINE     && <WifiOff className="size-2.5" />}
-            {STATUS_LABEL[status]}
+            {STATUS_LABEL_T[status]}
           </span>
         </div>
 
@@ -186,15 +196,15 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
       <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
         <div className="flex flex-col items-center py-3">
           <span className="text-[16px] font-black text-slate-700">
-            {eta != null ? `${eta} мин` : "—"}
+            {eta != null ? `${eta} ${t.panel_eta_suffix}` : "—"}
           </span>
-          <span className="text-[9px] text-slate-400">ДоЕзды</span>
+          <span className="text-[9px] text-slate-400">{t.drv_stat_eta}</span>
         </div>
         <div className="flex flex-col items-center py-3">
           <span className="text-[16px] font-black text-slate-700">
             {speedKmh != null ? speedKmh : "—"}
           </span>
-          <span className="text-[9px] text-slate-400">км/ч</span>
+          <span className="text-[9px] text-slate-400">{t.drv_stat_speed}</span>
         </div>
         <div className="flex flex-col items-center py-3">
           <span
@@ -205,17 +215,17 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
           >
             {alerts.length}
           </span>
-          <span className="text-[9px] text-slate-400">Тревог</span>
+          <span className="text-[9px] text-slate-400">{t.drv_stat_alerts}</span>
         </div>
       </div>
 
       {/* Tab bar */}
       <div className="flex border-b border-slate-100">
         {([
-          { id: "overview" as Tab, label: "Обзор",      icon: <Truck      className="size-3" /> },
-          { id: "timeline" as Tab, label: "Хронология", icon: <ListOrdered className="size-3" /> },
-          { id: "history"  as Tab, label: "История",    icon: <History    className="size-3" /> },
-          { id: "stats"    as Tab, label: "Статистика", icon: <BarChart2  className="size-3" /> },
+          { id: "overview" as Tab, label: t.drv_tab_overview, icon: <Truck       className="size-3" /> },
+          { id: "timeline" as Tab, label: t.drv_tab_timeline, icon: <ListOrdered className="size-3" /> },
+          { id: "history"  as Tab, label: t.drv_tab_history,  icon: <History     className="size-3" /> },
+          { id: "stats"    as Tab, label: t.drv_tab_stats,    icon: <BarChart2   className="size-3" /> },
         ]).map(({ id, label, icon }) => (
           <button
             key={id}
@@ -250,11 +260,12 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         {alerts.length > 0 && (
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-              Активные тревоги
+              {t.drv_active_alerts}
             </p>
             <div className="flex flex-col gap-1.5">
               {alerts.map((alert) => {
                 const cfg = ALERT_CFG[alert.type];
+                const label = ALERT_LABEL_T[alert.type];
                 return (
                   <div
                     key={alert.type}
@@ -265,19 +276,19 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
                   >
                     {cfg.icon}
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-semibold leading-none">{cfg.label}</p>
-                      {alert.message !== cfg.label && (
+                      <p className="text-[10px] font-semibold leading-none">{label}</p>
+                      {alert.message !== label && (
                         <p className="mt-0.5 truncate text-[9px] opacity-70">{alert.message}</p>
                       )}
                     </div>
                     <span className="shrink-0 text-[9px] opacity-60">
-                      {formatDistanceToNow(alert.since, { addSuffix: true })}
+                      {formatDistanceToNow(alert.since, { addSuffix: true, locale: fnsLocale })}
                     </span>
                     <button
                       onClick={() => clearAlert(driverId, alert.type)}
                       className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold opacity-60 hover:opacity-100"
                     >
-                      скрыть
+                      {t.drv_dismiss}
                     </button>
                   </div>
                 );
@@ -297,7 +308,7 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         {!isLoading && data?.activeAssignment && (
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-              Текущая доставка
+              {t.drv_current_delivery}
             </p>
             <div className="rounded-xl bg-blue-50 p-3 ring-1 ring-blue-100">
               <p className="text-[12px] font-bold text-blue-800">
@@ -315,10 +326,10 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
               )}
               <div className="mt-2 flex items-center justify-between">
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
-                  {({ PENDING: "Ожидает", ACCEPTED: "Принято", PICKED_UP: "Забрал", DELIVERED: "Доставлено", CANCELLED: "Отменено" } as Record<string, string>)[data.activeAssignment.status] ?? data.activeAssignment.status}
+                  {t.drv_assign_status(data.activeAssignment.status)}
                 </span>
                 <span className="text-[9px] text-blue-400">
-                  {formatDistanceToNow(new Date(data.activeAssignment.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(data.activeAssignment.createdAt), { addSuffix: true, locale: fnsLocale })}
                 </span>
               </div>
             </div>
@@ -340,22 +351,22 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         {!isLoading && data && (
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-              Статистика смены
+              {t.drv_shift_stats}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <StatCard
-                label="Сегодня"
+                label={t.drv_stat_today}
                 value={data.stats.assignmentsToday}
                 icon={<Calendar className="size-3 text-slate-400" />}
               />
               <StatCard
-                label="Доставлено"
+                label={t.drv_stat_delivered}
                 value={data.stats.totalDelivered}
                 icon={<Package className="size-3 text-emerald-500" />}
                 highlight="emerald"
               />
               <StatCard
-                label="Нарушений"
+                label={t.drv_stat_violations}
                 value={data.stats.fraudCount}
                 icon={
                   <Shield
@@ -374,7 +385,7 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         {/* Last location */}
         <div className="border-b border-slate-100 px-4 py-3">
           <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-            Последнее местоположение
+            {t.drv_last_location}
           </p>
           {loc ? (
             <div className="flex flex-col gap-1.5">
@@ -384,12 +395,12 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
               </div>
               <div className="flex items-center gap-2 text-[10px] text-slate-500">
                 <Clock className="size-3 shrink-0 text-slate-400" />
-                Обновлено {formatDistanceToNow(loc.timestamp, { addSuffix: true })}
+                {t.drv_updated} {formatDistanceToNow(loc.timestamp, { addSuffix: true, locale: fnsLocale })}
               </div>
               {loc.heading != null && (
                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
                   <Navigation className="size-3 shrink-0 text-slate-400" />
-                  Направление {Math.round(loc.heading)}°
+                  {t.drv_heading} {Math.round(loc.heading)}°
                 </div>
               )}
             </div>
@@ -402,12 +413,12 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
               {data.lastSeenAt && (
                 <div className="flex items-center gap-2 text-[10px] text-slate-400">
                   <Clock className="size-3 shrink-0 text-slate-300" />
-                  Последний раз {formatDistanceToNow(new Date(data.lastSeenAt), { addSuffix: true })}
+                  {t.drv_last_seen} {formatDistanceToNow(new Date(data.lastSeenAt), { addSuffix: true, locale: fnsLocale })}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-[10px] text-slate-400">Нет данных о местоположении</p>
+            <p className="text-[10px] text-slate-400">{t.drv_no_location}</p>
           )}
         </div>
 
@@ -415,8 +426,8 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         {data?.memberSince && (
           <div className="px-4 py-2.5">
             <p className="text-[9px] text-slate-300">
-              Курьер с{" "}
-              {new Date(data.memberSince).toLocaleDateString("ru-RU", {
+              {t.drv_member_since}{" "}
+              {new Date(data.memberSince).toLocaleDateString(dateLocale, {
                 month: "long",
                 year:  "numeric",
               })}
@@ -434,14 +445,14 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#1B4D91] px-3 py-2.5 text-[12px] font-bold text-white transition hover:bg-[#163d73]"
           >
             <Phone className="size-3.5" />
-            Позвонить
+            {t.drv_call}
           </a>
           <button
             onClick={() => onOpenPlayback(driverId)}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] font-bold text-slate-600 transition hover:bg-slate-100"
           >
             <Route className="size-3.5" />
-            Маршрут
+            {t.drv_playback}
           </button>
         </div>
       </div>
@@ -449,22 +460,18 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
   );
 }
 
-// ─── Event config ─────────────────────────────────────────────────────────────
+// ─── Event icon/style config (label computed from t() in component) ───────────
 
-const EVENT_CFG: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
-  CREATED:        { label: "Назначен",            icon: <Package       className="size-3" />, cls: "bg-slate-100  text-slate-500"  },
-  ACCEPTED:       { label: "Принято",             icon: <CheckCircle2  className="size-3" />, cls: "bg-emerald-100 text-emerald-600" },
-  PICKED_UP:      { label: "Забрал товар",        icon: <Truck         className="size-3" />, cls: "bg-blue-100   text-blue-600"   },
-  DELIVERED:      { label: "Доставлено",          icon: <CheckCircle2  className="size-3" />, cls: "bg-emerald-100 text-emerald-700" },
-  CANCELLED:      { label: "Отменено",            icon: <XCircle       className="size-3" />, cls: "bg-red-100    text-red-600"    },
-  OTP_VERIFIED:   { label: "OTP подтверждён",     icon: <KeyRound      className="size-3" />, cls: "bg-violet-100 text-violet-600" },
-  POD_UPLOADED:   { label: "Фото подтверждено",   icon: <Camera        className="size-3" />, cls: "bg-cyan-100   text-cyan-600"   },
-  ISSUE_REPORTED: { label: "Сообщил о проблеме",  icon: <AlertTriangle className="size-3" />, cls: "bg-amber-100  text-amber-600"  },
+const EVENT_ICON_CLS: Record<string, { icon: React.ReactNode; cls: string }> = {
+  CREATED:        { icon: <Package       className="size-3" />, cls: "bg-slate-100  text-slate-500"  },
+  ACCEPTED:       { icon: <CheckCircle2  className="size-3" />, cls: "bg-emerald-100 text-emerald-600" },
+  PICKED_UP:      { icon: <Truck         className="size-3" />, cls: "bg-blue-100   text-blue-600"   },
+  DELIVERED:      { icon: <CheckCircle2  className="size-3" />, cls: "bg-emerald-100 text-emerald-700" },
+  CANCELLED:      { icon: <XCircle       className="size-3" />, cls: "bg-red-100    text-red-600"    },
+  OTP_VERIFIED:   { icon: <KeyRound      className="size-3" />, cls: "bg-violet-100 text-violet-600" },
+  POD_UPLOADED:   { icon: <Camera        className="size-3" />, cls: "bg-cyan-100   text-cyan-600"   },
+  ISSUE_REPORTED: { icon: <AlertTriangle className="size-3" />, cls: "bg-amber-100  text-amber-600"  },
 };
-
-function eventCfg(event: string) {
-  return EVENT_CFG[event] ?? { label: event, icon: <Clock className="size-3" />, cls: "bg-slate-100 text-slate-500" };
-}
 
 // ─── Timeline tab ─────────────────────────────────────────────────────────────
 
@@ -472,9 +479,10 @@ function TimelineTab({
   driverId,
   activeAssignmentId,
 }: {
-  driverId:          string;
+  driverId:           string;
   activeAssignmentId: string | null;
 }) {
+  const t = useT();
   const { data: history = [], isLoading: histLoading } = useQuery({
     queryKey: queryKeys.drivers.assignments(driverId),
     queryFn:  () => trackingApi.getDriverAssignmentHistory(driverId, 1),
@@ -511,8 +519,8 @@ function TimelineTab({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
         <ListOrdered className="mb-2 size-8 text-slate-200" />
-        <p className="text-[11px] font-semibold text-slate-400">Нет активного назначения</p>
-        <p className="text-[10px] text-slate-300">События появятся после начала доставки</p>
+        <p className="text-[11px] font-semibold text-slate-400">{t.drv_timeline_no_assign_title}</p>
+        <p className="text-[10px] text-slate-300">{t.drv_timeline_no_assign_desc}</p>
       </div>
     );
   }
@@ -521,8 +529,8 @@ function TimelineTab({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
         <Clock className="mb-2 size-8 text-slate-200" />
-        <p className="text-[11px] font-semibold text-slate-400">Событий пока нет</p>
-        <p className="text-[10px] text-slate-300">События появятся по мере доставки</p>
+        <p className="text-[11px] font-semibold text-slate-400">{t.drv_timeline_no_ev_title}</p>
+        <p className="text-[10px] text-slate-300">{t.drv_timeline_no_ev_desc}</p>
       </div>
     );
   }
@@ -530,7 +538,7 @@ function TimelineTab({
   return (
     <div className="px-4 py-3">
       <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-slate-400">
-        Текущее назначение
+        {t.drv_timeline_title}
       </p>
       <div className="relative">
         {/* Vertical line */}
@@ -546,26 +554,43 @@ function TimelineTab({
 }
 
 function TimelineEvent({ event, isLast }: { event: AssignmentEvent; isLast: boolean }) {
-  const cfg = eventCfg(event.event);
+  const t      = useT();
+  const locale = useDispatcherLocaleStore((s) => s.locale);
+  const fnsLocale = locale === "ru" ? ruLocale : undefined;
+
+  const EV_LABEL: Record<string, string> = {
+    CREATED:        t.drv_ev_created,
+    ACCEPTED:       t.drv_ev_accepted,
+    PICKED_UP:      t.drv_ev_picked_up,
+    DELIVERED:      t.drv_ev_delivered,
+    CANCELLED:      t.drv_ev_cancelled,
+    OTP_VERIFIED:   t.drv_ev_otp,
+    POD_UPLOADED:   t.drv_ev_pod,
+    ISSUE_REPORTED: t.drv_ev_issue,
+  };
+
+  const { icon, cls } = EVENT_ICON_CLS[event.event] ?? { icon: <Clock className="size-3" />, cls: "bg-slate-100 text-slate-500" };
+  const label = EV_LABEL[event.event] ?? event.event;
+
   return (
     <div className="relative flex gap-3 pb-4">
       <div
         className={cn(
           "relative z-10 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full",
-          cfg.cls,
+          cls,
           isLast && "ring-2 ring-[#1B4D91]/20"
         )}
       >
-        {cfg.icon}
+        {icon}
       </div>
       <div className="min-w-0 flex-1 pt-0.5">
-        <p className="text-[11px] font-semibold text-slate-700">{cfg.label}</p>
+        <p className="text-[11px] font-semibold text-slate-700">{label}</p>
         {event.note && event.event === "ISSUE_REPORTED" && (
           <p className="mt-0.5 text-[10px] text-amber-600 leading-snug">&quot;{event.note}&quot;</p>
         )}
         <p className="mt-0.5 text-[9px] text-slate-400">
           {format(new Date(event.createdAt), "HH:mm:ss")} ·{" "}
-          {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}
+          {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: fnsLocale })}
         </p>
       </div>
     </div>
@@ -582,15 +607,8 @@ const STATUS_PILL: Record<string, string> = {
   PENDING:   "bg-slate-100 text-slate-500",
 };
 
-const STATUS_PILL_LABEL: Record<string, string> = {
-  DELIVERED: "Доставлено",
-  CANCELLED: "Отменено",
-  ACCEPTED:  "Принято",
-  PICKED_UP: "Забрал",
-  PENDING:   "Ожидает",
-};
-
 function HistoryTab({ driverId }: { driverId: string }) {
+  const t = useT();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allItems, setAllItems] = useState<AssignmentHistoryItem[]>([]);
 
@@ -600,7 +618,6 @@ function HistoryTab({ driverId }: { driverId: string }) {
     staleTime: 30_000,
   });
 
-  // Accumulate pages
   const items = cursor === undefined ? data : [...allItems, ...data];
 
   const loadMore = () => {
@@ -624,7 +641,7 @@ function HistoryTab({ driverId }: { driverId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center px-4">
         <History className="mb-2 size-8 text-slate-200" />
-        <p className="text-[11px] font-semibold text-slate-400">История доставок пуста</p>
+        <p className="text-[11px] font-semibold text-slate-400">{t.drv_history_empty}</p>
       </div>
     );
   }
@@ -632,7 +649,7 @@ function HistoryTab({ driverId }: { driverId: string }) {
   return (
     <div className="px-4 py-3">
       <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-slate-400">
-        Прошлые назначения
+        {t.drv_history_title}
       </p>
       <div className="flex flex-col gap-2">
         {items.map((item) => (
@@ -645,7 +662,7 @@ function HistoryTab({ driverId }: { driverId: string }) {
           disabled={isFetching}
           className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl border border-slate-200 py-2 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50"
         >
-          {isFetching ? "Загрузка…" : "Ещё"}
+          {isFetching ? t.drv_history_loading : t.drv_history_load_more}
           {!isFetching && <ChevronRight className="size-3" />}
         </button>
       )}
@@ -654,6 +671,18 @@ function HistoryTab({ driverId }: { driverId: string }) {
 }
 
 function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
+  const t      = useT();
+  const locale = useDispatcherLocaleStore((s) => s.locale);
+  const fnsLocale = locale === "ru" ? ruLocale : undefined;
+
+  const STATUS_LABEL_MAP: Record<string, string> = {
+    DELIVERED: t.drv_hst_delivered,
+    CANCELLED: t.drv_hst_cancelled,
+    ACCEPTED:  t.drv_hst_accepted,
+    PICKED_UP: t.drv_hst_picked_up,
+    PENDING:   t.drv_hst_pending,
+  };
+
   const pillCls = STATUS_PILL[item.status] ?? "bg-slate-100 text-slate-500";
   return (
     <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
@@ -662,7 +691,7 @@ function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
           {item.order.customerName}
         </p>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold", pillCls)}>
-          {STATUS_PILL_LABEL[item.status] ?? item.status}
+          {STATUS_LABEL_MAP[item.status] ?? item.status}
         </span>
       </div>
       {item.order.deliveryAddress && (
@@ -673,10 +702,10 @@ function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
       )}
       <div className="mt-1.5 flex items-center justify-between">
         <span className="text-[9px] text-slate-400">
-          {format(new Date(item.createdAt), "dd MMM, HH:mm")}
+          {format(new Date(item.createdAt), "dd MMM, HH:mm", { locale: fnsLocale })}
         </span>
         {item._count.events > 0 && (
-          <span className="text-[9px] text-slate-300">{item._count.events} событий</span>
+          <span className="text-[9px] text-slate-300">{t.drv_history_events(item._count.events)}</span>
         )}
       </div>
     </div>
@@ -686,6 +715,7 @@ function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
 // ─── Stats tab ────────────────────────────────────────────────────────────────
 
 function StatsTab({ driverId }: { driverId: string }) {
+  const t = useT();
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.drivers.stats(driverId),
     queryFn:  () => trackingApi.getDriverStats(driverId),
@@ -712,7 +742,7 @@ function StatsTab({ driverId }: { driverId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
         <Activity className="mb-2 size-8 text-slate-200" />
-        <p className="text-[11px] font-semibold text-slate-400">Нет аналитики</p>
+        <p className="text-[11px] font-semibold text-slate-400">{t.drv_stats_no_analytics}</p>
       </div>
     );
   }
@@ -724,22 +754,22 @@ function StatsTab({ driverId }: { driverId: string }) {
       {/* 30-day summary */}
       <div>
         <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Последние 30 дней
+          {t.drv_stats_30d}
         </p>
         <div className="grid grid-cols-3 gap-2">
           <MetricCard
-            label="Доставок"
+            label={t.drv_stats_deliveries}
             value={String(data.delivered30)}
             icon={<Package className="size-3 text-emerald-500" />}
             highlight="emerald"
           />
           <MetricCard
-            label="Назначено"
+            label={t.drv_stats_assigned}
             value={String(data.total30)}
             icon={<Truck className="size-3 text-slate-400" />}
           />
           <MetricCard
-            label="Отменено"
+            label={t.drv_stats_cancelled}
             value={String(data.cancelled30)}
             icon={<XCircle className="size-3 text-red-400" />}
             highlight={data.cancelled30 > 0 ? "red" : undefined}
@@ -751,11 +781,11 @@ function StatsTab({ driverId }: { driverId: string }) {
       {hasSufficientData && (
         <div>
           <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-            Показатели
+            {t.drv_stats_rates}
           </p>
           <div className="flex flex-col gap-2">
             <RateBar
-              label="Принятие"
+              label={t.drv_stats_acceptance}
               value={data.acceptanceRate}
               good={90}
               warn={75}
@@ -763,7 +793,7 @@ function StatsTab({ driverId }: { driverId: string }) {
               suffix="%"
             />
             <RateBar
-              label="Отмены"
+              label={t.drv_stats_cancellation}
               value={data.cancellationRate}
               good={5}
               warn={15}
@@ -778,19 +808,19 @@ function StatsTab({ driverId }: { driverId: string }) {
       {/* Avg delivery time */}
       <div>
         <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-          Эффективность
+          {t.drv_stats_efficiency}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <MetricCard
-            label="Сред. доставка"
-            value={data.avgDeliveryMinutes != null ? `${data.avgDeliveryMinutes} мин` : "—"}
+            label={t.drv_stats_avg_delivery}
+            value={data.avgDeliveryMinutes != null ? `${data.avgDeliveryMinutes} ${t.panel_eta_suffix}` : "—"}
             icon={<Timer className="size-3 text-blue-400" />}
             highlight={
               data.avgDeliveryMinutes != null && data.avgDeliveryMinutes > 90 ? "red" : undefined
             }
           />
           <MetricCard
-            label="Проблем"
+            label={t.drv_stats_issues}
             value={String(data.issueCount)}
             icon={<CircleAlert className="size-3 text-amber-500" />}
             highlight={data.issueCount > 0 ? "amber" : undefined}
@@ -798,7 +828,7 @@ function StatsTab({ driverId }: { driverId: string }) {
         </div>
         {data.issueRate != null && data.issueRate > 0 && (
           <p className="mt-1.5 text-[9px] text-amber-500">
-            {data.issueRate.toFixed(2)} проблем на доставку (30 дней)
+            {t.drv_stats_issue_rate(data.issueRate)}
           </p>
         )}
       </div>
@@ -806,12 +836,12 @@ function StatsTab({ driverId }: { driverId: string }) {
       {/* All-time */}
       <div>
         <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-          За всё время
+          {t.drv_stats_alltime}
         </p>
         <div className="rounded-xl bg-slate-50 ring-1 ring-slate-100 divide-y divide-slate-100">
-          <AllTimeRow label="Всего назначено" value={data.allTime.total} />
-          <AllTimeRow label="Выполнено"        value={data.allTime.delivered} highlight="emerald" />
-          <AllTimeRow label="Отменено"         value={data.allTime.cancelled} highlight={data.allTime.cancelled > 0 ? "red" : undefined} />
+          <AllTimeRow label={t.drv_stats_at_total}     value={data.allTime.total} />
+          <AllTimeRow label={t.drv_stats_at_done}      value={data.allTime.delivered} highlight="emerald" />
+          <AllTimeRow label={t.drv_stats_at_cancelled} value={data.allTime.cancelled} highlight={data.allTime.cancelled > 0 ? "red" : undefined} />
         </div>
       </div>
 
@@ -819,7 +849,7 @@ function StatsTab({ driverId }: { driverId: string }) {
       {ratingSummary && ratingSummary.count > 0 && (
         <div>
           <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
-            Оценки клиентов
+            {t.drv_stats_ratings}
           </p>
           <div className="rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3">
             {/* Average + count */}
@@ -841,7 +871,7 @@ function StatsTab({ driverId }: { driverId: string }) {
                 {ratingSummary.average?.toFixed(1) ?? "—"}
               </span>
               <span className="text-[9px] text-slate-400">
-                ({ratingSummary.count} {ratingSummary.count === 1 ? "оценка" : "оценок"})
+                {t.drv_stats_rating_count(ratingSummary.count)}
               </span>
             </div>
 
@@ -885,7 +915,7 @@ function StatsTab({ driverId }: { driverId: string }) {
 
       {!hasSufficientData && (
         <p className="text-center text-[9px] text-slate-300 pb-1">
-          Статистика появится после 3+ назначений за 30 дней
+          {t.drv_stats_no_data}
         </p>
       )}
     </div>

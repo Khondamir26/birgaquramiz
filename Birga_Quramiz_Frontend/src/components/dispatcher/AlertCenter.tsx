@@ -6,6 +6,8 @@ import type { ExtendedDriver, AlertType } from "@/store/trackingStore";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { formatDistanceToNow } from "date-fns";
+import { ru as ruLocale } from "date-fns/locale";
+import { useT, useDispatcherLocaleStore } from "@/store/dispatcherLocaleStore";
 import {
   X,
   AlertTriangle,
@@ -97,6 +99,7 @@ interface Props {
 
 export default function AlertCenter({ onClose, onFocusDriver }: Props) {
   const { drivers, clearAlert } = useTrackingStore();
+  const t = useT();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape
@@ -153,11 +156,9 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
               <Shield className="size-3.5 text-red-500" />
             </div>
             <div>
-              <h2 className="text-[13px] font-black text-slate-800">Центр тревог</h2>
+              <h2 className="text-[13px] font-black text-slate-800">{t.alert_center_title}</h2>
               <p className="text-[10px] text-slate-400">
-                {flat.length === 0
-                  ? "Нет активных тревог"
-                  : `${flat.length} ${flat.length === 1 ? "тревога" : "тревог"}`}
+                {t.alert_center_count(flat.length)}
               </p>
             </div>
           </div>
@@ -168,7 +169,7 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
                 onClick={dismissAll}
                 className="rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                Скрыть все
+                {t.alert_dismiss_all}
               </button>
             )}
             <button
@@ -186,8 +187,8 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
           {flat.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <BellOff className="mb-3 size-10 text-slate-200" />
-              <p className="text-[13px] font-bold text-slate-400">Всё спокойно</p>
-              <p className="text-[11px] text-slate-300">Нет активных тревог</p>
+              <p className="text-[13px] font-bold text-slate-400">{t.alert_empty_title}</p>
+              <p className="text-[11px] text-slate-300">{t.alert_empty_desc}</p>
             </div>
           ) : (
             <>
@@ -196,6 +197,12 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
                 .map((sev) => {
                   const items = grouped.get(sev)!;
                   const hdr   = SEVERITY_LABEL[sev];
+                  const sevLabel: Record<string, string> = {
+                    critical: t.alert_sev_critical,
+                    high:     t.alert_sev_high,
+                    medium:   t.alert_sev_medium,
+                    info:     t.alert_sev_info,
+                  };
                   return (
                     <div key={sev}>
                       <div
@@ -204,7 +211,7 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
                           hdr.headerCls
                         )}
                       >
-                        <span>{hdr.label}</span>
+                        <span>{sevLabel[sev]}</span>
                         <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[8px] font-black">
                           {items.length}
                         </span>
@@ -239,8 +246,17 @@ function AlertRow({
   onDismiss: () => void;
   onFocus:   () => void;
 }) {
+  const t      = useT();
+  const locale = useDispatcherLocaleStore((s) => s.locale);
+  const fnsLocale = locale === "ru" ? ruLocale : undefined;
   const cfg   = ALERT_CFG[item.type];
   const abbr  = initials(item.driver.name);
+  const alertLabel: Record<AlertType, string> = {
+    stuck:       t.alert_type_stuck,
+    signal_lost: t.alert_type_signal,
+    delayed:     t.alert_type_delayed,
+    issue:       t.alert_type_issue,
+  };
 
   return (
     <div className={cn("flex items-start gap-3 border-b px-5 py-3.5 transition-colors hover:brightness-95", cfg.rowCls)}>
@@ -264,15 +280,15 @@ function AlertRow({
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
               <span className={cn("rounded-full px-1.5 py-0.5 text-[9px] font-bold", cfg.badgeCls)}>
-                {cfg.label}
+                {alertLabel[item.type]}
               </span>
-              {item.message !== cfg.label && (
+              {item.message !== alertLabel[item.type] && (
                 <span className="truncate text-[10px] text-slate-500">{item.message}</span>
               )}
             </div>
           </div>
           <span className="shrink-0 text-[9px] text-slate-400">
-            {formatDistanceToNow(item.since, { addSuffix: true })}
+            {formatDistanceToNow(item.since, { addSuffix: true, locale: fnsLocale })}
           </span>
         </div>
 
@@ -283,21 +299,21 @@ function AlertRow({
             className="flex items-center gap-1 rounded-lg bg-[#1B4D91] px-2.5 py-1 text-[9px] font-bold text-white transition hover:bg-[#163d73]"
           >
             <MapPin className="size-2.5" />
-            На карте
+            {t.alert_focus}
           </button>
           <a
             href={`tel:${item.driver.phone}`}
             className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100"
           >
             <Phone className="size-2.5" />
-            Позвонить
+            {t.alert_call}
           </a>
           <button
             onClick={onDismiss}
             className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="size-2.5" />
-            Скрыть
+            {t.alert_dismiss}
           </button>
         </div>
       </div>

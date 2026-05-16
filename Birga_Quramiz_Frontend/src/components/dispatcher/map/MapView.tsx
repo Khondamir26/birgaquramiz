@@ -5,6 +5,8 @@ import { DriverStatus } from "@/types/tracking";
 import type { DriverLocation } from "@/types/tracking";
 import type { ExtendedDriver } from "@/store/trackingStore";
 import { Maximize2, AlertTriangle, MapPin } from "lucide-react";
+import { useT, useDispatcherLocaleStore } from "@/store/dispatcherLocaleStore";
+import type { Translations } from "@/lib/i18n/dispatcher-translations";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global { interface Window { google?: any; } }
@@ -69,10 +71,10 @@ function buildMarkerIcon(gmaps: any, driver: ExtendedDriver, isSelected: boolean
   };
 }
 
-function buildBalloon(driver: ExtendedDriver): string {
+function buildBalloon(driver: ExtendedDriver, t: Translations): string {
   const statusLabel =
-    driver.status === DriverStatus.ON_DELIVERY ? "On Delivery" :
-    driver.status === DriverStatus.ONLINE       ? "Available"   : "Offline";
+    driver.status === DriverStatus.ON_DELIVERY ? t.map_balloon_delivering :
+    driver.status === DriverStatus.ONLINE       ? t.map_balloon_free       : t.map_balloon_offline;
 
   const colors: Record<string, { bg: string; text: string }> = {
     ON_DELIVERY: { bg: "#dbeafe", text: "#1e40af" },
@@ -82,7 +84,7 @@ function buildBalloon(driver: ExtendedDriver): string {
   const { bg, text } = colors[driver.status] ?? colors.OFFLINE;
 
   const eta = driver.etaMinutes != null
-    ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#1B4D91">ETA ${driver.etaMinutes}m</span>`
+    ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#1B4D91">${t.map_balloon_eta(driver.etaMinutes)}</span>`
     : "";
 
   const alerts = driver.alerts.length
@@ -90,7 +92,7 @@ function buildBalloon(driver: ExtendedDriver): string {
     : "";
 
   const deliveries = driver.assignmentsToday > 0
-    ? `<div style="margin-top:4px;font-size:10px;color:#94a3b8">${driver.assignmentsToday} deliveries today</div>`
+    ? `<div style="margin-top:4px;font-size:10px;color:#94a3b8">${t.map_balloon_deliveries(driver.assignmentsToday)}</div>`
     : "";
 
   return `
@@ -107,6 +109,7 @@ function buildBalloon(driver: ExtendedDriver): string {
 }
 
 function MapLoadingOverlay() {
+  const t = useT();
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-3">
@@ -114,32 +117,27 @@ function MapLoadingOverlay() {
           <div className="absolute inset-0 animate-ping rounded-full bg-[#1B4D91]/20" />
           <MapPin className="size-6 text-[#1B4D91]" />
         </div>
-        <p className="text-[13px] font-semibold text-slate-500">Loading map…</p>
+        <p className="text-[13px] font-semibold text-slate-500">{t.map_loading}</p>
       </div>
     </div>
   );
 }
 
 function MapErrorOverlay({ onRetry }: { onRetry: () => void }) {
+  const t = useT();
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-3 px-6 text-center">
         <div className="flex size-12 items-center justify-center rounded-2xl bg-red-50">
           <AlertTriangle className="size-6 text-red-500" />
         </div>
-        <p className="text-[14px] font-bold text-slate-700">Map failed to load</p>
-        <p className="text-[12px] text-slate-400">
-          Check that{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]">
-            NEXT_PUBLIC_GOOGLE_MAPS_KEY
-          </code>{" "}
-          is set correctly
-        </p>
+        <p className="text-[14px] font-bold text-slate-700">{t.map_error_title}</p>
+        <p className="text-[12px] text-slate-400">{t.map_error_desc}</p>
         <button
           onClick={onRetry}
           className="mt-1 rounded-xl bg-[#1B4D91] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#163b92]"
         >
-          Retry
+          {t.map_retry}
         </button>
       </div>
     </div>
@@ -152,6 +150,7 @@ const ANIM_MS = 600; // marker glide duration
 function easeOut(t: number) { return 1 - (1 - t) * (1 - t); }
 
 export default function MapView({ drivers, locations, selectedDriverId, onSelectDriver }: Props) {
+  const t = useT();
   const containerRef  = useRef<HTMLDivElement>(null);
   const mapRef        = useRef<any>(null);
   const markersRef    = useRef<Map<string, any>>(new Map());
@@ -292,8 +291,9 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
       } else if (loc) {
         const marker = new gmaps.maps.Marker({ position: { lat: loc.lat, lng: loc.lng }, map, icon, title: driver.name, zIndex });
         marker.addListener("click", () => {
+          const tt = useDispatcherLocaleStore.getState().t;
           infoWindowRef.current?.close();
-          infoWindowRef.current?.setContent(buildBalloon(driver));
+          infoWindowRef.current?.setContent(buildBalloon(driver, tt));
           infoWindowRef.current?.open({ anchor: marker, map });
           onSelectDriver(driver.id);
         });
@@ -346,7 +346,7 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
           <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
             <button
               onClick={fitAll}
-              title="Show all drivers"
+              title={t.map_fit_all}
               className="flex size-9 items-center justify-center rounded-xl border border-slate-100 bg-white shadow-md text-slate-600 transition hover:bg-slate-50 active:scale-95"
             >
               <Maximize2 className="size-4" />
@@ -360,21 +360,21 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
                 <span className="relative inline-flex size-2 rounded-full bg-red-500" />
               </span>
               <span className="text-[11px] font-black text-red-600">
-                {alertCount} alert{alertCount !== 1 ? "s" : ""}
+                {t.map_alerts(alertCount)}
               </span>
             </div>
           )}
 
           <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 rounded-xl border border-slate-100 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-sm">
             <p className="mb-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
-              {onlineCount} active
+              {t.map_legend_active(onlineCount)}
             </p>
             {[
-              { color: "#10b981", label: "Available"   },
-              { color: "#1B4D91", label: "On Delivery" },
-              { color: "#ef4444", label: "Alert"       },
-              { color: "#f59e0b", label: "Selected"    },
-              { color: "#94a3b8", label: "Offline"     },
+              { color: "#10b981", label: t.map_legend_free       },
+              { color: "#1B4D91", label: t.map_legend_delivering },
+              { color: "#ef4444", label: t.map_legend_alert      },
+              { color: "#f59e0b", label: t.map_legend_selected   },
+              { color: "#94a3b8", label: t.map_legend_offline    },
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: color }} />

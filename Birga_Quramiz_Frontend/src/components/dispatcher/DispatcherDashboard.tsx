@@ -14,8 +14,10 @@ import DriverDetailModal from "./DriverDetailModal";
 import AlertCenter from "./AlertCenter";
 import RoutePlayback from "./RoutePlayback";
 import OrderPanel from "./OrderPanel";
+import OrderDetailPanel from "./OrderDetailPanel";
 import MapView from "./map/MapView";
 import TopBar from "./TopBar";
+import { useT, useDispatcherLocaleStore } from "@/store/dispatcherLocaleStore";
 import {
   AlertTriangle,
   Clock,
@@ -92,14 +94,15 @@ function ToastStack({ toasts, onDismiss }: { toasts: AlertToast[]; onDismiss: (i
 }
 
 function FraudFlagsSection({ flags }: { flags: FraudFlag[] }) {
+  const t = useT();
   if (flags.length === 0) return null;
   return (
     <section aria-label="Fraud flags" className="border-t border-red-100 bg-red-50/50">
       <div className="border-b border-red-100 px-4 py-2.5">
         <h3 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
           <Shield className="size-3" aria-hidden />
-          Подозрительная активность
-          <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] text-white" aria-label={`${flags.length} нарушений`}>
+          {t.dash_fraud_title}
+          <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] text-white" aria-label={`${flags.length} ${t.dash_fleet_fraud}`}>
             {flags.length}
           </span>
         </h3>
@@ -174,13 +177,14 @@ function CollapsedStrip({
 type MobileTab = "drivers" | "map" | "orders";
 
 function MobileTabBar({ active, onChange }: { active: MobileTab; onChange: (t: MobileTab) => void }) {
+  const t = useT();
   return (
     <nav aria-label="Main navigation" className="flex shrink-0 border-t border-slate-200 bg-white md:hidden">
       {(["drivers", "map", "orders"] as MobileTab[]).map((tab) => {
         const config: Record<MobileTab, { label: string; icon: React.ReactNode }> = {
-          drivers: { label: "Курьеры", icon: <Users   className="size-5" aria-hidden /> },
-          map:     { label: "Карта",   icon: <MapIcon className="size-5" aria-hidden /> },
-          orders:  { label: "Заказы",  icon: <Package className="size-5" aria-hidden /> },
+          drivers: { label: t.dash_tab_drivers, icon: <Users   className="size-5" aria-hidden /> },
+          map:     { label: t.dash_tab_map,     icon: <MapIcon className="size-5" aria-hidden /> },
+          orders:  { label: t.dash_tab_orders,  icon: <Package className="size-5" aria-hidden /> },
         };
         const isActive = active === tab;
         return (
@@ -204,6 +208,7 @@ function MobileTabBar({ active, onChange }: { active: MobileTab; onChange: (t: M
 
 export default function DispatcherDashboard() {
   const { user } = useAuthStore();
+  const t = useT();
   const {
     setDrivers,
     drivers,
@@ -220,6 +225,7 @@ export default function DispatcherDashboard() {
   const [mobileTab,       setMobileTab]       = useState<MobileTab>("map");
   const [alertCenterOpen,  setAlertCenterOpen]  = useState(false);
   const [playbackDriverId, setPlaybackDriverId] = useState<string | null>(null);
+  const [selectedOrderId,  setSelectedOrderId]  = useState<string | null>(null);
 
   const toastTimers = useRef<globalThis.Map<string, ReturnType<typeof setTimeout>>>(new globalThis.Map());
 
@@ -260,10 +266,11 @@ export default function DispatcherDashboard() {
   useEffect(() => {
     const handleDelayed = (e: Event) => {
       const { orderId, minutesWaiting } = (e as CustomEvent).detail;
+      const tt = useDispatcherLocaleStore.getState().t;
       addToast({
         kind:  "warning",
-        title: "Заказ задерживается",
-        body:  `Заказ ${String(orderId).slice(-6).toUpperCase()} ждёт ${minutesWaiting} мин`,
+        title: tt.dash_toast_delayed,
+        body:  tt.dash_toast_delayed_b(String(orderId).slice(-6).toUpperCase(), minutesWaiting),
       });
     };
 
@@ -271,19 +278,21 @@ export default function DispatcherDashboard() {
       const { status, driverId } = (e as CustomEvent).detail;
       const driver = Object.values(drivers).find((d) => d.id === driverId);
       if (status === "DELIVERED") {
+        const tt = useDispatcherLocaleStore.getState().t;
         addToast({
           kind:  "success",
-          title: "Заказ доставлен",
-          body:  driver ? `${driver.name} завершил доставку` : undefined,
+          title: tt.dash_toast_delivered,
+          body:  driver ? tt.dash_toast_delivered_b(driver.name) : undefined,
         });
       }
     };
 
     const handleDriverIssue = (e: Event) => {
       const { driverName, issue } = (e as CustomEvent<{ driverName: string; issue: string }>).detail;
+      const tt = useDispatcherLocaleStore.getState().t;
       addToast({
         kind:  "warning",
-        title: `Проблема: ${driverName}`,
+        title: tt.dash_toast_issue(driverName),
         body:  issue,
       });
     };
@@ -314,13 +323,13 @@ export default function DispatcherDashboard() {
       {isReconnecting && (
         <div role="status" className="flex items-center justify-center gap-2 bg-amber-500 py-1.5 text-[12px] font-bold text-white">
           <RefreshCcw className="size-3 animate-spin" aria-hidden />
-          Переподключение к серверу — данные могут быть устаревшими
+          {t.dash_reconnecting}
         </div>
       )}
       {!isConnected && !isReconnecting && (
         <div role="alert" className="flex items-center justify-center gap-2 bg-red-500 py-1.5 text-[12px] font-bold text-white">
           <AlertTriangle className="size-3" aria-hidden />
-          Соединение потеряно — отслеживание недоступно
+          {t.dash_disconnected}
         </div>
       )}
 
@@ -330,7 +339,7 @@ export default function DispatcherDashboard() {
           <div className="hidden md:flex">
             <CollapsedStrip
               side="left"
-              label="Курьеры"
+              label={t.dash_col_drivers}
               count={driversArr.length}
               alertCount={alertCount}
               icon={<Users className="size-4" />}
@@ -401,7 +410,7 @@ export default function DispatcherDashboard() {
               >
                 <AlertTriangle className="size-3 text-red-500" />
                 <span className="text-[11px] font-bold text-red-600">
-                  {alertCount} {alertCount === 1 ? "тревога" : "тревог"} — нажмите для просмотра
+                  {t.dash_alert_bubble(alertCount)}
                 </span>
               </button>
             </div>
@@ -422,6 +431,16 @@ export default function DispatcherDashboard() {
               />
             </div>
           )}
+
+          {/* Order detail overlay — slides in from right */}
+          {selectedOrderId && (
+            <div className="absolute right-0 top-0 z-20 h-full w-[320px] overflow-hidden border-l border-slate-200 bg-white shadow-xl">
+              <OrderDetailPanel
+                orderId={selectedOrderId}
+                onClose={() => setSelectedOrderId(null)}
+              />
+            </div>
+          )}
         </main>
 
         {/* Desktop collapsed right */}
@@ -429,7 +448,7 @@ export default function DispatcherDashboard() {
           <div className="hidden md:flex">
             <CollapsedStrip
               side="right"
-              label="Заказы"
+              label={t.dash_col_orders}
               count={0}
               icon={<Package className="size-4" />}
               onExpand={() => setRightOpen(true)}
@@ -461,23 +480,23 @@ export default function DispatcherDashboard() {
               <span className="text-[18px] font-black text-emerald-600">
                 {driversArr.filter((d) => d.status !== "OFFLINE").length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Активных</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{t.dash_fleet_active}</span>
             </div>
             <div className="flex flex-col items-center py-2.5">
               <span className="text-[18px] font-black text-[#1B4D91]">
                 {driversArr.filter((d) => d.status === "ON_DELIVERY").length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Доставок</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{t.dash_fleet_deliv}</span>
             </div>
             <div className="flex flex-col items-center py-2.5">
               <span className={cn("text-[18px] font-black", fraudFlags.length > 0 ? "text-red-500" : "text-slate-300")}>
                 {fraudFlags.length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Нарушений</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{t.dash_fleet_fraud}</span>
             </div>
           </div>
 
-          <OrderPanel selectedDriverId={selectedDriverId} />
+          <OrderPanel selectedDriverId={selectedDriverId} onViewDetail={setSelectedOrderId} />
         </aside>
 
         {/* Mobile order panel */}
@@ -488,7 +507,7 @@ export default function DispatcherDashboard() {
             mobileTab !== "orders" && "hidden"
           )}
         >
-          <OrderPanel selectedDriverId={selectedDriverId} />
+          <OrderPanel selectedDriverId={selectedDriverId} onViewDetail={setSelectedOrderId} />
         </aside>
       </div>
 

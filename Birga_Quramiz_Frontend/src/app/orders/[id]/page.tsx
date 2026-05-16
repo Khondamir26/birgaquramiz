@@ -11,11 +11,10 @@ import { getOrderById, payOrder, cancelOrder } from "@/lib/api/orders";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrderTracking } from "@/hooks/use-order-tracking";
 import { ProgressStepper, MilestonesTimeline } from "@/components/tracking/TrackingUI";
+import LiveRouteMap from "@/components/tracking/LiveRouteMap";
 import type { MilestoneKey } from "@/lib/tracking";
 import { fmtTime } from "@/lib/tracking";
 import type { Order, OrderStatus } from "@/types";
-
-const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? "";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   NEW: "Новый",
@@ -64,20 +63,6 @@ function TrackingSection({ orderId }: { orderId: string }) {
       .map(([k, v]) => [k, new Date(v!).getTime()])
   ) as Partial<Record<MilestoneKey, number>>;
 
-  const staticMapUrl =
-    tracking.driverLocation && tracking.destinationCoords
-      ? [
-          "https://maps.googleapis.com/maps/api/staticmap",
-          `?size=600x240&scale=2`,
-          `&markers=color:0x1B4D91%7C${tracking.driverLocation.lat},${tracking.driverLocation.lng}`,
-          `&markers=color:red%7C${tracking.destinationCoords.lat},${tracking.destinationCoords.lng}`,
-          `&path=color:0x1B4D91CC|weight:3`,
-          `|${tracking.driverLocation.lat},${tracking.driverLocation.lng}`,
-          `|${tracking.destinationCoords.lat},${tracking.destinationCoords.lng}`,
-          `&key=${MAPS_KEY}`,
-        ].join("")
-      : null;
-
   if (tracking.isLoading) {
     return (
       <div className="flex items-center gap-3 py-2">
@@ -124,14 +109,12 @@ function TrackingSection({ orderId }: { orderId: string }) {
         <ProgressStepper currentStatus={st} />
       )}
 
-      {staticMapUrl && !isDelivered && (
+      {tracking.driverLocation && tracking.destinationCoords && !isDelivered && (
         <div className="rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={staticMapUrl}
-            alt="Карта доставки"
-            className="w-full object-cover"
-            style={{ height: 200 }}
+          <LiveRouteMap
+            driverLocation={tracking.driverLocation}
+            destinationCoords={tracking.destinationCoords}
+            className="h-[200px] w-full"
           />
         </div>
       )}
