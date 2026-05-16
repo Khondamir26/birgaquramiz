@@ -633,6 +633,26 @@ function NotFoundState() {
   );
 }
 
+function PendingState({ address }: { address: string }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1B4D91]/5 to-white px-4">
+      <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-[#1B4D91]/10">
+        <Truck className="size-10 text-[#1B4D91] animate-pulse" />
+      </div>
+      <h1 className="mb-1 text-xl font-black text-slate-800">Курьер назначен</h1>
+      <p className="mb-6 text-center text-sm text-slate-500">
+        Курьер принимает заказ — страница обновится автоматически
+      </p>
+      {address && (
+        <div className="flex w-full max-w-sm items-start gap-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+          <MapPin className="mt-0.5 size-4 shrink-0 text-[#1B4D91]" />
+          <p className="text-[13px] text-slate-600">{address}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1B4D91]/5 to-white px-4">
@@ -908,6 +928,10 @@ export default function TrackOrderPage() {
     return <ErrorState message={tracking.error} onRetry={handleRetry} />;
   }
   if (!tracking.status)   return <LoadingSkeleton />;
+
+  if (tracking.status === "PENDING") {
+    return <PendingState address={tracking.deliveryAddress} />;
+  }
 
   if (tracking.status === "DELIVERED") {
     return (

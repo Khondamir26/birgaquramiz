@@ -10,7 +10,7 @@ const API_URL =
 const REST_INTERVAL_MS    = 8_000;
 const SOCKET_TIMEOUT_MS   = 6_000;
 
-export type AssignmentStatus = "ACCEPTED" | "PICKED_UP" | "DELIVERED" | "CANCELLED";
+export type AssignmentStatus = "PENDING" | "ACCEPTED" | "PICKED_UP" | "DELIVERED" | "CANCELLED";
 
 export interface DriverLocation {
   lat:       number;

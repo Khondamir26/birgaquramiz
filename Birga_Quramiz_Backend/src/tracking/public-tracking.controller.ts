@@ -37,16 +37,30 @@ export class PublicTrackingController {
   async getPublicTracking(@Param('orderId') orderId: string) {
     const assignment = await this.trackingService.getAssignmentByOrder(orderId)
 
-    if (
-      !assignment ||
-      assignment.status === AssignmentStatus.CANCELLED ||
-      assignment.status === AssignmentStatus.PENDING
-    ) {
+    if (!assignment || assignment.status === AssignmentStatus.CANCELLED) {
       throw new NotFoundException('Order tracking not available')
     }
 
     const deliveryAddress = (assignment.order as { deliveryAddress?: string }).deliveryAddress ?? ''
-    const driverId        = assignment.driverId
+
+    // For PENDING assignments return minimal data — driver hasn't accepted yet
+    if (assignment.status === AssignmentStatus.PENDING) {
+      const nameParts = assignment.driver.name.split(' ')
+      return {
+        status: assignment.status,
+        driverInitials: nameParts.slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join(''),
+        driverFirstName: nameParts[0] ?? assignment.driver.name,
+        deliveryAddress,
+        driverLocation: null,
+        destinationCoords: null,
+        eta: null,
+        stageMilestones: {},
+        podPhotoUrl: null,
+        hasRating: false,
+      }
+    }
+
+    const driverId = assignment.driverId
 
     const [driverLocation, destinationCoords, stageMilestones, podPhotoUrl, hasRating] = await Promise.all([
       this.trackingService.getDriverLocation(driverId),
