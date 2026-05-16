@@ -356,7 +356,7 @@ export default function OrderDetailPage() {
           {order.comment && (
             <div className="flex items-start gap-3">
               <MessageSquare className="size-4 text-slate-400 shrink-0 mt-0.5" />
-              <p className="text-[14px] text-slate-600 italic">"{order.comment}"</p>
+              <p className="text-[14px] text-slate-600 italic">&ldquo;{order.comment}&rdquo;</p>
             </div>
           )}
         </div>
