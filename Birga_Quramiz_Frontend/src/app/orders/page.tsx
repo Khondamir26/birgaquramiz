@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
-import { getMyOrders, payOrder, cancelOrder, deliverOrder } from "@/lib/api/orders";
+import { getMyOrders, payOrder, cancelOrder } from "@/lib/api/orders";
 import { useAuth } from "@/hooks/useAuth";
 import type { Order, OrderStatus } from "@/types";
 
@@ -12,9 +12,18 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   NEW: "Новый",
   PAID: "Оплачен",
   CONFIRMED: "Подтверждён",
-  SHIPPED: "Отправлен",
+  SHIPPED: "В пути",
   DELIVERED: "Доставлен",
   CANCELLED: "Отменён",
+};
+
+const STATUS_HINTS: Record<OrderStatus, string> = {
+  NEW: "Ожидает оплаты",
+  PAID: "Продавец обрабатывает заказ",
+  CONFIRMED: "Готовится к отправке",
+  SHIPPED: "Курьер везёт ваш заказ",
+  DELIVERED: "Успешно доставлен",
+  CANCELLED: "Заказ отменён",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -129,8 +138,13 @@ export default function OrdersPage() {
                   </div>
                   <p className="font-black text-[22px] md:text-3xl text-[#E31E24] mt-2">{order.total.toLocaleString()} <span className="text-[14px] md:text-lg">сум</span></p>
                 </div>
-                <div className={`px-4 py-2 rounded-full text-[11px] md:text-[12px] font-black uppercase tracking-wider inline-flex items-center justify-center ${STATUS_COLORS[order.status]}`}>
-                  {STATUS_LABELS[order.status]}
+                <div className="flex flex-col items-end gap-1.5">
+                  <div className={`px-4 py-2 rounded-full text-[11px] md:text-[12px] font-black uppercase tracking-wider inline-flex items-center justify-center ${STATUS_COLORS[order.status]}`}>
+                    {STATUS_LABELS[order.status]}
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium text-right">
+                    {STATUS_HINTS[order.status]}
+                  </p>
                 </div>
               </div>
 
@@ -150,17 +164,28 @@ export default function OrdersPage() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
-                {order.status === "NEW" && (
-                  <>
-                    <button
-                      disabled={actionLoading === order.id + "pay"}
-                      onClick={() => doAction(() => payOrder(order.id), order.id + "pay")}
-                      className="h-12 flex-1 sm:flex-none rounded-full px-8 bg-[#E31E24] text-white text-[14px] font-bold hover:bg-[#C91A20] transition-colors shadow-lg shadow-[#E31E24]/20 flex items-center justify-center disabled:opacity-50"
-                    >
-                      {actionLoading === order.id + "pay" ? "Оплата..." : "Оплатить"}
-                    </button>
+              {/* Actions — only for statuses where customer can act */}
+              {(order.status === "NEW" || order.status === "PAID") && (
+                <div className="flex flex-col sm:flex-row gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
+                  {order.status === "NEW" && (
+                    <>
+                      <button
+                        disabled={actionLoading === order.id + "pay"}
+                        onClick={() => doAction(() => payOrder(order.id), order.id + "pay")}
+                        className="h-12 flex-1 sm:flex-none rounded-full px-8 bg-[#E31E24] text-white text-[14px] font-bold hover:bg-[#C91A20] transition-colors shadow-lg shadow-[#E31E24]/20 flex items-center justify-center disabled:opacity-50"
+                      >
+                        {actionLoading === order.id + "pay" ? "Оплата..." : "Оплатить"}
+                      </button>
+                      <button
+                        disabled={actionLoading === order.id + "cancel"}
+                        onClick={() => doAction(() => cancelOrder(order.id), order.id + "cancel")}
+                        className="h-12 flex-1 sm:flex-none rounded-full px-8 border-2 border-slate-200 bg-white text-slate-600 text-[14px] font-bold hover:border-[#E31E24] hover:text-[#E31E24] transition-colors flex items-center justify-center disabled:opacity-50"
+                      >
+                        Отменить
+                      </button>
+                    </>
+                  )}
+                  {order.status === "PAID" && (
                     <button
                       disabled={actionLoading === order.id + "cancel"}
                       onClick={() => doAction(() => cancelOrder(order.id), order.id + "cancel")}
@@ -168,29 +193,9 @@ export default function OrdersPage() {
                     >
                       Отменить
                     </button>
-                  </>
-                )}
-
-                {order.status === "PAID" && (
-                  <button
-                    disabled={actionLoading === order.id + "cancel"}
-                    onClick={() => doAction(() => cancelOrder(order.id), order.id + "cancel")}
-                    className="h-12 flex-1 sm:flex-none rounded-full px-8 border-2 border-slate-200 bg-white text-slate-600 text-[14px] font-bold hover:border-[#E31E24] hover:text-[#E31E24] transition-colors flex items-center justify-center disabled:opacity-50"
-                  >
-                    Отменить
-                  </button>
-                )}
-
-                {order.status === "SHIPPED" && (
-                  <button
-                    disabled={actionLoading === order.id + "deliver"}
-                    onClick={() => doAction(() => deliverOrder(order.id), order.id + "deliver")}
-                    className="h-12 flex-1 sm:flex-none rounded-full px-8 bg-[#1B4D91] text-white text-[14px] font-bold hover:bg-[#1B4D91]/90 transition-colors shadow-lg shadow-[#1B4D91]/20 flex items-center justify-center disabled:opacity-50"
-                  >
-                    Подтвердить получение
-                  </button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </Link>
           ))}
         </div>

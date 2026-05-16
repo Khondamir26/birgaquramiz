@@ -7,7 +7,7 @@ import {
   ArrowLeft, Package, MapPin, CreditCard, MessageSquare,
   Truck, CheckCircle, Navigation,
 } from "lucide-react";
-import { getOrderById, payOrder, cancelOrder, deliverOrder } from "@/lib/api/orders";
+import { getOrderById, payOrder, cancelOrder } from "@/lib/api/orders";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrderTracking } from "@/hooks/use-order-tracking";
 import { ProgressStepper, MilestonesTimeline } from "@/components/tracking/TrackingUI";
@@ -21,9 +21,18 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   NEW: "Новый",
   PAID: "Оплачен",
   CONFIRMED: "Подтверждён",
-  SHIPPED: "Отправлен",
+  SHIPPED: "В пути",
   DELIVERED: "Доставлен",
   CANCELLED: "Отменён",
+};
+
+const STATUS_HINTS: Record<OrderStatus, string> = {
+  NEW: "Ожидает оплаты",
+  PAID: "Продавец обрабатывает заказ",
+  CONFIRMED: "Готовится к отправке",
+  SHIPPED: "Курьер везёт ваш заказ",
+  DELIVERED: "Успешно доставлен",
+  CANCELLED: "Заказ отменён",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -280,11 +289,14 @@ export default function OrderDetailPage() {
               {order.total.toLocaleString()} <span className="text-[16px]">сум</span>
             </p>
           </div>
-          <span
-            className={`px-4 py-2 rounded-full text-[12px] font-black uppercase tracking-wider self-start ${STATUS_COLORS[currentStatus]}`}
-          >
-            {STATUS_LABELS[currentStatus]}
-          </span>
+          <div className="flex flex-col items-end gap-1.5 self-start">
+            <span className={`px-4 py-2 rounded-full text-[12px] font-black uppercase tracking-wider ${STATUS_COLORS[currentStatus]}`}>
+              {STATUS_LABELS[currentStatus]}
+            </span>
+            <p className="text-[11px] text-slate-400 font-medium text-right">
+              {STATUS_HINTS[currentStatus]}
+            </p>
+          </div>
         </div>
       </section>
 
@@ -369,8 +381,8 @@ export default function OrderDetailPage() {
         </section>
       )}
 
-      {/* Actions */}
-      {(currentStatus === "NEW" || currentStatus === "PAID" || currentStatus === "SHIPPED") && (
+      {/* Actions — only pay/cancel; delivery is handled by the driver */}
+      {(currentStatus === "NEW" || currentStatus === "PAID") && (
         <section className="flex flex-col sm:flex-row gap-3">
           {currentStatus === "NEW" && (
             <>
@@ -397,15 +409,6 @@ export default function OrderDetailPage() {
               className="h-14 flex-1 rounded-full border-2 border-slate-200 bg-white text-slate-600 text-[15px] font-bold hover:border-[#E31E24] hover:text-[#E31E24] transition-colors flex items-center justify-center disabled:opacity-50"
             >
               Отменить заказ
-            </button>
-          )}
-          {currentStatus === "SHIPPED" && (
-            <button
-              disabled={actionLoading === "deliver"}
-              onClick={() => doAction(() => deliverOrder(id), "deliver")}
-              className="h-14 flex-1 rounded-full bg-[#1B4D91] text-white text-[15px] font-bold hover:bg-[#1B4D91]/90 transition-colors shadow-lg shadow-[#1B4D91]/20 flex items-center justify-center disabled:opacity-50"
-            >
-              {actionLoading === "deliver" ? "Подтверждение…" : "Подтвердить получение"}
             </button>
           )}
         </section>
