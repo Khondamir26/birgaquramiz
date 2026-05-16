@@ -57,10 +57,10 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
   };
 
   const connState = isReconnecting
-    ? { label: "Reconnecting…", icon: <RefreshCcw className="size-3 animate-spin text-amber-300" />, text: "text-amber-200" }
+    ? { label: "Переподключение…", icon: <RefreshCcw className="size-3 animate-spin text-amber-300" />, text: "text-amber-200" }
     : isConnected
-    ? { label: "Live",          icon: <Wifi       className="size-3 text-emerald-300" />,           text: "text-emerald-200" }
-    : { label: "Offline",       icon: <WifiOff    className="size-3 text-red-300" />,               text: "text-red-200" };
+    ? { label: "Онлайн",           icon: <Wifi       className="size-3 text-emerald-300" />,           text: "text-emerald-200" }
+    : { label: "Оффлайн",          icon: <WifiOff    className="size-3 text-red-300" />,               text: "text-red-200" };
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#1B4D91] px-5">
@@ -72,16 +72,16 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           birga tracking
         </span>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/60">
-          dispatcher
+          диспетчер
         </span>
       </div>
 
       <div className="hidden items-center gap-4 md:flex">
-        <StatPill dot="bg-emerald-400" label={`${onlineCount} available`} />
+        <StatPill dot="bg-emerald-400" label={`${onlineCount} свободно`} />
 
         <div className="h-3 w-px bg-white/20" />
 
-        <StatPill icon={<Truck className="size-3 text-white/50" />} label={`${deliveryCount} delivering`} />
+        <StatPill icon={<Truck className="size-3 text-white/50" />} label={`${deliveryCount} в доставке`} />
 
         {alertCount > 0 && (
           <>
@@ -89,11 +89,11 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
             <button
               onClick={onOpenAlertCenter}
               className="flex items-center gap-1.5 rounded-full bg-red-500/25 px-2.5 py-1 transition hover:bg-red-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-              aria-label={`Open alert center — ${alertCount} active alerts`}
+              aria-label={`Открыть центр тревог — ${alertCount} активных тревог`}
             >
               <AlertTriangle className="size-3 text-red-300" />
               <span className="text-[12px] font-bold text-red-200">
-                {alertCount} alert{alertCount !== 1 ? "s" : ""}
+                {alertCount} {alertCount === 1 ? "тревога" : "тревог"}
               </span>
             </button>
           </>
@@ -110,7 +110,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           <>
             <div className="h-3 w-px bg-white/20" />
             <span className="text-[10px] text-white/35">
-              synced {new Date(lastSyncAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
+              синхр. {new Date(lastSyncAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
             </span>
           </>
         )}
@@ -140,7 +140,7 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
         >
           <LogOut className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Sign out</span>
+          <span className="hidden sm:inline">Выйти</span>
         </button>
       </div>
     </header>

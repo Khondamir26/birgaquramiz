@@ -98,8 +98,8 @@ function FraudFlagsSection({ flags }: { flags: FraudFlag[] }) {
       <div className="border-b border-red-100 px-4 py-2.5">
         <h3 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
           <Shield className="size-3" aria-hidden />
-          Fraud Flags
-          <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] text-white" aria-label={`${flags.length} fraud flags`}>
+          Подозрительная активность
+          <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] text-white" aria-label={`${flags.length} нарушений`}>
             {flags.length}
           </span>
         </h3>
@@ -116,8 +116,8 @@ function FraudFlagsSection({ flags }: { flags: FraudFlag[] }) {
               <p className="mt-0.5 text-[10px] leading-tight text-red-400">{flag.description}</p>
             )}
             <p className="mt-0.5 text-[9px] text-red-300">
-              {new Date(flag.createdAt).toLocaleString("en-US", {
-                month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+              {new Date(flag.createdAt).toLocaleString("ru-RU", {
+                day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
               })}
             </p>
           </div>
@@ -178,9 +178,9 @@ function MobileTabBar({ active, onChange }: { active: MobileTab; onChange: (t: M
     <nav aria-label="Main navigation" className="flex shrink-0 border-t border-slate-200 bg-white md:hidden">
       {(["drivers", "map", "orders"] as MobileTab[]).map((tab) => {
         const config: Record<MobileTab, { label: string; icon: React.ReactNode }> = {
-          drivers: { label: "Drivers", icon: <Users   className="size-5" aria-hidden /> },
-          map:     { label: "Map",     icon: <MapIcon className="size-5" aria-hidden /> },
-          orders:  { label: "Orders",  icon: <Package className="size-5" aria-hidden /> },
+          drivers: { label: "Курьеры", icon: <Users   className="size-5" aria-hidden /> },
+          map:     { label: "Карта",   icon: <MapIcon className="size-5" aria-hidden /> },
+          orders:  { label: "Заказы",  icon: <Package className="size-5" aria-hidden /> },
         };
         const isActive = active === tab;
         return (
@@ -262,8 +262,8 @@ export default function DispatcherDashboard() {
       const { orderId, minutesWaiting } = (e as CustomEvent).detail;
       addToast({
         kind:  "warning",
-        title: "Order delayed",
-        body:  `Order ${String(orderId).slice(-6).toUpperCase()} waiting ${minutesWaiting}m for pickup`,
+        title: "Заказ задерживается",
+        body:  `Заказ ${String(orderId).slice(-6).toUpperCase()} ждёт ${minutesWaiting} мин`,
       });
     };
 
@@ -273,8 +273,8 @@ export default function DispatcherDashboard() {
       if (status === "DELIVERED") {
         addToast({
           kind:  "success",
-          title: "Order delivered",
-          body:  driver ? `${driver.name} completed delivery` : undefined,
+          title: "Заказ доставлен",
+          body:  driver ? `${driver.name} завершил доставку` : undefined,
         });
       }
     };
@@ -283,7 +283,7 @@ export default function DispatcherDashboard() {
       const { driverName, issue } = (e as CustomEvent<{ driverName: string; issue: string }>).detail;
       addToast({
         kind:  "warning",
-        title: `Issue: ${driverName}`,
+        title: `Проблема: ${driverName}`,
         body:  issue,
       });
     };
@@ -314,13 +314,13 @@ export default function DispatcherDashboard() {
       {isReconnecting && (
         <div role="status" className="flex items-center justify-center gap-2 bg-amber-500 py-1.5 text-[12px] font-bold text-white">
           <RefreshCcw className="size-3 animate-spin" aria-hidden />
-          Reconnecting to server — data may be stale
+          Переподключение к серверу — данные могут быть устаревшими
         </div>
       )}
       {!isConnected && !isReconnecting && (
         <div role="alert" className="flex items-center justify-center gap-2 bg-red-500 py-1.5 text-[12px] font-bold text-white">
           <AlertTriangle className="size-3" aria-hidden />
-          Connection lost — live tracking unavailable
+          Соединение потеряно — отслеживание недоступно
         </div>
       )}
 
@@ -330,7 +330,7 @@ export default function DispatcherDashboard() {
           <div className="hidden md:flex">
             <CollapsedStrip
               side="left"
-              label="Drivers"
+              label="Курьеры"
               count={driversArr.length}
               alertCount={alertCount}
               icon={<Users className="size-4" />}
@@ -401,7 +401,7 @@ export default function DispatcherDashboard() {
               >
                 <AlertTriangle className="size-3 text-red-500" />
                 <span className="text-[11px] font-bold text-red-600">
-                  {alertCount} active alert{alertCount !== 1 ? "s" : ""} — tap to review
+                  {alertCount} {alertCount === 1 ? "тревога" : "тревог"} — нажмите для просмотра
                 </span>
               </button>
             </div>
@@ -429,7 +429,7 @@ export default function DispatcherDashboard() {
           <div className="hidden md:flex">
             <CollapsedStrip
               side="right"
-              label="Orders"
+              label="Заказы"
               count={0}
               icon={<Package className="size-4" />}
               onExpand={() => setRightOpen(true)}
@@ -461,19 +461,19 @@ export default function DispatcherDashboard() {
               <span className="text-[18px] font-black text-emerald-600">
                 {driversArr.filter((d) => d.status !== "OFFLINE").length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Active</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Активных</span>
             </div>
             <div className="flex flex-col items-center py-2.5">
               <span className="text-[18px] font-black text-[#1B4D91]">
                 {driversArr.filter((d) => d.status === "ON_DELIVERY").length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Delivering</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Доставок</span>
             </div>
             <div className="flex flex-col items-center py-2.5">
               <span className={cn("text-[18px] font-black", fraudFlags.length > 0 ? "text-red-500" : "text-slate-300")}>
                 {fraudFlags.length}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Fraud</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Нарушений</span>
             </div>
           </div>
 

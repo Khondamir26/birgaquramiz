@@ -138,9 +138,9 @@ function OrderCard({
           <Check className="size-4 text-emerald-600" />
         </div>
         <div>
-          <p className="text-[13px] font-bold text-emerald-700">Assigned!</p>
+          <p className="text-[13px] font-bold text-emerald-700">Назначен!</p>
           <p className="text-[11px] text-emerald-500">
-            {effectiveDriver?.name ?? "Driver"} received the order
+            {effectiveDriver?.name ?? "Курьер"} получил заказ
           </p>
         </div>
       </div>
@@ -160,7 +160,7 @@ function OrderCard({
               {order.customerName}
             </span>
             <span className="shrink-0 text-[12px] font-black text-[#1B4D91]">
-              {order.total.toLocaleString()} sum
+              {order.total.toLocaleString()} сум
             </span>
           </div>
 
@@ -178,18 +178,18 @@ function OrderCard({
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-              {order._count.items} items
+              {order._count.items} товаров
             </span>
 
             {tier === "red" ? (
               <span className="flex items-center gap-0.5 rounded-full border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-black text-red-600">
                 <AlertTriangle className="size-2.5" aria-hidden />
-                {mins}m waiting
+                {mins} мин ожидает
               </span>
             ) : tier === "amber" ? (
               <span className="flex items-center gap-0.5 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                 <Clock className="size-2.5" aria-hidden />
-                {mins}m
+                {mins} мин
               </span>
             ) : (
               <span className="text-[10px] text-slate-400">
@@ -207,13 +207,13 @@ function OrderCard({
           {recsLoading ? (
             <div className="mb-2.5 flex items-center gap-2 py-1">
               <Loader2 className="size-3.5 animate-spin text-slate-400" aria-hidden />
-              <p className="text-[11px] text-slate-400">Finding best drivers…</p>
+              <p className="text-[11px] text-slate-400">Ищем лучших курьеров…</p>
             </div>
           ) : recommendations.length > 0 ? (
             <div className="mb-2.5">
               <p className="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
                 <Star className="size-2.5" aria-hidden />
-                Recommended
+                Рекомендованные
               </p>
               <div className="flex flex-col gap-1">
                 {recommendations.slice(0, 3).map((rec, i) => {
@@ -240,14 +240,14 @@ function OrderCard({
                         <div className="flex items-center gap-2 text-[10px] text-slate-500">
                           <span className="flex items-center gap-0.5">
                             <Navigation className="size-2.5" aria-hidden />
-                            {rec.distanceKm.toFixed(1)} km
+                            {rec.distanceKm.toFixed(1)} км
                           </span>
                           <span className="flex items-center gap-0.5">
                             <Clock className="size-2.5" aria-hidden />
-                            ~{rec.etaMinutes}m
+                            ~{rec.etaMinutes} мин
                           </span>
                           {rec.currentLoad > 0 && (
-                            <span className="text-amber-600">{rec.currentLoad} active</span>
+                            <span className="text-amber-600">{rec.currentLoad} активных</span>
                           )}
                         </div>
                       </div>
@@ -276,8 +276,8 @@ function OrderCard({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[12px] font-bold text-slate-800">{effectiveDriver.name}</p>
                 <p className="text-[10px] text-slate-500">
-                  {effectiveDriver.status === DriverStatus.ONLINE ? "Available" : "On delivery"}
-                  {effectiveDriver.assignmentsToday > 0 ? ` · ${effectiveDriver.assignmentsToday} today` : ""}
+                  {effectiveDriver.status === DriverStatus.ONLINE ? "Свободен" : "На доставке"}
+                  {effectiveDriver.assignmentsToday > 0 ? ` · ${effectiveDriver.assignmentsToday} сегодня` : ""}
                 </p>
               </div>
               <Truck className="size-3.5 shrink-0 text-slate-300" aria-hidden />
@@ -285,15 +285,15 @@ function OrderCard({
           ) : recommendations.length === 0 && !recsLoading ? (
             <div className="mb-2.5 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2">
               <AlertTriangle className="size-3.5 text-amber-500" aria-hidden />
-              <p className="text-[11px] text-amber-700">Select a driver above or from the left panel</p>
+              <p className="text-[11px] text-amber-700">Выберите курьера из списка</p>
             </div>
           ) : null}
 
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Note for driver (optional)"
-            aria-label="Note for driver"
+            placeholder="Заметка для курьера (необяз.)"
+            aria-label="Заметка для курьера"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] outline-none transition focus:border-[#1B4D91] focus:ring-2 focus:ring-[#1B4D91]/10"
           />
 
@@ -306,7 +306,7 @@ function OrderCard({
               {isAssigning
                 ? <Loader2 className="size-3.5 animate-spin" aria-hidden />
                 : <Check className="size-3.5" aria-hidden />}
-              {isAssigning ? "Assigning…" : "Assign"}
+              {isAssigning ? "Назначаем…" : "Назначить"}
             </button>
             <button
               onClick={() => { setExpanded(false); setNote(""); }}
@@ -323,7 +323,7 @@ function OrderCard({
           onClick={() => setExpanded(true)}
           className="flex w-full items-center justify-between border-t border-slate-50 px-4 py-2 text-[12px] font-bold text-[#1B4D91] transition hover:bg-slate-50"
         >
-          <span>Assign driver</span>
+          <span>Назначить курьера</span>
           <ChevronRight className="size-3.5" aria-hidden />
         </button>
       )}
@@ -414,7 +414,7 @@ export default function OrderPanel({ selectedDriverId }: Props) {
       <div className="border-b border-slate-100 px-4 py-3">
         <div className="flex items-center justify-between">
           <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-            Order Queue
+            Очередь заказов
           </h2>
           <button
             onClick={() => void refetch()}
@@ -427,12 +427,12 @@ export default function OrderPanel({ selectedDriverId }: Props) {
         </div>
         <div className="mt-0.5 flex items-center gap-2" aria-live="polite" aria-atomic>
           <p className="text-[13px] font-semibold text-slate-700">
-            {isLoading ? "…" : `${orders.length} waiting`}
+            {isLoading ? "…" : `${orders.length} ожидает`}
           </p>
           {urgentCount > 0 && (
             <span className="flex items-center gap-0.5 rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-black text-red-600">
               <AlertTriangle className="size-2.5" aria-hidden />
-              {urgentCount} urgent
+              {urgentCount} срочно
             </span>
           )}
         </div>
@@ -441,12 +441,12 @@ export default function OrderPanel({ selectedDriverId }: Props) {
       {isError && (
         <div role="alert" className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5">
           <WifiOff className="size-3.5 shrink-0 text-red-500" aria-hidden />
-          <p className="flex-1 text-[11px] font-medium text-red-700">Failed to load orders</p>
+          <p className="flex-1 text-[11px] font-medium text-red-700">Ошибка загрузки заказов</p>
           <button
             onClick={() => void refetch()}
             className="rounded-lg border border-red-200 bg-white px-2 py-1 text-[11px] font-bold text-red-600 transition hover:bg-red-50"
           >
-            Retry
+            Повторить
           </button>
         </div>
       )}
@@ -454,7 +454,7 @@ export default function OrderPanel({ selectedDriverId }: Props) {
       {newFlash && (
         <div role="status" className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-[#1B4D91]/15 bg-[#1B4D91]/[0.06] px-3 py-2 animate-pulse">
           <Package className="size-3.5 text-[#1B4D91]" aria-hidden />
-          <p className="text-[12px] font-bold text-[#1B4D91]">New order!</p>
+          <p className="text-[12px] font-bold text-[#1B4D91]">Новый заказ!</p>
         </div>
       )}
 
@@ -495,8 +495,8 @@ export default function OrderPanel({ selectedDriverId }: Props) {
         {!isLoading && !isError && orders.length === 0 && (
           <EmptyState
             icon={<Package className="size-6" />}
-            title="No pending orders"
-            description="All orders have been assigned"
+            title="Нет заказов"
+            description="Все заказы назначены"
           />
         )}
       </div>

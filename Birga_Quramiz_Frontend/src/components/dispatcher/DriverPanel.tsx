@@ -47,19 +47,19 @@ type FilterTab = "all" | "alert" | "delivering" | "available" | "offline";
 
 const STATUS_CFG = {
   [DriverStatus.ONLINE]: {
-    label: "Available",
+    label: "Свободен",
     dot:   "bg-emerald-400",
     badge: "bg-emerald-50 text-emerald-700",
     icon:  <Wifi className="size-3" />,
   },
   [DriverStatus.ON_DELIVERY]: {
-    label: "Delivering",
+    label: "Везёт",
     dot:   "bg-blue-500",
     badge: "bg-blue-50 text-blue-700",
     icon:  <Truck className="size-3" />,
   },
   [DriverStatus.OFFLINE]: {
-    label: "Offline",
+    label: "Оффлайн",
     dot:   "bg-slate-300",
     badge: "bg-slate-50 text-slate-400",
     icon:  <WifiOff className="size-3" />,
@@ -68,22 +68,22 @@ const STATUS_CFG = {
 
 const ALERT_CFG: Record<AlertType, { label: string; cls: string; icon: React.ReactNode }> = {
   stuck: {
-    label: "Driver stuck",
+    label: "Застрял",
     cls:   "bg-red-50 text-red-600 border border-red-100",
     icon:  <AlertTriangle className="size-2.5" />,
   },
   signal_lost: {
-    label: "Signal lost",
+    label: "Нет сигнала",
     cls:   "bg-amber-50 text-amber-600 border border-amber-100",
     icon:  <Radio className="size-2.5" />,
   },
   delayed: {
-    label: "Delivery late",
+    label: "Опаздывает",
     cls:   "bg-orange-50 text-orange-600 border border-orange-100",
     icon:  <Clock className="size-2.5" />,
   },
   issue: {
-    label: "Driver issue",
+    label: "Проблема",
     cls:   "bg-purple-50 text-purple-700 border border-purple-100",
     icon:  <MessageCircleWarning className="size-2.5" />,
   },
@@ -155,14 +155,14 @@ const DriverRow = ({
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {driver.etaMinutes != null && driver.status === DriverStatus.ON_DELIVERY && (
-              <span className="flex items-center gap-1 rounded-full bg-[#1B4D91]/[0.08] px-2 py-0.5 text-[9px] font-bold text-[#1B4D91]">
+              <span className="flex items-center gap-1 rounded-full bg-[#1B4D91]/[0.08] px-2 py-0.5 text-[10px] font-bold text-[#1B4D91]">
                 <Clock className="size-2" />
-                {driver.etaMinutes}m ETA
+                {driver.etaMinutes} мин
               </span>
             )}
             {driver.assignmentsToday > 0 && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-500">
-                {driver.assignmentsToday} today
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                {driver.assignmentsToday} сегодня
               </span>
             )}
             {lastSeen && <span className="text-[9px] text-slate-400">{lastSeen}</span>}
@@ -210,11 +210,11 @@ const SectionHeader = ({ label, count, urgent }: { label: string; count: number;
 );
 
 const TABS: { id: FilterTab; label: string }[] = [
-  { id: "all",        label: "All"        },
-  { id: "alert",      label: "Alert"      },
-  { id: "delivering", label: "Delivering" },
-  { id: "available",  label: "Available"  },
-  { id: "offline",    label: "Offline"    },
+  { id: "all",        label: "Все"      },
+  { id: "alert",      label: "Тревога"  },
+  { id: "delivering", label: "Доставка" },
+  { id: "available",  label: "Свободен" },
+  { id: "offline",    label: "Оффлайн"  },
 ];
 
 export default function DriverPanel({
@@ -280,16 +280,16 @@ export default function DriverPanel({
     <div className="flex flex-col">
       <div className="border-b border-slate-100 px-4 pt-3 pb-2.5">
         <div className="flex items-center justify-between">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Drivers</h2>
+          <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Курьеры</h2>
           {withAlerts.length > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-black text-white">
+            <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black text-white">
               <Shield className="size-2" />
-              {withAlerts.length} alert{withAlerts.length !== 1 ? "s" : ""}
+              {withAlerts.length} {withAlerts.length === 1 ? "тревога" : "тревог"}
             </span>
           )}
         </div>
         <p className="mt-0.5 text-[12px] font-semibold text-slate-700">
-          {totalActive} active · {totalOffline} offline
+          {totalActive} активных · {totalOffline} оффлайн
         </p>
       </div>
 
@@ -300,8 +300,8 @@ export default function DriverPanel({
             ref={searchRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or phone…"
-            aria-label="Search drivers by name or phone"
+            placeholder="Поиск по имени или телефону…"
+            aria-label="Поиск курьеров по имени или телефону"
             className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-8 text-[12px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#1B4D91] focus:bg-white focus:ring-2 focus:ring-[#1B4D91]/10"
           />
           {search && (
@@ -371,7 +371,7 @@ export default function DriverPanel({
         <div role="tabpanel" id="driver-tab-panel-all" aria-label="All drivers">
           {withAlerts.length > 0 && (
             <>
-              <SectionHeader label="⚠ Needs attention" count={withAlerts.length} urgent />
+              <SectionHeader label="⚠ Требует внимания" count={withAlerts.length} urgent />
               {withAlerts.map((d) => (
                 <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
@@ -379,7 +379,7 @@ export default function DriverPanel({
           )}
           {delivering.length > 0 && (
             <>
-              <SectionHeader label="On delivery" count={delivering.length} />
+              <SectionHeader label="На доставке" count={delivering.length} />
               {delivering.map((d) => (
                 <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
@@ -387,7 +387,7 @@ export default function DriverPanel({
           )}
           {available.length > 0 && (
             <>
-              <SectionHeader label="Available" count={available.length} />
+              <SectionHeader label="Свободные" count={available.length} />
               {available.map((d) => (
                 <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
@@ -395,7 +395,7 @@ export default function DriverPanel({
           )}
           {offline.length > 0 && (
             <>
-              <SectionHeader label="Offline" count={offline.length} />
+              <SectionHeader label="Оффлайн" count={offline.length} />
               {offline.map((d) => (
                 <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
@@ -404,8 +404,8 @@ export default function DriverPanel({
           {drivers.length === 0 && !search && (
             <EmptyState
               icon={<User className="size-6 text-slate-400" />}
-              title="No drivers registered"
-              description="Drivers will appear here once they sign in"
+              title="Нет курьеров"
+              description="Курьеры появятся после входа в систему"
             />
           )}
         </div>
@@ -420,8 +420,8 @@ export default function DriverPanel({
             : (
               <EmptyState
                 icon={<User className="size-6 text-slate-400" />}
-                title={search ? "No results" : `No ${activeTab} drivers`}
-                description={search ? `No drivers match "${search}"` : undefined}
+                title={search ? "Нет результатов" : "Нет курьеров"}
+                description={search ? `Нет курьеров по запросу «${search}»` : undefined}
               />
             )}
         </div>
@@ -432,14 +432,14 @@ export default function DriverPanel({
         available.length === 0 && offline.length === 0 && (
         <EmptyState
           icon={<Search className="size-6 text-slate-400" />}
-          title="No results"
-          description={`No drivers match "${search}"`}
+          title="Нет результатов"
+          description={`Нет курьеров по запросу «${search}»`}
           action={
             <button
               onClick={() => setSearch("")}
               className="text-[12px] font-semibold text-[#1B4D91] hover:underline"
             >
-              Clear search
+              Сбросить поиск
             </button>
           }
         />

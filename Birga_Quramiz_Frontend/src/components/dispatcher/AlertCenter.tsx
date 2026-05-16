@@ -39,7 +39,7 @@ const ALERT_CFG: Record<AlertType, {
   badgeCls: string;
 }> = {
   stuck: {
-    label:    "Driver stuck",
+    label:    "Застрял",
     severity: "critical",
     icon:     <AlertTriangle className="size-3.5" />,
     rowCls:   "border-red-100   bg-red-50/60",
@@ -47,7 +47,7 @@ const ALERT_CFG: Record<AlertType, {
     badgeCls: "bg-red-100 text-red-700",
   },
   signal_lost: {
-    label:    "Signal lost",
+    label:    "Нет сигнала",
     severity: "high",
     icon:     <Radio className="size-3.5" />,
     rowCls:   "border-amber-100 bg-amber-50/50",
@@ -55,7 +55,7 @@ const ALERT_CFG: Record<AlertType, {
     badgeCls: "bg-amber-100 text-amber-700",
   },
   delayed: {
-    label:    "Delivery late",
+    label:    "Опаздывает",
     severity: "medium",
     icon:     <Clock className="size-3.5" />,
     rowCls:   "border-orange-100 bg-orange-50/40",
@@ -63,7 +63,7 @@ const ALERT_CFG: Record<AlertType, {
     badgeCls: "bg-orange-100 text-orange-700",
   },
   issue: {
-    label:    "Driver issue",
+    label:    "Проблема",
     severity: "info",
     icon:     <MessageCircleWarning className="size-3.5" />,
     rowCls:   "border-purple-100 bg-purple-50/40",
@@ -73,10 +73,10 @@ const ALERT_CFG: Record<AlertType, {
 };
 
 const SEVERITY_LABEL: Record<string, { label: string; headerCls: string }> = {
-  critical: { label: "Critical",  headerCls: "text-red-600 bg-red-50/80 border-red-100" },
-  high:     { label: "High",      headerCls: "text-amber-600 bg-amber-50/80 border-amber-100" },
-  medium:   { label: "Medium",    headerCls: "text-orange-600 bg-orange-50/80 border-orange-100" },
-  info:     { label: "Info",      headerCls: "text-purple-600 bg-purple-50/80 border-purple-100" },
+  critical: { label: "Критично",  headerCls: "text-red-600 bg-red-50/80 border-red-100" },
+  high:     { label: "Высокий",   headerCls: "text-amber-600 bg-amber-50/80 border-amber-100" },
+  medium:   { label: "Средний",   headerCls: "text-orange-600 bg-orange-50/80 border-orange-100" },
+  info:     { label: "Инфо",      headerCls: "text-purple-600 bg-purple-50/80 border-purple-100" },
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -153,11 +153,11 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
               <Shield className="size-3.5 text-red-500" />
             </div>
             <div>
-              <h2 className="text-[13px] font-black text-slate-800">Alert Center</h2>
+              <h2 className="text-[13px] font-black text-slate-800">Центр тревог</h2>
               <p className="text-[10px] text-slate-400">
                 {flat.length === 0
-                  ? "No active alerts"
-                  : `${flat.length} active alert${flat.length !== 1 ? "s" : ""}`}
+                  ? "Нет активных тревог"
+                  : `${flat.length} ${flat.length === 1 ? "тревога" : "тревог"}`}
               </p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
                 onClick={dismissAll}
                 className="rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
-                Dismiss all
+                Скрыть все
               </button>
             )}
             <button
@@ -186,8 +186,8 @@ export default function AlertCenter({ onClose, onFocusDriver }: Props) {
           {flat.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <BellOff className="mb-3 size-10 text-slate-200" />
-              <p className="text-[13px] font-bold text-slate-400">All clear</p>
-              <p className="text-[11px] text-slate-300">No active alerts right now</p>
+              <p className="text-[13px] font-bold text-slate-400">Всё спокойно</p>
+              <p className="text-[11px] text-slate-300">Нет активных тревог</p>
             </div>
           ) : (
             <>
@@ -283,21 +283,21 @@ function AlertRow({
             className="flex items-center gap-1 rounded-lg bg-[#1B4D91] px-2.5 py-1 text-[9px] font-bold text-white transition hover:bg-[#163d73]"
           >
             <MapPin className="size-2.5" />
-            Focus
+            На карте
           </button>
           <a
             href={`tel:${item.driver.phone}`}
             className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100"
           >
             <Phone className="size-2.5" />
-            Call
+            Позвонить
           </a>
           <button
             onClick={onDismiss}
             className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="size-2.5" />
-            Dismiss
+            Скрыть
           </button>
         </div>
       </div>
