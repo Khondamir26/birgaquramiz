@@ -49,11 +49,11 @@ export default function LiveRouteMap({ driverLocation, destinationCoords, classN
   const rendererRef     = useRef<any>(null);
   const lastFetchRef    = useRef<number>(0);
 
-  // Keep refs fresh so init-effect callbacks always see current coords
+  // Keep refs fresh so the init-effect promise callback always sees current coords
   const driverRef = useRef(driverLocation);
   const destRef   = useRef(destinationCoords);
-  driverRef.current = driverLocation;
-  destRef.current   = destinationCoords;
+  useEffect(() => { driverRef.current = driverLocation; });
+  useEffect(() => { destRef.current   = destinationCoords; });
 
   function requestRoute(force = false) {
     if (!serviceRef.current || !rendererRef.current) return;
@@ -147,14 +147,14 @@ export default function LiveRouteMap({ driverLocation, destinationCoords, classN
       requestRoute(true);
     });
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty — map mounts once
 
   // ── Track driver movement ────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !driverMarkerRef.current) return;
     driverMarkerRef.current.setPosition({ lat: driverLocation.lat, lng: driverLocation.lng });
     requestRoute();
-  }, [driverLocation.lat, driverLocation.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [driverLocation.lat, driverLocation.lng]);
 
   return (
     <div

@@ -72,9 +72,6 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
         <span className="text-[15px] font-black lowercase tracking-[-0.03em] text-white">
           birga tracking
         </span>
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/60">
-          {t.topbar_badge}
-        </span>
       </div>
 
       <div className="hidden items-center gap-4 md:flex">

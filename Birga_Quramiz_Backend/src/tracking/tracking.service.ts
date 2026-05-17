@@ -623,6 +623,42 @@ onModuleInit() {
     }
   }
 
+  // ─── Fraud events ────────────────────────────────────────────────────────────
+
+  async getRecentFraudEvents(limit = 200) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1_000)
+    return this.prisma.fraudEvent.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        driver: { select: { name: true, phone: true } },
+      },
+    })
+  }
+
+  async deleteFraudEvent(id: string): Promise<void> {
+    await this.prisma.fraudEvent.delete({ where: { id } }).catch(() => {})
+  }
+
+  async clearFraudEvents(): Promise<void> {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1_000)
+    await this.prisma.fraudEvent.deleteMany({ where: { createdAt: { gte: since } } })
+  }
+
+  // ─── Dispatcher order detail ─────────────────────────────────────────────────
+
+  async getOrderDetailForDispatcher(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { product: { select: { name: true } } } },
+      },
+    })
+    if (!order) throw new NotFoundException('Order not found')
+    return order
+  }
+
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   private validateTransition(current: AssignmentStatus, next: AssignmentStatus) {

@@ -767,6 +767,8 @@
     "roleUser": "User",
     "roleSeller": "Seller",
     "roleAdmin": "Admin",
+    "roleDriver": "Driver",
+    "roleDispatcher": "Dispatcher",
     "colName": "Name",
     "colPhone": "Phone",
     "colRole": "Role",

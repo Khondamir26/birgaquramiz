@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 
 const Footer = dynamic(
   () => import("@/components/layout/Footer"),
@@ -17,11 +18,14 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isDispatcher = pathname.startsWith("/dispatcher")
+
   return (
     <>
       {children}
-      <Footer />
-      <BottomNavigation />
+      {!isDispatcher && <Footer />}
+      {!isDispatcher && <BottomNavigation />}
     </>
   )
 }

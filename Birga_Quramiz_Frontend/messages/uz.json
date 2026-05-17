@@ -668,6 +668,8 @@
     "roleUser": "Foydalanuvchi",
     "roleSeller": "Sotuvchi",
     "roleAdmin": "Admin",
+    "roleDriver": "Kuryer",
+    "roleDispatcher": "Dispetcher",
     "colName": "Ism",
     "colPhone": "Telefon",
     "colRole": "Rol",

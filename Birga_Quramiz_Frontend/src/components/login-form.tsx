@@ -8,6 +8,7 @@ import { login } from '@/lib/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { formatPhone } from '@/lib/formatPhone'
 import Link from 'next/link'
+import { PageLoader } from '@/components/ui/FullPageLoader'
 
 export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const router = useRouter()
@@ -34,8 +35,11 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     router.replace(safeReturn)
   }, [isInitialized, isAuthenticated, user, router, safeReturn])
 
-  // Render nothing until auth is known or while redirecting
-  if (!isInitialized || isAuthenticated) return null
+  // While redirecting a logged-in user, render nothing
+  if (isAuthenticated) return null
+
+  // While auth is initializing, show a centered spinner so the page isn't blank
+  if (!isInitialized) return <PageLoader />
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value))

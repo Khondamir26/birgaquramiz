@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { TrackingProviders } from "./providers";
+import { PageLoader } from "@/components/ui/FullPageLoader";
 
 export default function DispatcherLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function DispatcherLayout({ children }: { children: ReactNode }) 
     }
   }, [isInitialized, isAuthenticated, user, router]);
 
-  if (!isInitialized) return null;
-  if (!isAuthenticated) return null;
-  if (user?.role !== "DISPATCHER" && user?.role !== "ADMIN") return null;
+  if (!isInitialized) return <PageLoader />;
+  if (!isAuthenticated) return <PageLoader />;
+  if (user?.role !== "DISPATCHER" && user?.role !== "ADMIN") return <PageLoader />;
 
   return (
     <TrackingProviders>

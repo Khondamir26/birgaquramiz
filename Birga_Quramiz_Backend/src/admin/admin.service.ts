@@ -36,7 +36,7 @@ export class AdminService {
     }
   }
 
-  async getUsers(page = 1, limit = 20, role?: 'USER' | 'SELLER' | 'ADMIN', q?: string) {
+  async getUsers(page = 1, limit = 20, role?: 'USER' | 'SELLER' | 'ADMIN' | 'DRIVER' | 'DISPATCHER', q?: string) {
     const safePage = page < 1 ? 1 : page
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit

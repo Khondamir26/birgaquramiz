@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import type { DriverListItem, DriverRecommendation, DriverStatus } from "@/types/tracking";
+import type { Order } from "@/types";
 
 export interface DriverDetail {
   id:          string;
@@ -52,12 +53,11 @@ export interface ETAResponse {
 }
 
 export interface FraudFlag {
-  id:          string;
-  driverId:    string;
-  type:        string;
-  description: string;
-  createdAt:   string;
-  driver?:     { name: string; phone: string };
+  id:       string;
+  driverId: string;
+  reason:   string;
+  createdAt: string;
+  driver?:  { name: string; phone: string | null };
 }
 
 export interface AssignmentEvent {
@@ -167,6 +167,18 @@ export const trackingApi = {
   getRouteHistory(driverId: string, from: string, to: string): Promise<RoutePoint[]> {
     const params = new URLSearchParams({ from, to });
     return apiFetch<RoutePoint[]>(`/tracking/drivers/${driverId}/history?${params}`);
+  },
+
+  getOrderDetail(orderId: string): Promise<Order> {
+    return apiFetch<Order>(`/tracking/orders/${orderId}/detail`);
+  },
+
+  dismissFraudFlag(id: string): Promise<void> {
+    return apiFetch<void>(`/tracking/fraud-events/${id}`, { method: "DELETE" });
+  },
+
+  clearAllFraudFlags(): Promise<void> {
+    return apiFetch<void>("/tracking/fraud-events", { method: "DELETE" });
   },
 
   getDriverRatingSummary(driverId: string): Promise<DriverRatingSummary> {

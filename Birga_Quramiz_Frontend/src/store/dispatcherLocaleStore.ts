@@ -11,12 +11,20 @@ interface DispatcherLocaleStore {
 
 export const useDispatcherLocaleStore = create<DispatcherLocaleStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       locale: "ru" as DLocale,
       t: TRANSLATIONS.ru,
       setLocale: (locale) => set({ locale, t: TRANSLATIONS[locale] }),
     }),
-    { name: "dispatcher-locale" }
+    {
+      name: "dispatcher-locale",
+      // Only store locale — t contains functions which are not JSON-serializable
+      partialize: (state) => ({ locale: state.locale }),
+      // Rehydrate t from TRANSLATIONS after locale is restored from storage
+      onRehydrateStorage: () => (state) => {
+        if (state) state.t = TRANSLATIONS[state.locale];
+      },
+    }
   )
 );
 

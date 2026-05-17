@@ -347,7 +347,7 @@ export default function MapView({ drivers, locations, selectedDriverId, onSelect
             <button
               onClick={fitAll}
               title={t.map_fit_all}
-              className="flex size-9 items-center justify-center rounded-xl border border-slate-100 bg-white shadow-md text-slate-600 transition hover:bg-slate-50 active:scale-95"
+              className="flex size-9 items-center justify-center rounded-2xl border border-slate-100 bg-white shadow-md text-slate-600 transition hover:bg-slate-50 active:scale-95"
             >
               <Maximize2 className="size-4" />
             </button>

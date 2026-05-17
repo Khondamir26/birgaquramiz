@@ -91,12 +91,13 @@ const ALERT_CFG: Record<AlertType, { cls: string; icon: React.ReactNode }> = {
 type Tab = "overview" | "timeline" | "history" | "stats";
 
 interface Props {
-  driverId:       string;
-  onClose:        () => void;
-  onOpenPlayback: (driverId: string) => void;
+  driverId:            string;
+  onClose:             () => void;
+  onOpenPlayback:      (driverId: string) => void;
+  onViewOrderDetail?:  (orderId: string) => void;
 }
 
-export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }: Props) {
+export default function DriverDetailModal({ driverId, onClose, onOpenPlayback, onViewOrderDetail }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { drivers, locations, clearAlert } = useTrackingStore();
   const t      = useT();
@@ -219,25 +220,27 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
         </div>
       </div>
 
-      {/* Tab bar */}
+      {/* Tab bar — icon only */}
       <div className="flex border-b border-slate-100">
         {([
-          { id: "overview" as Tab, label: t.drv_tab_overview, icon: <Truck       className="size-3" /> },
-          { id: "timeline" as Tab, label: t.drv_tab_timeline, icon: <ListOrdered className="size-3" /> },
-          { id: "history"  as Tab, label: t.drv_tab_history,  icon: <History     className="size-3" /> },
-          { id: "stats"    as Tab, label: t.drv_tab_stats,    icon: <BarChart2   className="size-3" /> },
-        ]).map(({ id, label, icon }) => (
+          { id: "overview" as Tab, icon: <Truck       className="size-[18px]" />, title: t.drv_tab_overview },
+          { id: "timeline" as Tab, icon: <ListOrdered className="size-[18px]" />, title: t.drv_tab_timeline },
+          { id: "history"  as Tab, icon: <History     className="size-[18px]" />, title: t.drv_tab_history  },
+          { id: "stats"    as Tab, icon: <BarChart2   className="size-[18px]" />, title: t.drv_tab_stats    },
+        ]).map(({ id, icon, title }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
+            title={title}
+            aria-label={title}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1 py-2 text-[10px] font-bold transition-colors",
+              "flex flex-1 items-center justify-center py-3 transition-colors",
               activeTab === id
                 ? "border-b-2 border-[#1B4D91] text-[#1B4D91]"
                 : "text-slate-400 hover:text-slate-600"
             )}
           >
-            {icon}{label}
+            {icon}
           </button>
         ))}
       </div>
@@ -250,7 +253,7 @@ export default function DriverDetailModal({ driverId, onClose, onOpenPlayback }:
           />
         )}
         {activeTab === "history" && (
-          <HistoryTab driverId={driverId} />
+          <HistoryTab driverId={driverId} onViewOrderDetail={onViewOrderDetail} />
         )}
         {activeTab === "stats" && (
           <StatsTab driverId={driverId} />
@@ -607,7 +610,7 @@ const STATUS_PILL: Record<string, string> = {
   PENDING:   "bg-slate-100 text-slate-500",
 };
 
-function HistoryTab({ driverId }: { driverId: string }) {
+function HistoryTab({ driverId, onViewOrderDetail }: { driverId: string; onViewOrderDetail?: (orderId: string) => void }) {
   const t = useT();
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allItems, setAllItems] = useState<AssignmentHistoryItem[]>([]);
@@ -653,7 +656,7 @@ function HistoryTab({ driverId }: { driverId: string }) {
       </p>
       <div className="flex flex-col gap-2">
         {items.map((item) => (
-          <HistoryCard key={item.id} item={item} />
+          <HistoryCard key={item.id} item={item} onViewOrderDetail={onViewOrderDetail} />
         ))}
       </div>
       {data.length === 10 && (
@@ -670,7 +673,7 @@ function HistoryTab({ driverId }: { driverId: string }) {
   );
 }
 
-function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
+function HistoryCard({ item, onViewOrderDetail }: { item: AssignmentHistoryItem; onViewOrderDetail?: (orderId: string) => void }) {
   const t      = useT();
   const locale = useDispatcherLocaleStore((s) => s.locale);
   const fnsLocale = locale === "ru" ? ruLocale : undefined;
@@ -683,16 +686,31 @@ function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
     PENDING:   t.drv_hst_pending,
   };
 
-  const pillCls = STATUS_PILL[item.status] ?? "bg-slate-100 text-slate-500";
+  const pillCls   = STATUS_PILL[item.status] ?? "bg-slate-100 text-slate-500";
+  const clickable = !!onViewOrderDetail;
+  const Wrapper   = clickable ? "button" : "div";
+
   return (
-    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+    <Wrapper
+      type={clickable ? "button" : undefined}
+      onClick={clickable ? () => onViewOrderDetail!(item.order.id) : undefined}
+      className={cn(
+        "w-full rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100 text-left",
+        clickable && "group cursor-pointer transition-colors hover:bg-blue-50/60 hover:ring-blue-100"
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="truncate text-[11px] font-bold text-slate-700">
           {item.order.customerName}
         </p>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold", pillCls)}>
-          {STATUS_LABEL_MAP[item.status] ?? item.status}
-        </span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className={cn("rounded-full px-2 py-0.5 text-[9px] font-bold", pillCls)}>
+            {STATUS_LABEL_MAP[item.status] ?? item.status}
+          </span>
+          {clickable && (
+            <ChevronRight className="size-3 text-slate-300 transition-colors group-hover:text-[#1B4D91]" />
+          )}
+        </div>
       </div>
       {item.order.deliveryAddress && (
         <p className="mt-0.5 flex items-start gap-1 text-[9px] text-slate-400 leading-snug">
@@ -708,7 +726,7 @@ function HistoryCard({ item }: { item: AssignmentHistoryItem }) {
           <span className="text-[9px] text-slate-300">{t.drv_history_events(item._count.events)}</span>
         )}
       </div>
-    </div>
+    </Wrapper>
   );
 }
 

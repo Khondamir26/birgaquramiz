@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getOrderById } from "@/lib/api/orders";
+import { trackingApi } from "@/services/trackingApi";
 import { useT } from "@/store/dispatcherLocaleStore";
 import { format } from "date-fns";
 import {
@@ -42,8 +42,8 @@ export default function OrderDetailPanel({ orderId, onClose }: Props) {
   const t = useT();
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ["order-detail", orderId],
-    queryFn:  () => getOrderById(orderId),
+    queryKey: ["dispatcher-order-detail", orderId],
+    queryFn:  () => trackingApi.getOrderDetail(orderId),
     staleTime: 60_000,
     enabled:  !!orderId,
   });

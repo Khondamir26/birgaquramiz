@@ -290,3 +290,14 @@
 .animate-toast-in {
   animation: toast-in 0.22s ease-out both;
 }
+
+@keyframes slide-from-left {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes slide-from-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.animate-slide-from-left  { animation: slide-from-left  0.26s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.animate-slide-from-right { animation: slide-from-right 0.26s cubic-bezier(0.32, 0.72, 0, 1) both; }

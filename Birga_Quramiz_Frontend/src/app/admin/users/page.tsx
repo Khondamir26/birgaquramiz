@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUserRole } from "@/lib/api/admin";
 import type { PaginatedResponse, Role, User } from "@/types";
 import { useTranslations } from "next-intl";
-import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store, BadgeCheck, Clock } from "lucide-react";
+import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store, BadgeCheck, Clock, Truck, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
@@ -85,9 +85,11 @@ export default function AdminUsersPage() {
 
   const getRoleBadge = (r: Role) => {
     switch (r) {
-      case "ADMIN":  return { icon: Shield,   bg: "bg-red-100",    text: "text-red-700",    label: t("roleAdmin") };
-      case "SELLER": return { icon: Store,    bg: "bg-orange-100", text: "text-orange-700", label: t("roleSeller") };
-      default:       return { icon: UserIcon, bg: "bg-blue-100",   text: "text-blue-700",   label: t("roleUser") };
+      case "ADMIN":      return { icon: Shield,   bg: "bg-red-100",    text: "text-red-700",    label: t("roleAdmin") };
+      case "SELLER":     return { icon: Store,    bg: "bg-orange-100", text: "text-orange-700", label: t("roleSeller") };
+      case "DRIVER":     return { icon: Truck,    bg: "bg-green-100",  text: "text-green-700",  label: t("roleDriver") };
+      case "DISPATCHER": return { icon: Radio,    bg: "bg-purple-100", text: "text-purple-700", label: t("roleDispatcher") };
+      default:           return { icon: UserIcon, bg: "bg-blue-100",   text: "text-blue-700",   label: t("roleUser") };
     }
   };
 
@@ -133,6 +135,8 @@ export default function AdminUsersPage() {
               <option value="USER">{t("roleUser")}</option>
               <option value="SELLER">{t("roleSeller")}</option>
               <option value="ADMIN">{t("roleAdmin")}</option>
+              <option value="DRIVER">{t("roleDriver")}</option>
+              <option value="DISPATCHER">{t("roleDispatcher")}</option>
             </select>
           </div>
 
@@ -216,6 +220,8 @@ export default function AdminUsersPage() {
                       <option value="USER">{t("roleUser")}</option>
                       <option value="SELLER">{t("roleSeller")}</option>
                       <option value="ADMIN">{t("roleAdmin")}</option>
+                      <option value="DRIVER">{t("roleDriver")}</option>
+                      <option value="DISPATCHER">{t("roleDispatcher")}</option>
                     </select>
                   </div>
                 );

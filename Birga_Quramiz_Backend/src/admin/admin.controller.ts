@@ -24,7 +24,7 @@ export class AdminController {
   getUsers(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
-    @Query('role') role?: 'USER' | 'SELLER' | 'ADMIN',
+    @Query('role') role?: 'USER' | 'SELLER' | 'ADMIN' | 'DRIVER' | 'DISPATCHER',
     @Query('q') q?: string,
   ) {
     return this.adminService.getUsers(Number(page), Number(limit), role, q)

@@ -29,6 +29,7 @@ type NavbarActionsProps = {
   actions: NavbarAction[];
   pathname: string;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   userName?: string;
   accountMenu: NavbarAccountItem[];
   signInLabel: string;
@@ -40,6 +41,7 @@ export default function NavbarActions({
   actions,
   pathname,
   isAuthenticated,
+  isInitialized,
   userName,
   accountMenu,
   signInLabel,
@@ -77,7 +79,12 @@ export default function NavbarActions({
         );
       })}
 
-      {isAuthenticated && userName ? (
+      {!isInitialized ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 px-3 py-2">
+          <div className="h-5 w-5 rounded-full bg-white/25 animate-pulse" />
+          <div className="h-2 w-14 rounded bg-white/25 animate-pulse" />
+        </div>
+      ) : isAuthenticated && userName ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="group flex flex-col items-center justify-center gap-1.5 px-3 py-2 text-center text-white/60 transition-all duration-200 hover:text-white">

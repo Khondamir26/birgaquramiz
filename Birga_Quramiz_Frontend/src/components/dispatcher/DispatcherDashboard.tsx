@@ -25,12 +25,12 @@ import {
   X,
   RefreshCcw,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   Users,
   Package,
   Map as MapIcon,
+  Trash2,
 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function cn(...inputs: Parameters<typeof clsx>) {
   return twMerge(clsx(inputs));
@@ -93,86 +93,161 @@ function ToastStack({ toasts, onDismiss }: { toasts: AlertToast[]; onDismiss: (i
   );
 }
 
+interface GroupedFlag {
+  key:          string;
+  driverId:     string;
+  driver?:      { name: string; phone: string | null };
+  reasonType:   string;
+  reasonDetail?: string;
+  count:        number;
+  latestAt:     string;
+  ids:          string[];
+}
+
+function groupFraudFlags(flags: FraudFlag[]): GroupedFlag[] {
+  const map = new Map<string, GroupedFlag>();
+  for (const flag of flags) {
+    const reasonType   = (flag.reason ?? "").split(":")[0];
+    const reasonDetail = flag.reason?.includes(":") ? flag.reason.split(":")[1] : undefined;
+    const key          = `${flag.driverId}::${reasonType}`;
+    const existing     = map.get(key);
+    if (existing) {
+      existing.count++;
+      existing.ids.push(flag.id);
+      if (new Date(flag.createdAt) > new Date(existing.latestAt)) {
+        existing.latestAt    = flag.createdAt;
+        existing.reasonDetail = reasonDetail;
+      }
+    } else {
+      map.set(key, { key, driverId: flag.driverId, driver: flag.driver, reasonType, reasonDetail, count: 1, latestAt: flag.createdAt, ids: [flag.id] });
+    }
+  }
+  return [...map.values()].sort((a, b) => new Date(b.latestAt).getTime() - new Date(a.latestAt).getTime());
+}
+
 function FraudFlagsSection({ flags }: { flags: FraudFlag[] }) {
-  const t = useT();
+  const t  = useT();
+  const qc = useQueryClient();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["tracking", "fraud-flags"] });
+
+  const dismissGroup = useMutation({
+    mutationFn: (ids: string[]) => Promise.all(ids.map((id) => trackingApi.dismissFraudFlag(id))),
+    onSuccess:  invalidate,
+  });
+
+  const clearAll = useMutation({
+    mutationFn: trackingApi.clearAllFraudFlags,
+    onSuccess:  invalidate,
+  });
+
   if (flags.length === 0) return null;
+
+  const groups = groupFraudFlags(flags);
+
   return (
-    <section aria-label="Fraud flags" className="border-t border-red-100 bg-red-50/50">
-      <div className="border-b border-red-100 px-4 py-2.5">
-        <h3 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
-          <Shield className="size-3" aria-hidden />
-          {t.dash_fraud_title}
-          <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] text-white" aria-label={`${flags.length} ${t.dash_fleet_fraud}`}>
-            {flags.length}
-          </span>
-        </h3>
-      </div>
-      {flags.map((flag) => (
-        <div key={flag.id} className="flex items-start gap-2 border-b border-red-100/60 px-4 py-2.5">
-          <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-red-100">
-            <AlertTriangle className="size-3 text-red-500" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold text-red-700">{flag.driver?.name ?? "Unknown driver"}</p>
-            <p className="text-[10px] text-red-500 capitalize">{flag.type.toLowerCase().replace(/_/g, " ")}</p>
-            {flag.description && (
-              <p className="mt-0.5 text-[10px] leading-tight text-red-400">{flag.description}</p>
-            )}
-            <p className="mt-0.5 text-[9px] text-red-300">
-              {new Date(flag.createdAt).toLocaleString("ru-RU", {
-                day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-              })}
-            </p>
-          </div>
+    <section aria-label="Security alerts" className="border-t-2 border-red-200 bg-white">
+      {/* Section header */}
+      <div className="flex items-center gap-2 bg-red-500 px-4 py-2.5">
+        <div className="flex size-5 shrink-0 items-center justify-center rounded bg-white/20">
+          <Shield className="size-3 text-white" aria-hidden />
         </div>
-      ))}
+        <div className="flex flex-1 items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white">
+            {t.dash_fraud_title}
+          </span>
+          <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[9px] font-black text-white">
+            {groups.length} {groups.length === 1 ? "driver" : "drivers"} · {flags.length} events
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => clearAll.mutate()}
+            disabled={clearAll.isPending}
+            aria-label="Clear all"
+            className="flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[9px] font-bold text-white/80 transition hover:bg-white/25 disabled:opacity-40"
+          >
+            <Trash2 className="size-3" aria-hidden />
+            Clear
+          </button>
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand" : "Collapse"}
+            className="flex size-6 items-center justify-center rounded-lg bg-white/15 text-white/80 transition hover:bg-white/25"
+          >
+            <svg className={cn("size-3 transition-transform duration-200", collapsed && "rotate-180")} viewBox="0 0 12 12" fill="none">
+              <path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Alert cards */}
+      {!collapsed && (
+        <div className="divide-y divide-slate-100">
+          {groups.map((g) => {
+            const isCritical = g.count >= 3;
+            return (
+              <div
+                key={g.key}
+                className={cn(
+                  "flex items-start gap-3 px-4 py-3 transition-colors",
+                  isCritical ? "bg-red-50/60" : "bg-white"
+                )}
+              >
+                {/* Severity indicator */}
+                <div className={cn(
+                  "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg",
+                  isCritical ? "bg-red-100" : "bg-amber-50"
+                )}>
+                  <AlertTriangle className={cn("size-3.5", isCritical ? "text-red-500" : "text-amber-500")} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[12px] font-bold text-slate-800">
+                        {g.driver?.name ?? "Unknown driver"}
+                      </p>
+                      <p className="mt-0.5 text-[10px] capitalize font-medium text-slate-500">
+                        {g.reasonType.toLowerCase().replace(/_/g, " ")}
+                        {g.reasonDetail && (
+                          <span className="ml-1 font-normal text-slate-400">· {g.reasonDetail}</span>
+                        )}
+                      </p>
+                    </div>
+                    {g.count > 1 && (
+                      <span className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black",
+                        isCritical ? "bg-red-500 text-white" : "bg-amber-100 text-amber-700"
+                      )}>
+                        {g.count}× in 10 min
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[9px] text-slate-400">
+                    Last: {new Date(g.latestAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => dismissGroup.mutate(g.ids)}
+                  disabled={dismissGroup.isPending}
+                  aria-label="Dismiss group"
+                  className="mt-0.5 shrink-0 rounded p-1 text-slate-300 transition hover:bg-slate-100 hover:text-slate-500 disabled:opacity-40"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
 
-function CollapsedStrip({
-  side,
-  label,
-  count,
-  alertCount,
-  icon,
-  onExpand,
-}: {
-  side:        "left" | "right";
-  label:       string;
-  count:       number;
-  alertCount?: number;
-  icon:        React.ReactNode;
-  onExpand:    () => void;
-}) {
-  return (
-    <button
-      onClick={onExpand}
-      aria-label={`Expand ${label} panel`}
-      aria-expanded={false}
-      className={cn(
-        "group flex w-10 shrink-0 flex-col items-center gap-3 border-slate-200 bg-white py-4 transition hover:bg-slate-50",
-        side === "left" ? "border-r" : "border-l"
-      )}
-    >
-      <span className="text-slate-300 transition group-hover:text-[#1B4D91]" aria-hidden>
-        {side === "left" ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
-      </span>
-      <span className="text-slate-400" aria-hidden>{icon}</span>
-      <span className="flex size-6 items-center justify-center rounded-full bg-slate-100 text-[11px] font-black text-slate-600">
-        {count}
-      </span>
-      {alertCount != null && alertCount > 0 && (
-        <span className="flex size-5 items-center justify-center rounded-full bg-red-50 text-[9px] font-black text-red-600">
-          {alertCount}
-        </span>
-      )}
-      <span className="mt-1 rotate-90 whitespace-nowrap text-[8px] font-black uppercase tracking-widest text-slate-300">
-        {label}
-      </span>
-    </button>
-  );
-}
 
 type MobileTab = "drivers" | "map" | "orders";
 
@@ -220,8 +295,6 @@ export default function DispatcherDashboard() {
   } = useTrackingStore();
 
   const [toasts,          setToasts]          = useState<AlertToast[]>([]);
-  const [leftOpen,        setLeftOpen]        = useState(true);
-  const [rightOpen,       setRightOpen]       = useState(true);
   const [mobileTab,       setMobileTab]       = useState<MobileTab>("map");
   const [alertCenterOpen,  setAlertCenterOpen]  = useState(false);
   const [playbackDriverId, setPlaybackDriverId] = useState<string | null>(null);
@@ -334,39 +407,14 @@ export default function DispatcherDashboard() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Desktop collapsed left */}
-        {!leftOpen && (
-          <div className="hidden md:flex">
-            <CollapsedStrip
-              side="left"
-              label={t.dash_col_drivers}
-              count={driversArr.length}
-              alertCount={alertCount}
-              icon={<Users className="size-4" />}
-              onExpand={() => setLeftOpen(true)}
-            />
-          </div>
-        )}
-
         {/* Desktop driver panel */}
         <aside
           aria-label="Driver panel"
           className={cn(
-            "relative hidden shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white transition-all duration-200 md:flex",
-            leftOpen ? "w-[285px]" : "w-0 overflow-hidden border-0",
-            hasAlerts && leftOpen && "border-r-red-200"
+            "relative hidden w-[285px] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white md:flex",
+            hasAlerts && "border-r-red-200"
           )}
         >
-          {leftOpen && (
-            <button
-              onClick={() => setLeftOpen(false)}
-              aria-label="Collapse driver panel"
-              aria-expanded={true}
-              className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 flex size-6 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm text-slate-400 transition hover:border-slate-300 hover:text-slate-600"
-            >
-              <ChevronLeft className="size-3.5" aria-hidden />
-            </button>
-          )}
           <DriverPanel
             drivers={driversArr}
             locations={locations}
@@ -423,18 +471,19 @@ export default function DispatcherDashboard() {
           />
           {/* Driver detail overlay — slides in from left when driver selected */}
           {selectedDriverId && (
-            <div className="absolute left-0 top-0 z-20 h-full w-[280px] overflow-hidden border-r border-slate-200 bg-white shadow-xl">
+            <div className="animate-slide-from-left absolute left-0 top-0 z-20 h-full w-[280px] overflow-hidden border-r border-slate-200 bg-white shadow-xl">
               <DriverDetailModal
                 driverId={selectedDriverId}
                 onClose={() => selectDriver(null)}
                 onOpenPlayback={(id) => { setPlaybackDriverId(id); selectDriver(null); }}
+                onViewOrderDetail={setSelectedOrderId}
               />
             </div>
           )}
 
           {/* Order detail overlay — slides in from right */}
           {selectedOrderId && (
-            <div className="absolute right-0 top-0 z-20 h-full w-[320px] overflow-hidden border-l border-slate-200 bg-white shadow-xl">
+            <div className="animate-slide-from-right absolute right-0 top-0 z-20 h-full w-[320px] overflow-hidden border-l border-slate-200 bg-white shadow-xl">
               <OrderDetailPanel
                 orderId={selectedOrderId}
                 onClose={() => setSelectedOrderId(null)}
@@ -443,38 +492,11 @@ export default function DispatcherDashboard() {
           )}
         </main>
 
-        {/* Desktop collapsed right */}
-        {!rightOpen && (
-          <div className="hidden md:flex">
-            <CollapsedStrip
-              side="right"
-              label={t.dash_col_orders}
-              count={0}
-              icon={<Package className="size-4" />}
-              onExpand={() => setRightOpen(true)}
-            />
-          </div>
-        )}
-
         {/* Desktop order panel */}
         <aside
           aria-label="Order panel"
-          className={cn(
-            "relative hidden shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white transition-all duration-200 md:flex",
-            rightOpen ? "w-[300px]" : "w-0 overflow-hidden border-0"
-          )}
+          className="hidden w-[300px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white md:flex"
         >
-          {rightOpen && (
-            <button
-              onClick={() => setRightOpen(false)}
-              aria-label="Collapse order panel"
-              aria-expanded={true}
-              className="absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-1/2 flex size-6 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm text-slate-400 transition hover:border-slate-300 hover:text-slate-600"
-            >
-              <ChevronRight className="size-3.5" aria-hidden />
-            </button>
-          )}
-
           <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100" aria-label="Fleet summary">
             <div className="flex flex-col items-center py-2.5">
               <span className="text-[18px] font-black text-emerald-600">

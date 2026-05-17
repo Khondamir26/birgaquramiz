@@ -241,7 +241,7 @@ export const TRANSLATIONS = {
     panel_drivers_summary:  (active: number, offline: number) => `${active} faol · ${offline} oflayn`,
     panel_search_ph:        "Ism yoki telefon bo'yicha qidirish…",
     panel_tab_all:          "Barchasi",
-    panel_tab_alert:        "Ogohlantirish",
+    panel_tab_alert:        "Trevoga",
     panel_tab_delivering:   "Yetkazish",
     panel_tab_available:    "Bo'sh",
     panel_tab_offline:      "Oflayn",

@@ -130,12 +130,24 @@ export class FraudService {
 
   async flagDriver(driverId: string, reason: string): Promise<void> {
     try {
+      // Throttle: skip if same driver triggered the same reason type within the last 10 minutes
+      const reasonType = reason.split(':')[0]
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1_000)
+      const recent = await this.prisma.fraudEvent.findFirst({
+        where: {
+          driverId,
+          reason: { startsWith: reasonType },
+          createdAt: { gte: tenMinutesAgo },
+        },
+        select: { id: true },
+      })
+      if (recent) return
+
       await this.prisma.fraudEvent.create({
         data: { driverId, reason },
       })
       this.logger.warn(`[fraud] flagged driver=${driverId} reason=${reason}`)
     } catch {
-      // If migration hasn't run yet, just log
       this.logger.warn(`[fraud] flagged driver=${driverId} reason=${reason} (DB write failed)`)
     }
   }

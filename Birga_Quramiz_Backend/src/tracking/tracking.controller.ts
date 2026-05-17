@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -82,11 +83,41 @@ export class TrackingController {
     return this.trackingService.getDriverRatingSummary(driverId)
   }
 
+  /** GET /tracking/fraud-events */
+  @Get('fraud-events')
+  @Roles('DISPATCHER', 'ADMIN')
+  getFraudEvents() {
+    return this.trackingService.getRecentFraudEvents()
+  }
+
+  /** DELETE /tracking/fraud-events — clear all events from the last 24h */
+  @Delete('fraud-events')
+  @Roles('DISPATCHER', 'ADMIN')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  clearFraudEvents() {
+    return this.trackingService.clearFraudEvents()
+  }
+
+  /** DELETE /tracking/fraud-events/:id — dismiss one event */
+  @Delete('fraud-events/:id')
+  @Roles('DISPATCHER', 'ADMIN')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteFraudEvent(@Param('id') id: string) {
+    return this.trackingService.deleteFraudEvent(id)
+  }
+
   /** GET /tracking/orders/assignable */
   @Get('orders/assignable')
   @Roles('DISPATCHER', 'ADMIN')
   getAssignableOrders() {
     return this.trackingService.getAssignableOrders()
+  }
+
+  /** GET /tracking/orders/:orderId/detail — full order detail for dispatcher */
+  @Get('orders/:orderId/detail')
+  @Roles('DISPATCHER', 'ADMIN')
+  getOrderDetail(@Param('orderId') orderId: string) {
+    return this.trackingService.getOrderDetailForDispatcher(orderId)
   }
 
   /** GET /tracking/orders/:orderId/recommend-drivers — ranked driver list */

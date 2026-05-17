@@ -668,6 +668,8 @@
     "roleUser": "Пользователь",
     "roleSeller": "Продавец",
     "roleAdmin": "Админ",
+    "roleDriver": "Курьер",
+    "roleDispatcher": "Диспетчер",
     "colName": "Имя",
     "colPhone": "Телефон",
     "colRole": "Роль",

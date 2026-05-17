@@ -73,7 +73,7 @@ function resolveAccountLabel(
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isInitialized } = useAuth();
   const { uniqueCount } = useCart();
   const { items: favorites } = useFavorites();
   const clearAuth = useAuthStore((state) => state.logout);
@@ -186,6 +186,9 @@ export default function Navbar() {
     setQuery("");
   }, [query, router, setQuery]);
 
+  // Dispatcher is a full-screen app with its own chrome — no marketplace nav needed
+  if (pathname.startsWith("/dispatcher")) return null;
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full">
@@ -247,6 +250,7 @@ export default function Navbar() {
               actions={resolvedActions}
               pathname={pathname}
               isAuthenticated={isAuthenticated}
+              isInitialized={isInitialized}
               userName={user?.name}
               accountMenu={resolvedAccountMenu}
               signInLabel={tCommon("signIn")}

@@ -2,17 +2,9 @@
 
 import { useState, useMemo, useRef } from "react";
 import {
-  Search,
-  X,
-  User,
-  Wifi,
-  WifiOff,
-  Truck,
-  AlertTriangle,
-  Clock,
-  Radio,
-  Shield,
-  MessageCircleWarning,
+  Search, X, User, Users, Wifi, WifiOff, CircleOff, Truck,
+  AlertTriangle, Clock, Radio, Shield, MessageCircleWarning,
+  Navigation, Crosshair,
 } from "lucide-react";
 import { DriverStatus } from "@/types/tracking";
 import type { DriverLocation } from "@/types/tracking";
@@ -45,41 +37,175 @@ interface Props {
 }
 
 type FilterTab = "all" | "alert" | "delivering" | "available" | "offline";
+type OpState   = "delivering" | "moving" | "idle" | "poor_gps" | "no_signal" | "offline";
 
+function getOpState(driver: ExtendedDriver, loc: DriverLocation | undefined): OpState {
+  if (driver.status === DriverStatus.OFFLINE) return "offline";
+  if (driver.signalLost)                      return "no_signal";
+  if (driver.status === DriverStatus.ON_DELIVERY) return "delivering";
+  if (loc?.speed !== undefined && loc.speed > 1.5)     return "moving";
+  if (loc?.accuracy !== undefined && loc.accuracy > 50) return "poor_gps";
+  return "idle";
+}
 
-const DriverRow = ({
-  driver,
-  loc,
-  isSelected,
-  onSelect,
+// ─── Filter Pill ──────────────────────────────────────────────────────────────
+
+function FilterPill({
+  icon, label, count, isActive, isAlert, isFull, onClick,
+}: {
+  icon:     React.ReactNode;
+  label:    string;
+  count:    number;
+  isActive: boolean;
+  isAlert?: boolean;
+  isFull?:  boolean;
+  onClick:  () => void;
+}) {
+  return (
+    <button
+      role="tab"
+      aria-selected={isActive}
+      onClick={onClick}
+      className={cn(
+        "relative flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4D91]/40",
+        isFull && "col-span-2",
+        isActive
+          ? isAlert
+            ? "border-red-200 bg-red-500 text-white shadow-lg shadow-red-500/20"
+            : "border-[#1B4D91]/20 bg-[#1B4D91] text-white shadow-lg shadow-[#1B4D91]/25"
+          : isAlert && count > 0
+          ? "border-red-100 bg-red-50/60 hover:bg-red-50"
+          : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+      )}
+    >
+      {/* Icon box */}
+      <div className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+        isActive
+          ? "bg-white/20 text-white"
+          : isAlert && count > 0
+          ? "bg-red-100 text-red-500"
+          : "bg-slate-100 text-slate-500"
+      )}>
+        {icon}
+      </div>
+
+      {/* Label + count */}
+      <div className="min-w-0 flex-1">
+        <p className={cn(
+          "text-[9px] font-black uppercase tracking-widest leading-none",
+          isActive ? "text-white/60" : "text-slate-400"
+        )}>
+          {label}
+        </p>
+        <p className={cn(
+          "mt-0.5 text-[22px] font-black leading-none tabular-nums",
+          isActive
+            ? "text-white"
+            : isAlert && count > 0
+            ? "text-red-500"
+            : "text-slate-700"
+        )}>
+          {count}
+        </p>
+      </div>
+
+      {/* Live pulse for alerts */}
+      {isAlert && count > 0 && !isActive && (
+        <span className="absolute right-2.5 top-2.5 flex size-2 items-center justify-center">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-60" />
+          <span className="relative size-1.5 rounded-full bg-red-500" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHeader({ label, count, urgent }: { label: string; count: number; urgent?: boolean }) {
+  return (
+    <div className={cn(
+      "sticky top-0 z-10 flex items-center justify-between border-b px-4 py-1.5 backdrop-blur-sm",
+      urgent
+        ? "border-red-100 bg-red-50/95 text-red-500"
+        : "border-slate-100 bg-white/95 text-slate-400"
+    )}>
+      <span className="text-[9px] font-black uppercase tracking-[0.14em]">{label}</span>
+      <span className={cn(
+        "rounded-full px-1.5 py-0.5 text-[8px] font-black",
+        urgent ? "bg-red-500 text-white" : "bg-slate-100 text-slate-500"
+      )}>
+        {count}
+      </span>
+    </div>
+  );
+}
+
+// ─── Driver Card ──────────────────────────────────────────────────────────────
+
+const DriverCard = ({
+  driver, loc, isSelected, onSelect,
 }: {
   driver:     ExtendedDriver;
   loc:        DriverLocation | undefined;
   isSelected: boolean;
   onSelect:   () => void;
 }) => {
-  const t         = useT();
-  const STATUS_CFG_LOCAL = {
-    [DriverStatus.ONLINE]:      { label: t.panel_status_free,       dot: "bg-emerald-400", badge: "bg-emerald-50 text-emerald-700", icon: <Wifi className="size-3" /> },
-    [DriverStatus.ON_DELIVERY]: { label: t.panel_status_delivering, dot: "bg-blue-500",    badge: "bg-blue-50 text-blue-700",       icon: <Truck className="size-3" /> },
-    [DriverStatus.OFFLINE]:     { label: t.panel_status_offline,    dot: "bg-slate-300",   badge: "bg-slate-50 text-slate-400",     icon: <WifiOff className="size-3" /> },
-  } as const;
-  const ALERT_CFG_LOCAL: Record<AlertType, { label: string; cls: string; icon: React.ReactNode }> = {
-    stuck:       { label: t.panel_alert_stuck,  cls: "bg-red-50 text-red-600 border border-red-100",       icon: <AlertTriangle className="size-2.5" /> },
-    signal_lost: { label: t.panel_alert_signal, cls: "bg-amber-50 text-amber-600 border border-amber-100", icon: <Radio className="size-2.5" /> },
-    delayed:     { label: t.panel_alert_delayed,cls: "bg-orange-50 text-orange-600 border border-orange-100", icon: <Clock className="size-2.5" /> },
-    issue:       { label: t.panel_alert_issue,  cls: "bg-purple-50 text-purple-700 border border-purple-100", icon: <MessageCircleWarning className="size-2.5" /> },
-  };
-  const cfg       = STATUS_CFG_LOCAL[driver.status];
+  const t        = useT();
+  const opState  = getOpState(driver, loc);
   const hasAlerts = driver.alerts.length > 0;
   const abbr      = initials(driver.name);
 
-  const avatarCls =
-    driver.status === DriverStatus.ON_DELIVERY
-      ? "bg-blue-100 text-blue-700"
-      : driver.status === DriverStatus.ONLINE
-      ? "bg-emerald-100 text-emerald-700"
-      : "bg-slate-100 text-slate-400";
+  const OP_CFG: Record<OpState, {
+    label: string; dot: string; badge: string;
+    badgeBorder: string; pulse: boolean; icon: React.ReactNode;
+  }> = {
+    delivering: {
+      label: t.panel_status_delivering,
+      dot: "bg-blue-500", badge: "bg-blue-50 text-blue-700", badgeBorder: "border-blue-100",
+      pulse: true, icon: <Truck className="size-2.5" />,
+    },
+    moving: {
+      label: "Moving",
+      dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", badgeBorder: "border-emerald-100",
+      pulse: true, icon: <Navigation className="size-2.5" />,
+    },
+    idle: {
+      label: t.panel_status_free,
+      dot: "bg-emerald-400", badge: "bg-emerald-50/70 text-emerald-600", badgeBorder: "border-emerald-100/60",
+      pulse: false, icon: <Wifi className="size-2.5" />,
+    },
+    poor_gps: {
+      label: "Poor GPS",
+      dot: "bg-amber-400", badge: "bg-amber-50 text-amber-700", badgeBorder: "border-amber-100",
+      pulse: false, icon: <Crosshair className="size-2.5" />,
+    },
+    no_signal: {
+      label: "No Signal",
+      dot: "bg-orange-400", badge: "bg-orange-50 text-orange-700", badgeBorder: "border-orange-100",
+      pulse: false, icon: <WifiOff className="size-2.5" />,
+    },
+    offline: {
+      label: t.panel_status_offline,
+      dot: "bg-slate-300", badge: "bg-slate-50 text-slate-400", badgeBorder: "border-slate-200",
+      pulse: false, icon: <CircleOff className="size-2.5" />,
+    },
+  };
+
+  const ALERT_CFG: Record<AlertType, { label: string; cls: string; icon: React.ReactNode }> = {
+    stuck:       { label: t.panel_alert_stuck,   cls: "bg-red-50 text-red-600 border-red-100",          icon: <AlertTriangle        className="size-2.5" /> },
+    signal_lost: { label: t.panel_alert_signal,  cls: "bg-amber-50 text-amber-600 border-amber-100",    icon: <Radio                className="size-2.5" /> },
+    delayed:     { label: t.panel_alert_delayed, cls: "bg-orange-50 text-orange-600 border-orange-100", icon: <Clock                className="size-2.5" /> },
+    issue:       { label: t.panel_alert_issue,   cls: "bg-purple-50 text-purple-700 border-purple-100", icon: <MessageCircleWarning className="size-2.5" /> },
+  };
+
+  const op = OP_CFG[opState];
+
+  const avatarRing =
+    opState === "delivering" || opState === "moving" ? "bg-blue-100 text-blue-700"
+    : opState === "idle"                             ? "bg-emerald-100 text-emerald-700"
+    :                                                  "bg-slate-100 text-slate-400";
 
   const lastSeen = loc
     ? formatDistanceToNow(loc.timestamp, { addSuffix: true })
@@ -87,25 +213,45 @@ const DriverRow = ({
     ? formatDistanceToNow(driver.lastLocation.timestamp, { addSuffix: true })
     : null;
 
+  const speedKmh = loc?.speed != null ? Math.round(loc.speed * 3.6) : null;
+
   return (
     <button
       onClick={onSelect}
       className={cn(
-        "flex w-full flex-col gap-2 border-l-2 px-4 py-3 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1B4D91]",
-        isSelected   ? "border-[#1B4D91] bg-[#1B4D91]/[0.03]" : "border-transparent",
-        hasAlerts && !isSelected && "bg-red-50/40"
+        "group flex w-full flex-col gap-2 border-l-[3px] px-4 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1B4D91]",
+        isSelected
+          ? "border-[#1B4D91] bg-[#1B4D91]/[0.07] shadow-[inset_3px_0_0_#1B4D91]"
+          : hasAlerts
+          ? "border-red-400/70 bg-red-50/25 hover:bg-red-50/50"
+          : "border-transparent hover:bg-slate-50/80"
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
+        {/* Avatar with live pulse */}
         <div className="relative shrink-0">
-          <div className={cn("flex size-9 items-center justify-center rounded-full text-[12px] font-black", avatarCls)}>
+          {op.pulse && (
+            <span className={cn(
+              "absolute inset-[-3px] rounded-full animate-ping opacity-25",
+              opState === "delivering" ? "bg-blue-400" : "bg-emerald-400"
+            )} />
+          )}
+          <div className={cn(
+            "relative flex size-9 items-center justify-center rounded-full text-[12px] font-black",
+            avatarRing
+          )}>
             {abbr}
           </div>
-          <span className={cn("absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white", cfg.dot)} />
+          <span className={cn(
+            "absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white",
+            op.dot,
+            op.pulse && "shadow-[0_0_0_2px_rgba(255,255,255,0.8)]"
+          )} />
         </div>
 
+        {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-start justify-between gap-1.5">
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="truncate text-[13px] font-semibold text-slate-800">{driver.name}</span>
               {hasAlerts && (
@@ -115,43 +261,52 @@ const DriverRow = ({
                 </span>
               )}
             </div>
-            <span className={cn("flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold", cfg.badge)}>
-              {cfg.icon}
-              {cfg.label}
+            <span className={cn(
+              "flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
+              op.badge, op.badgeBorder
+            )}>
+              {op.icon}
+              {op.label}
             </span>
           </div>
-
-          <p className="mt-0.5 text-[11px] text-slate-400">{driver.phone}</p>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {driver.etaMinutes != null && driver.status === DriverStatus.ON_DELIVERY && (
-              <span className="flex items-center gap-1 rounded-full bg-[#1B4D91]/[0.08] px-2 py-0.5 text-[10px] font-bold text-[#1B4D91]">
-                <Clock className="size-2" />
-                {driver.etaMinutes} {t.panel_eta_suffix}
-              </span>
-            )}
-            {driver.assignmentsToday > 0 && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                {driver.assignmentsToday} {t.panel_today}
-              </span>
-            )}
-            {lastSeen && <span className="text-[9px] text-slate-400">{lastSeen}</span>}
-          </div>
+          <p className="mt-0.5 text-[10px] text-slate-400">{driver.phone}</p>
         </div>
       </div>
 
+      {/* Metrics row */}
+      <div className="ml-12 flex flex-wrap items-center gap-1.5">
+        {driver.etaMinutes != null && opState === "delivering" && (
+          <span className="flex items-center gap-1 rounded-full bg-[#1B4D91]/[0.08] px-2 py-0.5 text-[10px] font-bold text-[#1B4D91]">
+            <Clock className="size-2.5" />
+            ETA {driver.etaMinutes} {t.panel_eta_suffix}
+          </span>
+        )}
+        {speedKmh !== null && speedKmh > 3 && (
+          <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-500">
+            <Navigation className="size-2.5" />
+            {speedKmh} km/h
+          </span>
+        )}
+        {driver.assignmentsToday > 0 && (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-400">
+            {driver.assignmentsToday} {t.panel_today}
+          </span>
+        )}
+        {lastSeen && (
+          <span className="text-[9px] text-slate-300">{lastSeen}</span>
+        )}
+      </div>
+
+      {/* Alert tags */}
       {hasAlerts && (
         <div className="ml-12 flex flex-col gap-1">
           {driver.alerts.map((alert) => {
-            const ac = ALERT_CFG_LOCAL[alert.type];
+            const ac = ALERT_CFG[alert.type];
             return (
-              <div
-                key={alert.type}
-                className={cn("flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold", ac.cls)}
-              >
+              <div key={alert.type} className={cn("flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-semibold", ac.cls)}>
                 {ac.icon}
                 <span>{ac.label}</span>
-                <span className="ml-auto text-[9px] font-normal opacity-70">
+                <span className="ml-auto text-[9px] font-normal opacity-60">
                   {formatDistanceToNow(alert.since, { addSuffix: true })}
                 </span>
               </div>
@@ -163,41 +318,15 @@ const DriverRow = ({
   );
 };
 
-const SectionHeader = ({ label, count, urgent }: { label: string; count: number; urgent?: boolean }) => (
-  <div
-    className={cn(
-      "sticky top-0 z-10 flex items-center justify-between border-b px-4 py-2 text-[9px] font-black uppercase tracking-[0.14em] backdrop-blur-sm",
-      urgent
-        ? "border-red-100 bg-red-50/90 text-red-600"
-        : "border-slate-100 bg-white/90 text-slate-400"
-    )}
-  >
-    <span>{label}</span>
-    <span className={cn("rounded-full px-1.5 py-0.5 text-[8px] font-black", urgent ? "bg-red-500 text-white" : "bg-slate-100 text-slate-500")}>
-      {count}
-    </span>
-  </div>
-);
+// ─── Main Panel ───────────────────────────────────────────────────────────────
 
 export default function DriverPanel({
-  drivers,
-  locations,
-  selectedDriverId,
-  onSelect,
-  isLoading = false,
+  drivers, locations, selectedDriverId, onSelect, isLoading = false,
 }: Props) {
   const t = useT();
   const [search,    setSearch]    = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const TABS: { id: FilterTab; label: string }[] = [
-    { id: "all",        label: t.panel_tab_all       },
-    { id: "alert",      label: t.panel_tab_alert     },
-    { id: "delivering", label: t.panel_tab_delivering },
-    { id: "available",  label: t.panel_tab_available  },
-    { id: "offline",    label: t.panel_tab_offline    },
-  ];
 
   const { withAlerts, delivering, available, offline } = useMemo(() => {
     const base = search.trim()
@@ -206,7 +335,6 @@ export default function DriverPanel({
           return d.name.toLowerCase().includes(q) || d.phone.includes(q);
         })
       : drivers;
-
     return {
       withAlerts: base.filter((d) => d.alerts.length > 0),
       delivering: base
@@ -235,7 +363,6 @@ export default function DriverPanel({
           return d.name.toLowerCase().includes(q) || d.phone.includes(q);
         })
       : drivers;
-
     switch (activeTab) {
       case "alert":      return base.filter((d) => d.alerts.length > 0);
       case "delivering": return base.filter((d) => d.status === DriverStatus.ON_DELIVERY);
@@ -247,24 +374,42 @@ export default function DriverPanel({
 
   const handleSelect = (id: string) => onSelect(id === selectedDriverId ? null : id);
 
+  const PILLS: {
+    id: FilterTab; icon: React.ReactNode; label: string; isAlert?: boolean; isFull?: boolean;
+  }[] = [
+    { id: "all",        icon: <Users         className="size-4" />, label: t.panel_tab_all,        isFull: true },
+    { id: "alert",      icon: <AlertTriangle className="size-4" />, label: t.panel_tab_alert,      isAlert: true },
+    { id: "delivering", icon: <Truck         className="size-4" />, label: t.panel_tab_delivering },
+    { id: "available",  icon: <Wifi          className="size-4" />, label: t.panel_tab_available  },
+    { id: "offline",    icon: <CircleOff     className="size-4" />, label: t.panel_tab_offline    },
+  ];
+
   return (
     <div className="flex flex-col">
+      {/* Header */}
       <div className="border-b border-slate-100 px-4 pt-3 pb-2.5">
         <div className="flex items-center justify-between">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{t.panel_drivers_title}</h2>
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex size-2 items-center justify-center">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+              <span className="relative size-1.5 rounded-full bg-emerald-500" />
+            </span>
+            <h2 className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">{t.panel_drivers_title}</h2>
+          </div>
           {withAlerts.length > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black text-white">
-              <Shield className="size-2" />
+            <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">
+              <Shield className="size-2.5" />
               {t.panel_driver_alerts(withAlerts.length)}
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-[12px] font-semibold text-slate-700">
+        <p className="mt-0.5 text-[13px] font-bold text-slate-700">
           {t.panel_drivers_summary(totalActive, totalOffline)}
         </p>
       </div>
 
-      <div className="border-b border-slate-100 px-3 py-2">
+      {/* Search */}
+      <div className="border-b border-slate-100 px-3 py-1.5">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" aria-hidden />
           <input
@@ -281,55 +426,33 @@ export default function DriverPanel({
               aria-label="Clear search"
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
             >
-              <X className="size-3" aria-hidden />
+              <X className="size-3" />
             </button>
           )}
         </div>
       </div>
 
+      {/* Filter Pills — 2-col grid, "All" spans full width */}
       <div
         role="tablist"
         aria-label="Filter drivers"
-        className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-3 py-2 scrollbar-none"
+        className="grid grid-cols-2 gap-1.5 border-b border-slate-100 bg-slate-50/40 px-3 py-2"
       >
-        {TABS.map((tab) => {
-          const count   = tabCounts[tab.id];
-          const isAlert = tab.id === "alert" && count > 0;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors",
-                activeTab === tab.id
-                  ? isAlert
-                    ? "bg-red-500 text-white"
-                    : "bg-[#1B4D91] text-white"
-                  : "text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className={cn(
-                    "rounded-full px-1 py-0.5 text-[7px] font-black leading-none",
-                    activeTab === tab.id
-                      ? "bg-white/25 text-white"
-                      : isAlert
-                      ? "bg-red-100 text-red-600"
-                      : "bg-slate-200 text-slate-600"
-                  )}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {PILLS.map((pill) => (
+          <FilterPill
+            key={pill.id}
+            icon={pill.icon}
+            label={pill.label}
+            count={tabCounts[pill.id]}
+            isActive={activeTab === pill.id}
+            isAlert={pill.isAlert}
+            isFull={pill.isFull}
+            onClick={() => setActiveTab(pill.id)}
+          />
+        ))}
       </div>
 
+      {/* Driver List */}
       {isLoading && (
         <div>
           <DriverRowSkeleton />
@@ -339,12 +462,12 @@ export default function DriverPanel({
       )}
 
       {!isLoading && activeTab === "all" && (
-        <div role="tabpanel" id="driver-tab-panel-all" aria-label="All drivers">
+        <div role="tabpanel">
           {withAlerts.length > 0 && (
             <>
               <SectionHeader label={`⚠ ${t.panel_section_attention}`} count={withAlerts.length} urgent />
               {withAlerts.map((d) => (
-                <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
+                <DriverCard key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
             </>
           )}
@@ -352,7 +475,7 @@ export default function DriverPanel({
             <>
               <SectionHeader label={t.panel_section_delivery} count={delivering.length} />
               {delivering.map((d) => (
-                <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
+                <DriverCard key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
             </>
           )}
@@ -360,7 +483,7 @@ export default function DriverPanel({
             <>
               <SectionHeader label={t.panel_section_available} count={available.length} />
               {available.map((d) => (
-                <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
+                <DriverCard key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
             </>
           )}
@@ -368,7 +491,7 @@ export default function DriverPanel({
             <>
               <SectionHeader label={t.panel_section_offline} count={offline.length} />
               {offline.map((d) => (
-                <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
+                <DriverCard key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))}
             </>
           )}
@@ -383,10 +506,10 @@ export default function DriverPanel({
       )}
 
       {!isLoading && activeTab !== "all" && (
-        <div role="tabpanel" id={`driver-tab-panel-${activeTab}`} aria-label={`${activeTab} drivers`}>
+        <div role="tabpanel">
           {flatFiltered.length > 0
             ? flatFiltered.map((d) => (
-                <DriverRow key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
+                <DriverCard key={d.id} driver={d} loc={locations[d.id]} isSelected={d.id === selectedDriverId} onSelect={() => handleSelect(d.id)} />
               ))
             : (
               <EmptyState
@@ -394,7 +517,8 @@ export default function DriverPanel({
                 title={search ? t.panel_empty_no_q_title : t.panel_empty_no_drivers}
                 description={search ? t.panel_empty_no_results(search) : undefined}
               />
-            )}
+            )
+          }
         </div>
       )}
 

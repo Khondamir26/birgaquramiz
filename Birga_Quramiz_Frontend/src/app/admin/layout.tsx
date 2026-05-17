@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { PageLoader } from "@/components/ui/FullPageLoader";
 
 
 
@@ -30,16 +31,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  if (!isInitialized || (isAuthenticated && !user)) {
-    return (
-      <div className="page-shell max-w-6xl">
-        <div className="surface-card h-20 animate-pulse" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || user?.role !== "ADMIN") {
-    return null;
+  if (!isInitialized || (isAuthenticated && !user) || !isAuthenticated || user?.role !== "ADMIN") {
+    return <PageLoader />;
   }
 
   return (
