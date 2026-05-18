@@ -13,7 +13,7 @@ CREATE TABLE "AssignmentEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "ai_quota" (
+CREATE TABLE IF NOT EXISTS "ai_quota" (
     "key" TEXT NOT NULL,
     "day" DATE NOT NULL,
     "count" INTEGER NOT NULL DEFAULT 0,
@@ -39,7 +39,7 @@ CREATE TABLE "DeliveryRating" (
 CREATE INDEX "AssignmentEvent_assignmentId_createdAt_idx" ON "AssignmentEvent"("assignmentId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "idx_ai_quota_key_day" ON "ai_quota"("key", "day");
+CREATE INDEX IF NOT EXISTS "idx_ai_quota_key_day" ON "ai_quota"("key", "day");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "DeliveryRating_orderId_key" ON "DeliveryRating"("orderId");
@@ -54,13 +54,13 @@ CREATE INDEX "DeliveryRating_driverId_idx" ON "DeliveryRating"("driverId");
 CREATE INDEX "DeliveryRating_driverId_createdAt_idx" ON "DeliveryRating"("driverId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "DriverProfile_status_idx" ON "DriverProfile"("status");
+CREATE INDEX IF NOT EXISTS "DriverProfile_status_idx" ON "DriverProfile"("status");
 
 -- CreateIndex
-CREATE INDEX "DriverProfile_status_lastSeenAt_idx" ON "DriverProfile"("status", "lastSeenAt");
+CREATE INDEX IF NOT EXISTS "DriverProfile_status_lastSeenAt_idx" ON "DriverProfile"("status", "lastSeenAt");
 
 -- CreateIndex
-CREATE INDEX "LocationHistory_createdAt_idx" ON "LocationHistory"("createdAt");
+CREATE INDEX IF NOT EXISTS "LocationHistory_createdAt_idx" ON "LocationHistory"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "AssignmentEvent" ADD CONSTRAINT "AssignmentEvent_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "DeliveryAssignment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
