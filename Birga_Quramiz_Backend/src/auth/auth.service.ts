@@ -205,9 +205,10 @@ export class AuthService {
     languageCode: string | null,
     metadata: SessionMetadata,
   ) {
-    // Case A: telegramId already linked to an existing user
     const existing = await this.prisma.user.findUnique({ where: { telegramId } })
-    if (existing) {
+
+    // Case A: telegramId linked AND phone verified — auto-login
+    if (existing?.phone) {
       await this.prisma.user.update({
         where: { telegramId },
         data: { telegramUsername, telegramPhoto, languageCode },
@@ -225,12 +226,16 @@ export class AuthService {
       return { requiresPhone: false as const, user: safeUser, tokens }
     }
 
-    // Case B: unknown telegramId — store pending data, require phone verification
+    // Case B: telegramId linked but no phone, OR unknown telegramId — require phone
+    // existingUserId is set when the account exists but has no phone yet (legacy accounts)
     const pendingToken = randomUUID()
     await this.redis.setex(
       `tg:pending:${pendingToken}`,
       600,
-      JSON.stringify({ telegramId, name, telegramUsername, telegramPhoto, languageCode }),
+      JSON.stringify({
+        telegramId, name, telegramUsername, telegramPhoto, languageCode,
+        existingUserId: existing?.id ?? null,
+      }),
     )
     return { requiresPhone: true as const, pendingToken }
   }
@@ -293,6 +298,7 @@ export class AuthService {
     const tgData: {
       telegramId: string; name: string
       telegramUsername: string | null; telegramPhoto: string | null; languageCode: string | null
+      existingUserId: string | null
     } = JSON.parse(raw)
 
     const phone = normalizePhone(rawPhone)
@@ -303,11 +309,21 @@ export class AuthService {
       languageCode: tgData.languageCode,
     }
 
-    let user = await this.prisma.user.findUnique({ where: { phone } })
-    if (user) {
-      user = await this.prisma.user.update({ where: { id: user.id }, data: telegramFields })
+    let user: Awaited<ReturnType<typeof this.prisma.user.findUnique>>
+
+    if (tgData.existingUserId) {
+      // Legacy account: telegramId existed but had no phone — add phone to it
+      user = await this.prisma.user.update({
+        where: { id: tgData.existingUserId },
+        data: { phone, ...telegramFields },
+      })
     } else {
-      user = await this.prisma.user.create({ data: { phone, name: tgData.name, ...telegramFields } })
+      user = await this.prisma.user.findUnique({ where: { phone } })
+      if (user) {
+        user = await this.prisma.user.update({ where: { id: user.id }, data: telegramFields })
+      } else {
+        user = await this.prisma.user.create({ data: { phone, name: tgData.name, ...telegramFields } })
+      }
     }
 
     await this.redis.del(`tg:pending:${pendingToken}`)
