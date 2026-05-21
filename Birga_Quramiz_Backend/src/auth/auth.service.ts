@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, UnauthorizedException, HttpException, 
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
-import { randomUUID, createHmac } from 'crypto'
+import { randomUUID, createHmac, createHash } from 'crypto'
 import type { Prisma } from '@prisma/client'
 import type { AuthUser, JwtPayload } from './auth.types'
 import { SmsService } from '../tracking/services/sms.service'
@@ -168,113 +168,156 @@ export class AuthService {
     }
   }
 
-  async telegramLogin(initData: string, metadata: SessionMetadata = {}) {
+  private verifyTelegramInitData(initData: string): Record<string, string> {
     if (!telegramBotToken) {
       throw new BadRequestException('Telegram integration is not configured')
     }
 
     const urlParams = new URLSearchParams(initData)
     const hash = urlParams.get('hash')
-
-    if (!hash) {
-      throw new UnauthorizedException('Invalid initData: missing hash')
-    }
+    if (!hash) throw new UnauthorizedException('Invalid initData: missing hash')
 
     urlParams.delete('hash')
-
     const params: string[] = []
-
-    urlParams.forEach((value, key) => {
-      params.push(`${key}=${value}`)
-    })
-
+    urlParams.forEach((value, key) => params.push(`${key}=${value}`))
     params.sort()
 
-    const dataCheckString = params.join('\n')
-
-    const secretKey = createHmac('sha256', 'WebAppData')
-      .update(telegramBotToken)
-      .digest()
-
-    const calculatedHash = createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex')
-
-    if (calculatedHash !== hash) {
-      throw new UnauthorizedException('Invalid Telegram signature')
-    }
+    const secretKey = createHmac('sha256', 'WebAppData').update(telegramBotToken).digest()
+    const calculatedHash = createHmac('sha256', secretKey).update(params.join('\n')).digest('hex')
+    if (calculatedHash !== hash) throw new UnauthorizedException('Invalid Telegram signature')
 
     const authDate = Number(urlParams.get('auth_date'))
-
-    if (!authDate) {
-      throw new UnauthorizedException('Invalid initData: missing auth_date')
-    }
-
-    const now = Math.floor(Date.now() / 1000)
-
-    if (now - authDate > 86400) {
+    if (!authDate) throw new UnauthorizedException('Invalid initData: missing auth_date')
+    if (Math.floor(Date.now() / 1000) - authDate > 86400) {
       throw new UnauthorizedException('Telegram initData is expired')
     }
 
-    const userStr = urlParams.get('user')
+    const result: Record<string, string> = {}
+    urlParams.forEach((value, key) => { result[key] = value })
+    return result
+  }
 
-    if (!userStr) {
-      throw new UnauthorizedException('Invalid initData: missing user data')
+  private async loginTelegramUser(
+    telegramId: string,
+    name: string,
+    telegramUsername: string | null,
+    telegramPhoto: string | null,
+    languageCode: string | null,
+    metadata: SessionMetadata,
+  ) {
+    // Case A: telegramId already linked to an existing user
+    const existing = await this.prisma.user.findUnique({ where: { telegramId } })
+    if (existing) {
+      await this.prisma.user.update({
+        where: { telegramId },
+        data: { telegramUsername, telegramPhoto, languageCode },
+      })
+      const safeUser: AuthUser = {
+        id: existing.id,
+        name: existing.name,
+        phone: existing.phone,
+        role: existing.role,
+        createdAt: existing.createdAt,
+      }
+      const tokenId = randomUUID()
+      const tokens = await this.generateTokens(safeUser, tokenId)
+      await this.createRefreshSession(existing.id, tokenId, tokens.refreshToken, metadata)
+      return { requiresPhone: false as const, user: safeUser, tokens }
     }
 
-    let tgUser: any
+    // Case B: unknown telegramId — store pending data, require phone verification
+    const pendingToken = randomUUID()
+    await this.redis.setex(
+      `tg:pending:${pendingToken}`,
+      600,
+      JSON.stringify({ telegramId, name, telegramUsername, telegramPhoto, languageCode }),
+    )
+    return { requiresPhone: true as const, pendingToken }
+  }
 
-    try {
-      tgUser = JSON.parse(userStr)
-    } catch {
+  async telegramLogin(initData: string, metadata: SessionMetadata = {}) {
+    const fields = this.verifyTelegramInitData(initData)
+
+    const userStr = fields['user']
+    if (!userStr) throw new UnauthorizedException('Invalid initData: missing user data')
+
+    let tgUser: any
+    try { tgUser = JSON.parse(userStr) } catch {
       throw new UnauthorizedException('Invalid initData: invalid user JSON')
     }
 
-    const telegramId = String(tgUser.id)
-    const telegramUsername = tgUser.username ?? null
-    const telegramPhoto = tgUser.photo_url ?? null
-    const languageCode = tgUser.language_code ?? null
-
-    const name =
-      tgUser.first_name +
-      (tgUser.last_name ? ` ${tgUser.last_name}` : '')
-
-    // Use upsert to avoid race conditions
-    const user = await this.prisma.user.upsert({
-      where: { telegramId },
-      create: {
-        telegramId,
-        name,
-        telegramUsername,
-        telegramPhoto,
-        languageCode,
-      },
-      update: {
-        telegramUsername,
-        telegramPhoto,
-        languageCode,
-      },
-    })
-
-    const safeUser: AuthUser = {
-      id: user.id,
-      name: user.name,
-      phone: user.phone,
-      role: user.role,
-      createdAt: user.createdAt,
-    }
-
-    const tokenId = randomUUID()
-
-    const tokens = await this.generateTokens(safeUser, tokenId)
-
-    await this.createRefreshSession(
-      user.id,
-      tokenId,
-      tokens.refreshToken,
+    return this.loginTelegramUser(
+      String(tgUser.id),
+      tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ''),
+      tgUser.username ?? null,
+      tgUser.photo_url ?? null,
+      tgUser.language_code ?? null,
       metadata,
     )
+  }
 
+  async telegramWidgetLogin(
+    data: { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string; auth_date: number; hash: string },
+    metadata: SessionMetadata = {},
+  ) {
+    if (!telegramBotToken) throw new BadRequestException('Telegram integration is not configured')
+
+    const { hash, ...fields } = data
+    const checkString = (Object.entries(fields) as [string, string | number][])
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n')
+
+    const secretKey = createHash('sha256').update(telegramBotToken).digest()
+    const calculatedHash = createHmac('sha256', secretKey).update(checkString).digest('hex')
+    if (calculatedHash !== hash) throw new UnauthorizedException('Invalid Telegram widget signature')
+
+    if (Math.floor(Date.now() / 1000) - data.auth_date > 86400) {
+      throw new UnauthorizedException('Telegram widget data is expired')
+    }
+
+    return this.loginTelegramUser(
+      String(data.id),
+      data.first_name + (data.last_name ? ` ${data.last_name}` : ''),
+      data.username ?? null,
+      data.photo_url ?? null,
+      null,
+      metadata,
+    )
+  }
+
+  async linkTelegramContact(pendingToken: string, rawPhone: string, metadata: SessionMetadata = {}) {
+    const raw = await this.redis.get(`tg:pending:${pendingToken}`)
+    if (!raw) throw new BadRequestException('Telegram session expired. Please try again.')
+
+    const tgData: {
+      telegramId: string; name: string
+      telegramUsername: string | null; telegramPhoto: string | null; languageCode: string | null
+    } = JSON.parse(raw)
+
+    const phone = normalizePhone(rawPhone)
+    const telegramFields = {
+      telegramId: tgData.telegramId,
+      telegramUsername: tgData.telegramUsername,
+      telegramPhoto: tgData.telegramPhoto,
+      languageCode: tgData.languageCode,
+    }
+
+    let user = await this.prisma.user.findUnique({ where: { phone } })
+    if (user) {
+      user = await this.prisma.user.update({ where: { id: user.id }, data: telegramFields })
+    } else {
+      user = await this.prisma.user.create({ data: { phone, name: tgData.name, ...telegramFields } })
+    }
+
+    await this.redis.del(`tg:pending:${pendingToken}`)
+
+    const safeUser: AuthUser = {
+      id: user.id, name: user.name, phone: user.phone, role: user.role, createdAt: user.createdAt,
+    }
+    const tokenId = randomUUID()
+    const tokens = await this.generateTokens(safeUser, tokenId)
+    await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
     return { user: safeUser, tokens }
   }
 
@@ -311,7 +354,7 @@ export class AuthService {
     return { message: 'OTP sent' }
   }
 
-  async verifyOtp(rawPhone: string, code: string, name: string | undefined, metadata: SessionMetadata = {}) {
+  async verifyOtp(rawPhone: string, code: string, name: string | undefined, pendingTelegramToken: string | undefined, metadata: SessionMetadata = {}) {
     const phone = normalizePhone(rawPhone)
 
     const otpKey = `otp:auth:${phone}`
@@ -344,6 +387,24 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: { phone, name: name?.trim() || '' },
       })
+    }
+
+    // Link pending Telegram account if provided
+    if (pendingTelegramToken) {
+      const raw = await this.redis.get(`tg:pending:${pendingTelegramToken}`)
+      if (raw) {
+        const tgData = JSON.parse(raw)
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            telegramId: tgData.telegramId,
+            telegramUsername: tgData.telegramUsername,
+            telegramPhoto: tgData.telegramPhoto,
+            languageCode: tgData.languageCode,
+          },
+        })
+        await this.redis.del(`tg:pending:${pendingTelegramToken}`)
+      }
     }
 
     const safeUser: AuthUser = {

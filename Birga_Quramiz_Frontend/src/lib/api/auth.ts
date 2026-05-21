@@ -30,10 +30,44 @@ export function login(data: { phone: string; password: string }) {
   })
 }
 
+export type TelegramLoginResult =
+  | { requiresPhone: false; user: User }
+  | { requiresPhone: true; pendingToken: string }
+
+export type TelegramWidgetUser = {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+  auth_date: number
+  hash: string
+}
+
 export function telegramLogin(initData: string) {
-  return apiFetch<{ user: User }>('/auth/telegram', {
+  return apiFetch<TelegramLoginResult>('/auth/telegram', {
     method: 'POST',
     body: JSON.stringify({ initData }),
+  }).then((result) => {
+    if (!result.requiresPhone) markSessionHint()
+    return result
+  })
+}
+
+export function telegramWidgetLogin(data: TelegramWidgetUser) {
+  return apiFetch<TelegramLoginResult>('/auth/telegram/widget', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }).then((result) => {
+    if (!result.requiresPhone) markSessionHint()
+    return result
+  })
+}
+
+export function linkTelegramContact(data: { pendingToken: string; phone: string }) {
+  return apiFetch<{ user: User }>('/auth/telegram/link-contact', {
+    method: 'POST',
+    body: JSON.stringify(data),
   }).then((result) => {
     markSessionHint()
     return result
@@ -77,7 +111,7 @@ export function sendOtp(phone: string) {
   })
 }
 
-export function verifyOtp(data: { phone: string; code: string; name?: string }) {
+export function verifyOtp(data: { phone: string; code: string; name?: string; pendingTelegramToken?: string }) {
   return apiFetch<{ user: User; accessToken: string; refreshToken: string; isNewUser: boolean }>('/auth/otp/verify', {
     method: 'POST',
     body: JSON.stringify(data),

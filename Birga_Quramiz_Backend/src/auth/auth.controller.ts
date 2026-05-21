@@ -20,6 +20,8 @@ import { TelegramLoginDto } from './dto/telegram-login.dto'
 import { SendOtpDto } from './dto/send-otp.dto'
 import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
+import { TelegramLinkContactDto } from './dto/telegram-link-contact.dto'
+import { TelegramWidgetLoginDto } from './dto/telegram-widget-login.dto'
 import type { AuthUser } from './auth.types'
 
 const ACCESS_COOKIE = 'access_token'
@@ -96,7 +98,7 @@ export class AuthController {
 
   @Post('otp/verify')
   async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const { user, tokens, isNewUser } = await this.authService.verifyOtp(body.phone, body.code, body.name, {
+    const { user, tokens, isNewUser } = await this.authService.verifyOtp(body.phone, body.code, body.name, body.pendingTelegramToken, {
       userAgent: getUserAgent(req),
       ipAddress: getClientIp(req),
     })
@@ -135,13 +137,42 @@ export class AuthController {
 
   @Post('telegram')
   async telegramLogin(@Body() body: TelegramLoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const { user, tokens } = await this.authService.telegramLogin(body.initData, {
+    const result = await this.authService.telegramLogin(body.initData, {
+      userAgent: getUserAgent(req),
+      ipAddress: getClientIp(req),
+    })
+
+    if (result.requiresPhone) {
+      return { requiresPhone: true, pendingToken: result.pendingToken }
+    }
+
+    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+    return { requiresPhone: false, user: result.user }
+  }
+
+  @Post('telegram/widget')
+  async telegramWidgetLogin(@Body() body: TelegramWidgetLoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.telegramWidgetLogin(body, {
+      userAgent: getUserAgent(req),
+      ipAddress: getClientIp(req),
+    })
+
+    if (result.requiresPhone) {
+      return { requiresPhone: true, pendingToken: result.pendingToken }
+    }
+
+    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+    return { requiresPhone: false, user: result.user }
+  }
+
+  @Post('telegram/link-contact')
+  async linkTelegramContact(@Body() body: TelegramLinkContactDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { user, tokens } = await this.authService.linkTelegramContact(body.pendingToken, body.phone, {
       userAgent: getUserAgent(req),
       ipAddress: getClientIp(req),
     })
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
-
     return { user }
   }
 

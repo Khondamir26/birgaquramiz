@@ -14,4 +14,9 @@ export class VerifyOtpDto {
   @IsString()
   @MinLength(2)
   name?: string
+
+  // If set, links a pending Telegram account to the user after OTP verification
+  @IsOptional()
+  @IsString()
+  pendingTelegramToken?: string
 }

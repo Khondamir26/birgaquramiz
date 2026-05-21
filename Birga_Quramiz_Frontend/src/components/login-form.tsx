@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Phone, ArrowRight, Loader2, ChevronLeft, User as UserIcon } from 'lucide-react'
-import { sendOtp, verifyOtp, updateProfile } from '@/lib/api/auth'
+import { sendOtp, verifyOtp, updateProfile, telegramWidgetLogin } from '@/lib/api/auth'
+import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton'
+import type { TelegramWidgetUser } from '@/lib/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { formatPhone } from '@/lib/formatPhone'
 import Link from 'next/link'
@@ -33,6 +35,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const [loading, setLoading] = useState(false)
   const [resendCountdown, setResendCountdown] = useState(0)
   const [pendingUser, setPendingUser] = useState<User | null>(null)
+  const [pendingTelegramToken, setPendingTelegramToken] = useState<string | undefined>(undefined)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -65,6 +68,26 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     if (u.role === 'DISPATCHER') { router.push('/dispatcher'); return }
     if (u.role === 'SELLER') { router.push('/seller/dashboard'); return }
     router.push(safeReturn)
+  }
+
+  const handleTelegramWidgetAuth = async (tgUser: TelegramWidgetUser) => {
+    setError('')
+    setLoading(true)
+    try {
+      const result = await telegramWidgetLogin(tgUser)
+      if (!result.requiresPhone) {
+        setUser(result.user)
+        setInitialized(true)
+        redirectAfterLogin(result.user)
+      } else {
+        // Not linked yet — store pending token, let user continue with OTP
+        setPendingTelegramToken(result.pendingToken)
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('loginFailed'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -102,7 +125,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     setError('')
     setLoading(true)
     try {
-      const result = await verifyOtp({ phone: phone.replace(/\s/g, ''), code })
+      const result = await verifyOtp({ phone: phone.replace(/\s/g, ''), code, pendingTelegramToken })
       if (result.isNewUser && !result.user.name) {
         setPendingUser(result.user)
         setStep('name')
@@ -192,6 +215,20 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
                     : <>{t('otpSend')}<ArrowRight className="size-4" /></>}
                 </button>
               </form>
+
+              {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+                <>
+                  <div className="flex items-center gap-3 my-5">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">or</span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                  <TelegramLoginButton
+                    botName={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
+                    onAuth={handleTelegramWidgetAuth}
+                  />
+                </>
+              )}
             </>
           )}
 

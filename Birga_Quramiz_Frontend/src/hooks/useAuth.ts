@@ -3,11 +3,35 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
-import { restoreSession, telegramLogin } from '@/lib/api/auth'
+import { restoreSession, telegramLogin, linkTelegramContact } from '@/lib/api/auth'
+import { markSessionHint } from '@/lib/auth/sessionHint'
 import { toast } from 'sonner'
 import type { User } from '@/types'
 
 let authInitPromise: Promise<void> | null = null
+
+type TelegramWebApp = {
+  requestContact: (cb: (isSent: boolean) => void) => void
+  initDataUnsafe?: { contact?: { phone_number?: string }; start_param?: string }
+}
+
+async function requestTelegramContact(tg: TelegramWebApp, pendingToken: string): Promise<User | null> {
+  return new Promise((resolve) => {
+    tg.requestContact(async (isSent: boolean) => {
+      if (!isSent) { resolve(null); return }
+      const phone: string | undefined = tg.initDataUnsafe?.contact?.phone_number
+      if (!phone) { resolve(null); return }
+      try {
+        const result = await linkTelegramContact({ pendingToken, phone })
+        markSessionHint()
+        resolve(result.user)
+      } catch (err) {
+        console.error('[Telegram] linkTelegramContact failed', err)
+        resolve(null)
+      }
+    })
+  })
+}
 
 function initializeAuth() {
   if (authInitPromise) return authInitPromise
@@ -19,8 +43,6 @@ function initializeAuth() {
       let user: User | null = null
 
       if (typeof window !== 'undefined') {
-        // Only poll for Telegram SDK when the page was opened inside a Telegram WebApp.
-        // Telegram appends `tgWebAppData` to the URL hash — skip entirely for normal users.
         const isTelegramContext = window.location.hash.includes('tgWebAppData')
 
         if (isTelegramContext) {
@@ -40,7 +62,12 @@ function initializeAuth() {
           tg.expand()
           try {
             const result = await telegramLogin(tg.initData)
-            user = result.user
+            if (!result.requiresPhone) {
+              user = result.user
+            } else {
+              // telegramId not yet linked — request phone via Telegram's native dialog
+              user = await requestTelegramContact(tg, result.pendingToken)
+            }
           } catch (err) {
             console.error('Telegram login failed', err)
             toast.error('Failed to authenticate with Telegram')
@@ -69,14 +96,12 @@ export function useAuth() {
 
   useEffect(() => {
     if (isInitialized) {
-      // Check for Telegram deep link after auth is initialized
       if (typeof window !== 'undefined') {
         // @ts-expect-error window.Telegram might not be defined
         const tg = window.Telegram?.WebApp
         const startParam = tg?.initDataUnsafe?.start_param
         if (startParam && startParam.startsWith('product_')) {
           const productId = startParam.replace('product_', '')
-          // clear start_param to prevent infinite redirects or bugs but tg doesn't support clearing it natively cleanly
           router.push(`/product/${productId}`)
         }
       }
