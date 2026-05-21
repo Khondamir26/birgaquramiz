@@ -42,13 +42,13 @@ export class SmsService {
     return token
   }
 
-  async send(phone: string, message: string): Promise<void> {
+  async send(phone: string, message: string): Promise<boolean> {
     if (!this.enabled) {
       this.logger.warn(`[sms] ESKIZ_EMAIL/PASSWORD not set — skipping SMS to ${phone}`)
-      return
+      return false
     }
 
-    // Normalize: ensure +998XXXXXXXXX format
+    // Normalize: ensure 998XXXXXXXXX format (no leading +)
     const normalized = phone.startsWith('+') ? phone.slice(1) : phone
 
     try {
@@ -86,16 +86,23 @@ export class SmsService {
           }),
         })
 
-        if (!retry.ok) throw new Error(`Eskiz SMS retry failed: ${retry.status}`)
+        if (!retry.ok) {
+          this.logger.error(`[sms] retry failed: ${retry.status} ${await retry.text()}`)
+          return false
+        }
         this.logger.log(`[sms] sent to ${phone} (after token refresh)`)
-        return
+        return true
       }
 
-      if (!res.ok) throw new Error(`Eskiz SMS failed: ${res.status}`)
+      if (!res.ok) {
+        this.logger.error(`[sms] failed: ${res.status} ${await res.text()}`)
+        return false
+      }
       this.logger.log(`[sms] sent to ${phone}`)
+      return true
     } catch (err) {
       this.logger.error(`[sms] failed to send to ${phone}: ${err}`)
-      // Don't throw — OTP was generated; SMS failure shouldn't 500 the request
+      return false
     }
   }
 }

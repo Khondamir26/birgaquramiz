@@ -337,7 +337,15 @@ export class AuthService {
       if (sent) return { message: 'OTP sent', method: 'telegram' as const }
     }
 
-    await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+    const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+    if (!smsSent) {
+      // Clean up so the user can request again after fixing delivery
+      await this.redis.del(`otp:auth:${phone}`)
+      throw new HttpException(
+        'SMS delivery failed. Please try again or log in via Telegram.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      )
+    }
     return { message: 'OTP sent', method: 'sms' as const }
   }
 
