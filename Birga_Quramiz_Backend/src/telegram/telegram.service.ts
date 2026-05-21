@@ -2,6 +2,8 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { normalizePhone } from '../auth/phone.util'
 
+const MINI_APP_URL = 'https://birga-quramiz.uz'
+
 @Injectable()
 export class TelegramService implements OnApplicationBootstrap {
   private readonly logger = new Logger(TelegramService.name)
@@ -55,12 +57,11 @@ export class TelegramService implements OnApplicationBootstrap {
       return
     }
     await this.sendRaw(chatId, {
-      text: '👋 *Birga Quramiz*ga xush kelibsiz!\n\nIlovadan foydalanish uchun telefon raqamingizni ulang.',
+      text: '👋 *Birga Quramiz*ga xush kelibsiz!\n\nIlovadan foydalanish uchun telefon raqamingizni ulang.\n\n👇 Quyidagi tugmani bosing.',
       parse_mode: 'Markdown',
       reply_markup: {
         keyboard: [[{ text: '📱 Telefon raqamni ulash', request_contact: true }]],
         resize_keyboard: true,
-        one_time_keyboard: true,
       },
     })
   }
@@ -125,9 +126,18 @@ export class TelegramService implements OnApplicationBootstrap {
   }
 
   async sendLinkedSuccess(chatId: number) {
+    // Remove the persistent reply keyboard first
     await this.sendRaw(chatId, {
-      text: '✅ *Telefon raqam muvaffaqiyatli ulandi!*\n\nEndi ilovadan to\'liq foydalanishingiz mumkin.\n\n👇 Pastdagi *Birga Quramiz* tugmasini bosing.',
+      text: '✅ *Telefon raqam muvaffaqiyatli ulandi!*\n\nEndi ilovadan to\'liq foydalanishingiz mumkin.',
       parse_mode: 'Markdown',
+      reply_markup: { remove_keyboard: true },
+    })
+    // Then send inline "Open App" button
+    await this.sendRaw(chatId, {
+      text: '🛒 Ilovani ochish:',
+      reply_markup: {
+        inline_keyboard: [[{ text: '🛒 Ilovani ochish', web_app: { url: MINI_APP_URL } }]],
+      },
     })
   }
 
