@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   Get,
   UseGuards,
@@ -16,6 +17,9 @@ import { RegisterDto } from './dto/register.dto'
 import { RegisterSellerDto } from './dto/register-seller.dto'
 import { ChangePasswordDto } from './dto/change-password.dto'
 import { TelegramLoginDto } from './dto/telegram-login.dto'
+import { SendOtpDto } from './dto/send-otp.dto'
+import { VerifyOtpDto } from './dto/verify-otp.dto'
+import { UpdateProfileDto } from './dto/update-profile.dto'
 import type { AuthUser } from './auth.types'
 
 const ACCESS_COOKIE = 'access_token'
@@ -84,6 +88,23 @@ function getUserAgent(req: Request) {
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) { }
+
+  @Post('otp/send')
+  sendOtp(@Body() body: SendOtpDto, @Req() req: Request) {
+    return this.authService.sendOtp(body.phone, getClientIp(req))
+  }
+
+  @Post('otp/verify')
+  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { user, tokens, isNewUser } = await this.authService.verifyOtp(body.phone, body.code, body.name, {
+      userAgent: getUserAgent(req),
+      ipAddress: getClientIp(req),
+    })
+
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
+
+    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, isNewUser }
+  }
 
   @Post('register')
   register(@Body() body: RegisterDto) {
@@ -187,5 +208,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: AuthedRequest) {
     return req.user
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(@Req() req: AuthedRequest, @Body() body: UpdateProfileDto) {
+    return this.authService.updateProfile(req.user.id, body.name)
   }
 }

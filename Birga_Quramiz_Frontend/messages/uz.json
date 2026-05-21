@@ -242,7 +242,18 @@
     "comprehensiveAnalytics": "Tahlil",
     "quickSales": "Tezkor sotuv",
     "loginFailed": "Kirish xatosi",
-    "registrationFailed": "Royxatdan otish xatosi"
+    "registrationFailed": "Royxatdan otish xatosi",
+    "otpSend": "Kod olish",
+    "otpEnter": "Kodni kiriting",
+    "otpSent": "Kod {phone} raqamiga yuborildi",
+    "otpCode": "SMS kodi",
+    "otpVerify": "Tasdiqlash",
+    "otpResend": "Qayta yuborish",
+    "backToPhone": "Raqamni o'zgartirish",
+    "nameStep": "Ismingiz nima?",
+    "nameStepSubtitle": "Buyurtmalaringizda ko'rinadi",
+    "nameSave": "Davom etish",
+    "nameSkip": "O'tkazib yuborish"
   },
   "Profile": {
     "title": "Profil",

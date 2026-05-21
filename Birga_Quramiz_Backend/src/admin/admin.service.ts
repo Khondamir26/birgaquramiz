@@ -61,7 +61,7 @@ export class AdminService {
           phone: true,
           role: true,
           createdAt: true,
-          seller: { select: { id: true, company: true, verified: true } },
+          seller: { select: { id: true, company: true, status: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -113,7 +113,7 @@ export class AdminService {
 
       let sellerProfile = await tx.seller.findUnique({
         where: { userId: targetUser.id },
-        select: { id: true, userId: true, company: true, verified: true },
+        select: { id: true, userId: true, company: true, status: true },
       })
 
       if (role === 'SELLER') {
@@ -124,7 +124,7 @@ export class AdminService {
             userId: targetUser.id,
             company: companyName || `${targetUser.name} Store`,
           },
-          select: { id: true, userId: true, company: true, verified: true },
+          select: { id: true, userId: true, company: true, status: true },
         })
       } else if (sellerProfile) {
         const productsCount = await tx.product.count({
@@ -299,7 +299,7 @@ export class AdminService {
     const safeLimit = limit > 100 ? 100 : limit
     const skip = (safePage - 1) * safeLimit
 
-    const where: Prisma.SellerWhereInput = { verified: false }
+    const where: Prisma.SellerWhereInput = { status: 'PENDING' }
 
     if (q?.trim()) {
       const query = q.trim()
@@ -338,7 +338,7 @@ export class AdminService {
     if (!seller) throw new NotFoundException('Seller not found')
 
     await this.prisma.$transaction([
-      this.prisma.seller.update({ where: { id: sellerId }, data: { verified: true } }),
+      this.prisma.seller.update({ where: { id: sellerId }, data: { status: 'APPROVED' } }),
       this.prisma.user.update({ where: { id: seller.userId }, data: { role: 'SELLER' } }),
     ])
 

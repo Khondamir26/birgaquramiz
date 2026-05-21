@@ -242,7 +242,18 @@
     "comprehensiveAnalytics": "Аналитика",
     "quickSales": "Быстрые продажи",
     "loginFailed": "Ошибка входа",
-    "registrationFailed": "Ошибка регистрации"
+    "registrationFailed": "Ошибка регистрации",
+    "otpSend": "Получить код",
+    "otpEnter": "Введите код",
+    "otpSent": "Код отправлен на {phone}",
+    "otpCode": "Код из SMS",
+    "otpVerify": "Подтвердить",
+    "otpResend": "Отправить снова",
+    "backToPhone": "Изменить номер",
+    "nameStep": "Как вас зовут?",
+    "nameStepSubtitle": "Будет отображаться в ваших заказах",
+    "nameSave": "Продолжить",
+    "nameSkip": "Пропустить"
   },
   "Profile": {
     "title": "Профиль",

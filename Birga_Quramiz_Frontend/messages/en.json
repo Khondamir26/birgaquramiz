@@ -242,7 +242,18 @@
     "factoryPrices": "Direct pricing",
     "comprehensiveAnalytics": "Analytics",
     "quickSales": "Fast sales",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "otpSend": "Get code",
+    "otpEnter": "Enter the code",
+    "otpSent": "Code sent to {phone}",
+    "otpCode": "Code from SMS",
+    "otpVerify": "Verify",
+    "otpResend": "Resend code",
+    "backToPhone": "Change number",
+    "nameStep": "What's your name?",
+    "nameStepSubtitle": "It will appear on your orders",
+    "nameSave": "Continue",
+    "nameSkip": "Skip for now"
   },
   "Profile": {
     "title": "Profile",

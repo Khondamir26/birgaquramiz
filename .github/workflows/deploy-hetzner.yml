@@ -255,11 +255,6 @@ jobs:
             # Run database migrations
             ############################################
 
-            # If a previous migration run failed, mark it as rolled back so
-            # migrate deploy can re-apply it with the fixed SQL.
-            docker compose run --rm backend pnpm prisma migrate resolve \
-              --rolled-back 20260518115926_add_assignment_event_delivery_rating || true
-
             docker compose run --rm backend pnpm prisma migrate deploy
 
             ############################################

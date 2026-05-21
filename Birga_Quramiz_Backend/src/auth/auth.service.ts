@@ -1,10 +1,13 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
 import { randomUUID, createHmac } from 'crypto'
 import type { Prisma } from '@prisma/client'
 import type { AuthUser, JwtPayload } from './auth.types'
+import { SmsService } from '../tracking/services/sms.service'
+import { normalizePhone } from './phone.util'
+import Redis from 'ioredis'
 
 const ACCESS_TOKEN_TTL = '15m'
 const REFRESH_TOKEN_TTL = '7d'
@@ -46,6 +49,12 @@ function getBcryptSaltRounds() {
 
 const bcryptSaltRounds = getBcryptSaltRounds()
 
+const OTP_TTL = 180            // 3 minutes
+const OTP_MAX_ATTEMPTS = 5
+const OTP_RATE_LIMIT_COUNT = 3 // per phone per 15 min
+const OTP_RATE_LIMIT_WINDOW = 900
+const OTP_IP_RATE_LIMIT = 10   // per IP per hour
+
 type SessionMetadata = {
   userAgent?: string | null
   ipAddress?: string | null
@@ -53,10 +62,19 @@ type SessionMetadata = {
 
 @Injectable()
 export class AuthService {
+  private readonly redis: Redis
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-  ) { }
+    private sms: SmsService,
+  ) {
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST ?? 'localhost',
+      port: Number(process.env.REDIS_PORT ?? 6379),
+      password: process.env.REDIS_PASSWORD,
+    })
+  }
 
   private async toAuthUser(userId: string): Promise<AuthUser> {
     const user = await this.prisma.user.findUnique({
@@ -260,6 +278,89 @@ export class AuthService {
     return { user: safeUser, tokens }
   }
 
+  async sendOtp(rawPhone: string, ipAddress?: string | null) {
+    const phone = normalizePhone(rawPhone)
+
+    // Rate limit: 3 OTPs / 15 min per phone
+    const phoneRateKey = `otp:rate:phone:${phone}`
+    const phoneCount = await this.redis.incr(phoneRateKey)
+    if (phoneCount === 1) await this.redis.expire(phoneRateKey, OTP_RATE_LIMIT_WINDOW)
+    if (phoneCount > OTP_RATE_LIMIT_COUNT) {
+      throw new HttpException('Too many OTP requests. Try again in 15 minutes.', HttpStatus.TOO_MANY_REQUESTS)
+    }
+
+    // Rate limit: 10 OTPs / hour per IP
+    if (ipAddress) {
+      const ipRateKey = `otp:rate:ip:${ipAddress}`
+      const ipCount = await this.redis.incr(ipRateKey)
+      if (ipCount === 1) await this.redis.expire(ipRateKey, 3600)
+      if (ipCount > OTP_IP_RATE_LIMIT) {
+        throw new HttpException('Too many requests from this IP.', HttpStatus.TOO_MANY_REQUESTS)
+      }
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await this.redis.setex(`otp:auth:${phone}`, OTP_TTL, code)
+    await this.redis.del(`otp:attempts:${phone}`)
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[OTP DEV] ${phone} → ${code}`)
+    }
+    await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+
+    return { message: 'OTP sent' }
+  }
+
+  async verifyOtp(rawPhone: string, code: string, name: string | undefined, metadata: SessionMetadata = {}) {
+    const phone = normalizePhone(rawPhone)
+
+    const otpKey = `otp:auth:${phone}`
+    const attemptsKey = `otp:attempts:${phone}`
+
+    const stored = await this.redis.get(otpKey)
+    if (!stored) {
+      throw new BadRequestException('OTP expired or not sent')
+    }
+
+    const attempts = parseInt((await this.redis.get(attemptsKey)) ?? '0', 10)
+    if (attempts >= OTP_MAX_ATTEMPTS) {
+      await this.redis.del(otpKey)
+      throw new BadRequestException('Too many wrong attempts. Request a new OTP.')
+    }
+
+    if (stored !== code.trim()) {
+      await this.redis.incr(attemptsKey)
+      await this.redis.expire(attemptsKey, OTP_TTL)
+      throw new BadRequestException('Invalid OTP')
+    }
+
+    await Promise.all([this.redis.del(otpKey), this.redis.del(attemptsKey)])
+
+    let isNewUser = false
+    let user = await this.prisma.user.findUnique({ where: { phone } })
+
+    if (!user) {
+      isNewUser = true
+      user = await this.prisma.user.create({
+        data: { phone, name: name?.trim() || '' },
+      })
+    }
+
+    const safeUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+    }
+
+    const tokenId = randomUUID()
+    const tokens = await this.generateTokens(safeUser, tokenId)
+    await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
+
+    return { user: safeUser, tokens, isNewUser }
+  }
+
   async register(name: string, phone: string, password: string) {
     const existing = await this.prisma.user.findUnique({
       where: { phone },
@@ -353,9 +454,9 @@ export class AuthService {
     if (user.role === 'SELLER') {
       const seller = await this.prisma.seller.findUnique({
         where: { userId: user.id },
-        select: { verified: true },
+        select: { status: true },
       })
-      if (!seller?.verified) {
+      if (seller?.status !== 'APPROVED') {
         throw new UnauthorizedException('Your seller account is pending admin verification')
       }
     }
@@ -505,5 +606,15 @@ export class AuthService {
 
   async getProfile(userId: string) {
     return this.toAuthUser(userId)
+  }
+
+  async updateProfile(userId: string, name?: string) {
+    if (!name?.trim()) return this.toAuthUser(userId)
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { name: name.trim() },
+      select: { id: true, name: true, phone: true, role: true, createdAt: true },
+    })
   }
 }

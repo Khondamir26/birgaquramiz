@@ -70,6 +70,30 @@ export function changePassword(data: { currentPassword: string; newPassword: str
   })
 }
 
+export function sendOtp(phone: string) {
+  return apiFetch<{ message: string }>('/auth/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
+}
+
+export function verifyOtp(data: { phone: string; code: string; name?: string }) {
+  return apiFetch<{ user: User; accessToken: string; refreshToken: string; isNewUser: boolean }>('/auth/otp/verify', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }).then((result) => {
+    markSessionHint()
+    return result
+  })
+}
+
+export function updateProfile(data: { name?: string }) {
+  return apiFetch<User>('/auth/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
 export async function restoreSession(): Promise<User | null> {
   if (!hasSessionHint()) {
     return null

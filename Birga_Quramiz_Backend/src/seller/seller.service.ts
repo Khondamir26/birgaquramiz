@@ -116,7 +116,7 @@ export class SellerService {
       id: seller.id,
       articleNumber: seller.articleNumber,
       company: seller.company,
-      verified: seller.verified,
+      status: seller.status,
       memberSince: seller.user.createdAt,
       totalProducts,
       totalSold: soldResult._sum.quantity ?? 0,

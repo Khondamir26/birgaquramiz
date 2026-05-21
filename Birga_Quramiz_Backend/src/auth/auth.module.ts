@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller'
 import { PrismaModule } from '../prisma/prisma.module'
 import { JwtStrategy } from './jwt.strategy'
 import { RolesGuard } from './roles.guard'
+import { SmsService } from '../tracking/services/sms.service'
 
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim()
@@ -24,7 +25,7 @@ const jwtSecret = requiredEnv('JWT_SECRET')
       signOptions: { expiresIn: '15m' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, RolesGuard],
+  providers: [AuthService, JwtStrategy, RolesGuard, SmsService],
   controllers: [AuthController],
 })
 export class AuthModule { }
