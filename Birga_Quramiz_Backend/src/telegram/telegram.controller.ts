@@ -6,7 +6,7 @@ interface TelegramUpdate {
   update_id: number
   message?: {
     message_id: number
-    from?: { id: number; first_name: string; username?: string }
+    from?: { id: number; first_name: string; username?: string; language_code?: string }
     chat: { id: number }
     text?: string
     contact?: {
@@ -50,7 +50,7 @@ export class TelegramController {
     if (message.text === '/start') {
       const telegramId = String(from?.id ?? '')
       if (!telegramId) return
-      await this.telegram.handleStart(chatId, telegramId)
+      await this.telegram.handleStart(chatId, telegramId, from?.language_code)
       return
     }
 
@@ -63,6 +63,7 @@ export class TelegramController {
         message.contact.phone_number,
         chatId,
         message.contact.first_name ?? from.first_name ?? 'User',
+        from.language_code,
       )
     }
   }
