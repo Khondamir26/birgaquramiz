@@ -226,16 +226,12 @@ export class AuthService {
       return { requiresPhone: false as const, user: safeUser, tokens }
     }
 
-    // Case B: telegramId linked but no phone, OR unknown telegramId — require phone
-    // existingUserId is set when the account exists but has no phone yet (legacy accounts)
+    // Case B: telegramId not linked yet, or linked but no phone — require phone
     const pendingToken = randomUUID()
     await this.redis.setex(
       `tg:pending:${pendingToken}`,
       600,
-      JSON.stringify({
-        telegramId, name, telegramUsername, telegramPhoto, languageCode,
-        existingUserId: existing?.id ?? null,
-      }),
+      JSON.stringify({ telegramId, name, telegramUsername, telegramPhoto, languageCode }),
     )
     return { requiresPhone: true as const, pendingToken }
   }
@@ -289,52 +285,6 @@ export class AuthService {
       null,
       metadata,
     )
-  }
-
-  async linkTelegramContact(pendingToken: string, rawPhone: string, metadata: SessionMetadata = {}) {
-    const raw = await this.redis.get(`tg:pending:${pendingToken}`)
-    if (!raw) throw new BadRequestException('Telegram session expired. Please try again.')
-
-    const tgData: {
-      telegramId: string; name: string
-      telegramUsername: string | null; telegramPhoto: string | null; languageCode: string | null
-      existingUserId: string | null
-    } = JSON.parse(raw)
-
-    const phone = normalizePhone(rawPhone)
-    const telegramFields = {
-      telegramId: tgData.telegramId,
-      telegramUsername: tgData.telegramUsername,
-      telegramPhoto: tgData.telegramPhoto,
-      languageCode: tgData.languageCode,
-    }
-
-    let user: Awaited<ReturnType<typeof this.prisma.user.findUnique>>
-
-    if (tgData.existingUserId) {
-      // Legacy account: telegramId existed but had no phone — add phone to it
-      user = await this.prisma.user.update({
-        where: { id: tgData.existingUserId },
-        data: { phone, ...telegramFields },
-      })
-    } else {
-      user = await this.prisma.user.findUnique({ where: { phone } })
-      if (user) {
-        user = await this.prisma.user.update({ where: { id: user.id }, data: telegramFields })
-      } else {
-        user = await this.prisma.user.create({ data: { phone, name: tgData.name, ...telegramFields } })
-      }
-    }
-
-    await this.redis.del(`tg:pending:${pendingToken}`)
-
-    const safeUser: AuthUser = {
-      id: user.id, name: user.name, phone: user.phone, role: user.role, createdAt: user.createdAt,
-    }
-    const tokenId = randomUUID()
-    const tokens = await this.generateTokens(safeUser, tokenId)
-    await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
-    return { user: safeUser, tokens }
   }
 
   async sendOtp(rawPhone: string, ipAddress?: string | null) {

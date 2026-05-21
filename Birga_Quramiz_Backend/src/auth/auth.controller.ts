@@ -20,7 +20,6 @@ import { TelegramLoginDto } from './dto/telegram-login.dto'
 import { SendOtpDto } from './dto/send-otp.dto'
 import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
-import { TelegramLinkContactDto } from './dto/telegram-link-contact.dto'
 import { TelegramWidgetLoginDto } from './dto/telegram-widget-login.dto'
 import type { AuthUser } from './auth.types'
 
@@ -163,17 +162,6 @@ export class AuthController {
 
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
     return { requiresPhone: false, user: result.user }
-  }
-
-  @Post('telegram/link-contact')
-  async linkTelegramContact(@Body() body: TelegramLinkContactDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const { user, tokens } = await this.authService.linkTelegramContact(body.pendingToken, body.phone, {
-      userAgent: getUserAgent(req),
-      ipAddress: getClientIp(req),
-    })
-
-    setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
-    return { user }
   }
 
   @Post('refresh')

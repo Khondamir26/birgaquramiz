@@ -64,16 +64,6 @@ export function telegramWidgetLogin(data: TelegramWidgetUser) {
   })
 }
 
-export function linkTelegramContact(data: { pendingToken: string; phone: string }) {
-  return apiFetch<{ user: User }>('/auth/telegram/link-contact', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }).then((result) => {
-    markSessionHint()
-    return result
-  })
-}
-
 export function logout() {
   return apiFetch<{ message: string }>('/auth/refresh/logout', {
     method: 'POST',

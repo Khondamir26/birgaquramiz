@@ -68,6 +68,8 @@ services:
       ESKIZ_PASSWORD: ${ESKIZ_PASSWORD}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-https://api.birga-quramiz.uz}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:

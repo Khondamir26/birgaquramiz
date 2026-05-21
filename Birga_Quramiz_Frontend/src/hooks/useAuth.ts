@@ -3,41 +3,18 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
-import { restoreSession, telegramLogin, linkTelegramContact } from '@/lib/api/auth'
+import { restoreSession, telegramLogin } from '@/lib/api/auth'
 import { markSessionHint } from '@/lib/auth/sessionHint'
 import { toast } from 'sonner'
 import type { User } from '@/types'
 
 let authInitPromise: Promise<void> | null = null
 
-type TelegramWebApp = {
-  requestContact: (cb: (isSent: boolean) => void) => void
-  initDataUnsafe?: { contact?: { phone_number?: string }; start_param?: string }
-}
-
-async function requestTelegramContact(tg: TelegramWebApp, pendingToken: string): Promise<User | null> {
-  return new Promise((resolve) => {
-    tg.requestContact(async (isSent: boolean) => {
-      if (!isSent) { resolve(null); return }
-      const phone: string | undefined = tg.initDataUnsafe?.contact?.phone_number
-      if (!phone) { resolve(null); return }
-      try {
-        const result = await linkTelegramContact({ pendingToken, phone })
-        markSessionHint()
-        resolve(result.user)
-      } catch (err) {
-        console.error('[Telegram] linkTelegramContact failed', err)
-        resolve(null)
-      }
-    })
-  })
-}
-
 function initializeAuth() {
   if (authInitPromise) return authInitPromise
 
   authInitPromise = (async () => {
-    const { setUser, setInitialized } = useAuthStore.getState()
+    const { setUser, setInitialized, setTelegramRequiresPhone } = useAuthStore.getState()
 
     try {
       let user: User | null = null
@@ -64,9 +41,10 @@ function initializeAuth() {
             const result = await telegramLogin(tg.initData)
             if (!result.requiresPhone) {
               user = result.user
+              markSessionHint()
             } else {
-              // telegramId not yet linked — request phone via Telegram's native dialog
-              user = await requestTelegramContact(tg, result.pendingToken)
+              // Phone not linked yet — user must link via the bot (/start → share contact)
+              setTelegramRequiresPhone(true)
             }
           } catch (err) {
             console.error('Telegram login failed', err)
@@ -90,7 +68,7 @@ function initializeAuth() {
 }
 
 export function useAuth() {
-  const { user, isAuthenticated, isInitialized } = useAuthStore()
+  const { user, isAuthenticated, isInitialized, telegramRequiresPhone } = useAuthStore()
 
   const router = useRouter()
 
@@ -111,5 +89,5 @@ export function useAuth() {
     void initializeAuth()
   }, [isInitialized, router])
 
-  return { user, isAuthenticated, isInitialized }
+  return { user, isAuthenticated, isInitialized, telegramRequiresPhone }
 }

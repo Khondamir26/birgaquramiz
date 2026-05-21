@@ -21,6 +21,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { BrandsModule } from './brands/brands.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { MapsModule } from './maps/maps.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { MapsModule } from './maps/maps.module';
     ReviewsModule,
     BrandsModule,
     TrackingModule,
+    TelegramModule,
   ],
   controllers: [AppController, AnalyticsController],
   providers: [AppService],
