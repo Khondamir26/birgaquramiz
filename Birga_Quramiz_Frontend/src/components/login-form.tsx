@@ -34,6 +34,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendCountdown, setResendCountdown] = useState(0)
+  const [otpMethod, setOtpMethod] = useState<'telegram' | 'sms' | null>(null)
   const [pendingUser, setPendingUser] = useState<User | null>(null)
   const [pendingTelegramToken, setPendingTelegramToken] = useState<string | undefined>(undefined)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -95,7 +96,8 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     setError('')
     setLoading(true)
     try {
-      await sendOtp(phone.replace(/\s/g, ''))
+      const result = await sendOtp(phone.replace(/\s/g, ''))
+      setOtpMethod(result.method)
       setStep('otp')
       startResendCountdown()
     } catch (err: unknown) {
@@ -110,7 +112,8 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     setError('')
     setLoading(true)
     try {
-      await sendOtp(phone.replace(/\s/g, ''))
+      const result = await sendOtp(phone.replace(/\s/g, ''))
+      setOtpMethod(result.method)
       setCode('')
       startResendCountdown()
     } catch (err: unknown) {
@@ -237,7 +240,9 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             <>
               <div className="text-center mb-8">
                 <h1 className="text-[26px] font-black text-slate-900 mb-2">{t('otpEnter')}</h1>
-                <p className="text-[13px] text-slate-500">{t('otpSent', { phone })}</p>
+                <p className="text-[13px] text-slate-500">
+                  {otpMethod === 'telegram' ? t('otpSentTelegram') : t('otpSent', { phone })}
+                </p>
               </div>
 
               {error && <ErrorBanner message={error} />}

@@ -19,6 +19,48 @@ export class OrdersService {
     private smsService: SmsService,
   ) { }
 
+  private getOrderLang(code?: string | null): 'uz' | 'ru' | 'en' {
+    if (!code) return 'uz'
+    if (code.startsWith('ru')) return 'ru'
+    if (code.startsWith('en')) return 'en'
+    return 'uz'
+  }
+
+  private orderMsg(
+    status: 'NEW' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED',
+    shortId: string,
+    lang: 'uz' | 'ru' | 'en',
+  ): { tg: string; sms: string } {
+    const msgs = {
+      NEW: {
+        uz: { tg: `📦 *Birga Quramiz*\n\nZakaz #${shortId} qabul qilindi. Tayyorlanmoqda.`, sms: `Birga Quramiz: Zakaz #${shortId} qabul qilindi!` },
+        ru: { tg: `📦 *Birga Quramiz*\n\nЗаказ #${shortId} принят. Готовится к отправке.`, sms: `Birga Quramiz: Zaказ #${shortId} принят!` },
+        en: { tg: `📦 *Birga Quramiz*\n\nOrder #${shortId} received. We are preparing it.`, sms: `Birga Quramiz: Order #${shortId} received!` },
+      },
+      CONFIRMED: {
+        uz: { tg: `✅ *Birga Quramiz*\n\nZakaz #${shortId} tasdiqlandi. Yaqinda jo'natiladi.`, sms: `Birga Quramiz: Zakaz #${shortId} tasdiqlandi!` },
+        ru: { tg: `✅ *Birga Quramiz*\n\nЗаказ #${shortId} подтверждён. Скоро будет отправлен.`, sms: `Birga Quramiz: Заказ #${shortId} подтверждён!` },
+        en: { tg: `✅ *Birga Quramiz*\n\nOrder #${shortId} confirmed. Will be shipped soon.`, sms: `Birga Quramiz: Order #${shortId} confirmed!` },
+      },
+      SHIPPED: {
+        uz: { tg: `🚚 *Birga Quramiz*\n\nZakaz #${shortId} yo'lga chiqdi. Tez orada yetkaziladi!`, sms: `Birga Quramiz: Zakaz #${shortId} jo'natildi!` },
+        ru: { tg: `🚚 *Birga Quramiz*\n\nЗаказ #${shortId} отправлен. Скоро доставим!`, sms: `Birga Quramiz: Заказ #${shortId} отправлен!` },
+        en: { tg: `🚚 *Birga Quramiz*\n\nOrder #${shortId} shipped. On its way to you!`, sms: `Birga Quramiz: Order #${shortId} shipped!` },
+      },
+      DELIVERED: {
+        uz: { tg: `📦 *Birga Quramiz*\n\nZakaz #${shortId} yetkazildi. Xarid qilganingiz uchun rahmat!`, sms: `Birga Quramiz: Zakaz #${shortId} yetkazildi! Rahmat.` },
+        ru: { tg: `📦 *Birga Quramiz*\n\nЗаказ #${shortId} доставлен. Спасибо за покупку!`, sms: `Birga Quramiz: Заказ #${shortId} доставлен! Спасибо.` },
+        en: { tg: `📦 *Birga Quramiz*\n\nOrder #${shortId} delivered. Thank you for your purchase!`, sms: `Birga Quramiz: Order #${shortId} delivered! Thank you.` },
+      },
+      CANCELLED: {
+        uz: { tg: `❌ *Birga Quramiz*\n\nZakaz #${shortId} bekor qilindi.`, sms: `Birga Quramiz: Zakaz #${shortId} bekor qilindi.` },
+        ru: { tg: `❌ *Birga Quramiz*\n\nЗаказ #${shortId} отменён.`, sms: `Birga Quramiz: Заказ #${shortId} отменён.` },
+        en: { tg: `❌ *Birga Quramiz*\n\nOrder #${shortId} cancelled.`, sms: `Birga Quramiz: Order #${shortId} cancelled.` },
+      },
+    }
+    return msgs[status][lang]
+  }
+
   private async notifyOrderUser(
     telegramId: string | null | undefined,
     phone: string | null | undefined,
@@ -124,7 +166,7 @@ export class OrdersService {
         },
         include: {
           user: {
-            select: { telegramId: true }
+            select: { telegramId: true, languageCode: true }
           }
         }
       })
@@ -155,8 +197,9 @@ export class OrdersService {
     })
 
     if (createdOrder.user?.telegramId) {
-      const text = `📦 *Order Received*\n\nOrder #${createdOrder.id.slice(0, 8)}\nTotal: $${createdOrder.total}\nStatus: NEW\n\nWe are preparing your order.`
-      this.telegramService.sendMessage(createdOrder.user.telegramId, text).catch(e => console.error(e))
+      const lang = this.getOrderLang(createdOrder.user.languageCode)
+      const msg = this.orderMsg('NEW', createdOrder.id.slice(0, 8), lang)
+      this.telegramService.sendMessage(createdOrder.user.telegramId, msg.tg).catch(e => console.error(e))
     }
 
     return createdOrder
@@ -243,7 +286,7 @@ export class OrdersService {
           include: { product: true },
         },
         user: {
-          select: { telegramId: true, phone: true }
+          select: { telegramId: true, phone: true, languageCode: true }
         }
       },
     })
@@ -260,21 +303,17 @@ export class OrdersService {
 
       if (status === 'CONFIRMED' && order.status === 'PAID') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } })
-        void this.notifyOrderUser(
-          order.user?.telegramId, order.user?.phone,
-          `✅ *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} tasdiqlandi. Yaqinda jo'natiladi.`,
-          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} tasdiqlandi!`,
-        )
+        const lang = this.getOrderLang(order.user?.languageCode)
+        const msg = this.orderMsg('CONFIRMED', order.id.slice(0, 8), lang)
+        void this.notifyOrderUser(order.user?.telegramId, order.user?.phone, msg.tg, msg.sms)
         return updated
       }
 
       if (status === 'SHIPPED' && order.status === 'CONFIRMED') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED' } })
-        void this.notifyOrderUser(
-          order.user?.telegramId, order.user?.phone,
-          `🚚 *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} yo'lga chiqdi. Tez orada yetkaziladi!`,
-          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} jo'natildi!`,
-        )
+        const lang = this.getOrderLang(order.user?.languageCode)
+        const msg = this.orderMsg('SHIPPED', order.id.slice(0, 8), lang)
+        void this.notifyOrderUser(order.user?.telegramId, order.user?.phone, msg.tg, msg.sms)
         return updated
       }
     }
@@ -284,11 +323,9 @@ export class OrdersService {
 
       if (status === 'DELIVERED' && order.status === 'SHIPPED') {
         const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: 'DELIVERED' } })
-        void this.notifyOrderUser(
-          order.user?.telegramId, order.user?.phone,
-          `📦 *Birga Quramiz*\n\nZakaz #${order.id.slice(0, 8)} yetkazildi. Xarid qilganingiz uchun rahmat!`,
-          `Birga Quramiz: Zakaz #${order.id.slice(0, 8)} yetkazildi! Rahmat.`,
-        )
+        const lang = this.getOrderLang(order.user?.languageCode)
+        const msg = this.orderMsg('DELIVERED', order.id.slice(0, 8), lang)
+        void this.notifyOrderUser(order.user?.telegramId, order.user?.phone, msg.tg, msg.sms)
         return updated
       }
     }

@@ -6,6 +6,7 @@ import { randomUUID, createHmac, createHash } from 'crypto'
 import type { Prisma } from '@prisma/client'
 import type { AuthUser, JwtPayload } from './auth.types'
 import { SmsService } from '../tracking/services/sms.service'
+import { TelegramService } from '../telegram/telegram.service'
 import { normalizePhone } from './phone.util'
 import Redis from 'ioredis'
 
@@ -68,6 +69,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private sms: SmsService,
+    private telegram: TelegramService,
   ) {
     this.redis = new Redis({
       host: process.env.REDIS_HOST ?? 'localhost',
@@ -315,9 +317,28 @@ export class AuthService {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[OTP DEV] ${phone} → ${code}`)
     }
-    await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
 
-    return { message: 'OTP sent' }
+    const userRecord = await this.prisma.user.findUnique({
+      where: { phone },
+      select: { telegramId: true, languageCode: true },
+    })
+
+    if (userRecord?.telegramId) {
+      const lang = userRecord.languageCode
+      let text: string
+      if (lang?.startsWith('ru')) {
+        text = `Birga Quramiz: код подтверждения *${code}*. Действителен 3 минуты.`
+      } else if (lang?.startsWith('en')) {
+        text = `Birga Quramiz: verification code *${code}*. Valid for 3 minutes.`
+      } else {
+        text = `Birga Quramiz: tasdiqlash kodi *${code}*. Kod 3 daqiqa amal qiladi.`
+      }
+      const sent = await this.telegram.sendMessage(userRecord.telegramId, text)
+      if (sent) return { message: 'OTP sent', method: 'telegram' as const }
+    }
+
+    await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+    return { message: 'OTP sent', method: 'sms' as const }
   }
 
   async verifyOtp(rawPhone: string, code: string, name: string | undefined, pendingTelegramToken: string | undefined, metadata: SessionMetadata = {}) {

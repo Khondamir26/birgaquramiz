@@ -8,6 +8,28 @@ import { markSessionHint } from '@/lib/auth/sessionHint'
 import { toast } from 'sonner'
 import type { User } from '@/types'
 
+type SupportedLocale = 'uz' | 'ru' | 'en'
+
+function getLocaleFromCode(code?: string): SupportedLocale {
+  if (!code) return 'ru'
+  if (code.startsWith('uz')) return 'uz'
+  if (code.startsWith('en')) return 'en'
+  if (code.startsWith('ru')) return 'ru'
+  return 'ru'
+}
+
+function hasLocaleCookie(): boolean {
+  return document.cookie.split(';').some((c) => c.trim().startsWith('NEXT_LOCALE='))
+}
+
+async function setLocale(locale: SupportedLocale): Promise<void> {
+  await fetch('/api/locale', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ locale }),
+  })
+}
+
 let authInitPromise: Promise<void> | null = null
 
 function initializeAuth() {
@@ -33,6 +55,16 @@ function initializeAuth() {
 
         // @ts-expect-error window.Telegram might not be defined
         const tg = window.Telegram?.WebApp
+
+        // Auto-detect language on first visit — Telegram language takes priority,
+        // falls back to browser language. After first visit the cookie is set for 1 year.
+        if (!hasLocaleCookie()) {
+          const langCode = (tg?.initDataUnsafe?.user?.language_code as string | undefined)
+            ?? navigator.language
+          await setLocale(getLocaleFromCode(langCode))
+          window.location.reload()
+          return
+        }
 
         if (tg?.initData) {
           tg.ready()
