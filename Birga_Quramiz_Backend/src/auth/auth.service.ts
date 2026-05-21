@@ -335,18 +335,22 @@ export class AuthService {
       }
       const sent = await this.telegram.sendMessage(userRecord.telegramId, text)
       if (sent) return { message: 'OTP sent', method: 'telegram' as const }
+
+      // Bot failed for linked user — fall through to SMS
+      const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+      if (!smsSent) {
+        await this.redis.del(`otp:auth:${phone}`)
+        throw new HttpException(
+          'SMS delivery failed. Please try again later.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        )
+      }
+      return { message: 'OTP sent', method: 'sms' as const }
     }
 
-    const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
-    if (!smsSent) {
-      // Clean up so the user can request again after fixing delivery
-      await this.redis.del(`otp:auth:${phone}`)
-      throw new HttpException(
-        'SMS delivery failed. Please try again or log in via Telegram.',
-        HttpStatus.SERVICE_UNAVAILABLE,
-      )
-    }
-    return { message: 'OTP sent', method: 'sms' as const }
+    // No telegramId — user must open the bot to share phone and receive OTP there
+    // OTP is already stored in Redis; bot will find it by phone after linking
+    return { message: 'OTP pending bot delivery', method: 'bot_link' as const }
   }
 
   async verifyOtp(rawPhone: string, code: string, name: string | undefined, pendingTelegramToken: string | undefined, metadata: SessionMetadata = {}) {

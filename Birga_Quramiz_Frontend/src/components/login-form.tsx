@@ -34,7 +34,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendCountdown, setResendCountdown] = useState(0)
-  const [otpMethod, setOtpMethod] = useState<'telegram' | 'sms' | null>(null)
+  const [otpMethod, setOtpMethod] = useState<'telegram' | 'sms' | 'bot_link' | null>(null)
   const [pendingUser, setPendingUser] = useState<User | null>(null)
   const [pendingTelegramToken, setPendingTelegramToken] = useState<string | undefined>(undefined)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -241,9 +241,27 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
               <div className="text-center mb-8">
                 <h1 className="text-[26px] font-black text-slate-900 mb-2">{t('otpEnter')}</h1>
                 <p className="text-[13px] text-slate-500">
-                  {otpMethod === 'telegram' ? t('otpSentTelegram') : t('otpSent', { phone })}
+                  {otpMethod === 'telegram'
+                    ? t('otpSentTelegram')
+                    : otpMethod === 'bot_link'
+                    ? t('otpSentBotLink')
+                    : t('otpSent', { phone })}
                 </p>
               </div>
+
+              {otpMethod === 'bot_link' && process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+                <a
+                  href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full h-11 mb-6 rounded-2xl bg-[#229ED9] text-white font-bold text-[14px] hover:bg-[#1a8bc2] transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" className="size-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.53l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.958.029z"/>
+                  </svg>
+                  {t('otpOpenBot')}
+                </a>
+              )}
 
               {error && <ErrorBanner message={error} />}
 

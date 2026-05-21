@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { normalizePhone } from '../auth/phone.util'
+import Redis from 'ioredis'
 
 const MINI_APP_URL = 'https://birga-quramiz.uz'
 
@@ -11,6 +12,12 @@ function getLang(code?: string | null): Lang {
   if (code.startsWith('ru')) return 'ru'
   if (code.startsWith('en')) return 'en'
   return 'uz'
+}
+
+const OTP_DELIVERY = {
+  uz: (code: string) => `🔐 Saytga kirish kodingiz: *${code}*\n\nBu kodni brauzerdagi sahifaga kiriting.\nKod 3 daqiqa amal qiladi.`,
+  ru: (code: string) => `🔐 Ваш код для входа на сайт: *${code}*\n\nВведите этот код в браузере.\nКод действителен 3 минуты.`,
+  en: (code: string) => `🔐 Your website login code: *${code}*\n\nEnter this code in your browser.\nValid for 3 minutes.`,
 }
 
 const MSG = {
@@ -53,8 +60,15 @@ export class TelegramService implements OnApplicationBootstrap {
   private readonly webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim()
   private readonly backendPublicUrl =
     process.env.BACKEND_PUBLIC_URL?.trim() ?? 'https://api.birga-quramiz.uz'
+  private readonly redis: Redis
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST ?? 'localhost',
+      port: Number(process.env.REDIS_PORT ?? 6379),
+      password: process.env.REDIS_PASSWORD,
+    })
+  }
 
   async onApplicationBootstrap() {
     if (process.env.NODE_ENV !== 'production') return
@@ -165,6 +179,22 @@ export class TelegramService implements OnApplicationBootstrap {
       await this.prisma.user.create({
         data: { phone, name: firstName, telegramId },
       })
+    }
+
+    // If user had a pending OTP from website login — deliver it here
+    const pendingOtp = await this.redis.get(`otp:auth:${phone}`)
+    if (pendingOtp) {
+      await this.redis.del(`otp:auth:${phone}`)
+      await this.sendRaw(chatId, {
+        text: MSG.linked[lang],
+        parse_mode: 'Markdown',
+        reply_markup: { remove_keyboard: true },
+      })
+      await this.sendRaw(chatId, {
+        text: OTP_DELIVERY[lang](pendingOtp),
+        parse_mode: 'Markdown',
+      })
+      return
     }
 
     await this.sendLinkedSuccess(chatId, lang)

@@ -95,7 +95,7 @@ export function changePassword(data: { currentPassword: string; newPassword: str
 }
 
 export function sendOtp(phone: string) {
-  return apiFetch<{ message: string; method: 'telegram' | 'sms' }>('/auth/otp/send', {
+  return apiFetch<{ message: string; method: 'telegram' | 'sms' | 'bot_link' }>('/auth/otp/send', {
     method: 'POST',
     body: JSON.stringify({ phone }),
   })

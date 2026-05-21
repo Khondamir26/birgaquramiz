@@ -247,6 +247,8 @@
     "otpEnter": "Kodni kiriting",
     "otpSent": "Kod {phone} raqamiga yuborildi",
     "otpSentTelegram": "Kod Telegramga yuborildi",
+    "otpSentBotLink": "Quyidagi botni oching, raqamingizni ulashing — kod yuboriladi",
+    "otpOpenBot": "Kodni olish uchun Telegram botni ochish",
     "otpCode": "Tasdiqlash kodi",
     "otpVerify": "Tasdiqlash",
     "otpResend": "Qayta yuborish",

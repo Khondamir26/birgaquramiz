@@ -247,6 +247,8 @@
     "otpEnter": "Enter the code",
     "otpSent": "Code sent to {phone}",
     "otpSentTelegram": "Code sent to your Telegram",
+    "otpSentBotLink": "Open the bot below, share your phone — it will send the code",
+    "otpOpenBot": "Open Telegram Bot to get code",
     "otpCode": "Verification code",
     "otpVerify": "Verify",
     "otpResend": "Resend code",
