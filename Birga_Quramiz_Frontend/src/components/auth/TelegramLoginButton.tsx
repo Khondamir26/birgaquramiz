@@ -18,7 +18,7 @@ export function TelegramLoginButton({ botName, onAuth }: Props) {
     if (!containerRef.current) return
 
     // Stable global callback — avoids stale closure issues
-    ;(window as Record<string, unknown>).__tgWidgetCb = (user: TelegramWidgetUser) => onAuthRef.current(user)
+    ;(window as unknown as Record<string, unknown>).__tgWidgetCb = (user: TelegramWidgetUser) => onAuthRef.current(user)
 
     const script = document.createElement('script')
     script.src = 'https://telegram.org/js/telegram-widget.js?22'
@@ -33,7 +33,7 @@ export function TelegramLoginButton({ botName, onAuth }: Props) {
     containerRef.current.appendChild(script)
 
     return () => {
-      delete (window as Record<string, unknown>).__tgWidgetCb
+      delete (window as unknown as Record<string, unknown>).__tgWidgetCb
     }
   }, [botName])
 
