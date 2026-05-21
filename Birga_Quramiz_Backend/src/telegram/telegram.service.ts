@@ -2,8 +2,6 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { normalizePhone } from '../auth/phone.util'
 
-const MINI_APP_URL = 'https://birga-quramiz.uz'
-
 @Injectable()
 export class TelegramService implements OnApplicationBootstrap {
   private readonly logger = new Logger(TelegramService.name)
@@ -128,11 +126,8 @@ export class TelegramService implements OnApplicationBootstrap {
 
   async sendLinkedSuccess(chatId: number) {
     await this.sendRaw(chatId, {
-      text: '✅ *Telefon raqam muvaffaqiyatli ulandi!*\n\nEndi ilovadan to\'liq foydalanishingiz mumkin.',
+      text: '✅ *Telefon raqam muvaffaqiyatli ulandi!*\n\nEndi ilovadan to\'liq foydalanishingiz mumkin.\n\n👇 Pastdagi *Birga Quramiz* tugmasini bosing.',
       parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [[{ text: '🛒 Ilovani ochish', web_app: { url: MINI_APP_URL } }]],
-      },
     })
   }
 
