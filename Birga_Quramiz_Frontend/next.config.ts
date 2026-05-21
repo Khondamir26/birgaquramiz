@@ -6,11 +6,12 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://www.googletagmanager.com https://static.cloudflareinsights.com https://maps.googleapis.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://oauth.telegram.org https://www.googletagmanager.com https://static.cloudflareinsights.com https://maps.googleapis.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: blob: https: http://localhost:5000 http://127.0.0.1:5000 https://maps.googleapis.com https://maps.gstatic.com`,
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' http://localhost:5000 ws://localhost:5000 https://api.birga-quramiz.uz wss://api.birga-quramiz.uz https://ai.birga-quramiz.uz https://maps.googleapis.com https://www.google-analytics.com https://cloudflareinsights.com https://o*.ingest.sentry.io",
+  "connect-src 'self' http://localhost:5000 ws://localhost:5000 https://api.birga-quramiz.uz wss://api.birga-quramiz.uz https://ai.birga-quramiz.uz https://maps.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://cloudflareinsights.com https://*.sentry.io",
+  "frame-src 'self' https://oauth.telegram.org https://*.telegram.org",
   "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
   "base-uri 'self'",
   "form-action 'self'",
