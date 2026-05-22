@@ -32,7 +32,7 @@ describe('OrdersService', () => {
 
   it('rejects order creation for non-USER roles', async () => {
     await expect(
-      service.create({ id: 'u1', role: 'ADMIN' }, { items: [] } as any),
+      service.create({ id: 'u1', role: 'ADMIN', name: 'Test', phone: null, createdAt: new Date() }, { items: [] } as any),
     ).rejects.toThrow(BadRequestException)
   })
 

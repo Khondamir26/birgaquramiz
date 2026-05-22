@@ -22,14 +22,19 @@ export class SmsService {
   private async getToken(): Promise<string> {
     if (this.token && Date.now() < this.tokenExpiresAt) return this.token
 
+    const form = new URLSearchParams()
+    form.set('email', this.credentials.email)
+    form.set('password', this.credentials.password)
+
     const res = await fetch(`${ESKIZ_BASE}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.credentials),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
     })
 
     if (!res.ok) {
-      throw new Error(`Eskiz auth failed: ${res.status}`)
+      const text = await res.text()
+      throw new Error(`Eskiz auth failed: ${res.status} ${text}`)
     }
 
     const body = (await res.json()) as { data?: { token?: string } }
@@ -51,20 +56,22 @@ export class SmsService {
     // Normalize: ensure 998XXXXXXXXX format (no leading +)
     const normalized = phone.startsWith('+') ? phone.slice(1) : phone
 
+    const smsBody = new URLSearchParams({
+      mobile_phone: normalized,
+      message,
+      from: '4546',
+    }).toString();
+
     try {
       const token = await this.getToken()
 
       const res = await fetch(`${ESKIZ_BASE}/message/sms/send`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          mobile_phone: normalized,
-          message,
-          from: '4546',
-        }),
+        body: smsBody,
       })
 
       if (res.status === 401) {
@@ -76,14 +83,10 @@ export class SmsService {
         const retry = await fetch(`${ESKIZ_BASE}/message/sms/send`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
             Authorization: `Bearer ${freshToken}`,
           },
-          body: JSON.stringify({
-            mobile_phone: normalized,
-            message,
-            from: '4546',
-          }),
+          body: smsBody,
         })
 
         if (!retry.ok) {

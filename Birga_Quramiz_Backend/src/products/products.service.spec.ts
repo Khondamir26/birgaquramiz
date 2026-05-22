@@ -34,7 +34,7 @@ describe('ProductsService', () => {
     prisma.product.findFirst.mockResolvedValue({ id: 'p1', sellerId: 's1' })
     prisma.orderItem.count.mockResolvedValue(2)
 
-    await expect(service.deleteMyProduct('p1', { id: 'u1' })).rejects.toThrow(BadRequestException)
+    await expect(service.deleteMyProduct('p1', { id: 'u1', role: 'SELLER', name: 'Test', phone: null, createdAt: new Date() })).rejects.toThrow(BadRequestException)
   })
 
   it('reject method throws when product not found', async () => {
