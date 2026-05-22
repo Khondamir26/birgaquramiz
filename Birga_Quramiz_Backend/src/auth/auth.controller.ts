@@ -2,12 +2,15 @@ import {
   Controller,
   Post,
   Patch,
+  Delete,
   Body,
   Get,
+  Param,
   UseGuards,
   Req,
   Res,
   UnauthorizedException,
+  HttpCode,
 } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { JwtAuthGuard } from './jwt-auth.guard'
@@ -20,7 +23,7 @@ import { TelegramLoginDto } from './dto/telegram-login.dto'
 import { SendOtpDto } from './dto/send-otp.dto'
 import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
-import { TelegramWidgetLoginDto } from './dto/telegram-widget-login.dto'
+import { TelegramOtpVerifyDto } from './dto/telegram-otp-verify.dto'
 import type { AuthUser } from './auth.types'
 
 const ACCESS_COOKIE = 'access_token'
@@ -104,7 +107,7 @@ export class AuthController {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, isNewUser }
+    return { user, accessToken: tokens.accessToken, isNewUser }
   }
 
   @Post('register')
@@ -131,7 +134,7 @@ export class AuthController {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken }
+    return { user, accessToken: tokens.accessToken }
   }
 
   @Post('telegram')
@@ -149,9 +152,10 @@ export class AuthController {
     return { requiresPhone: false, user: result.user }
   }
 
-  @Post('telegram/widget')
-  async telegramWidgetLogin(@Body() body: TelegramWidgetLoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.telegramWidgetLogin(body, {
+  @Post('telegram/otp/verify')
+  @HttpCode(200)
+  async verifyTelegramOtp(@Body() body: TelegramOtpVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.verifyTelegramOtp(body.otp, {
       userAgent: getUserAgent(req),
       ipAddress: getClientIp(req),
     })
@@ -181,7 +185,7 @@ export class AuthController {
     })
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken)
 
-    return { user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken }
+    return { user, accessToken: tokens.accessToken }
   }
 
   @Post('refresh/logout')
@@ -233,5 +237,18 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   updateProfile(@Req() req: AuthedRequest, @Body() body: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.id, body.name)
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  getSessions(@Req() req: AuthedRequest) {
+    return this.authService.getSessions(req.user.id, req.user.tokenId ?? '')
+  }
+
+  @Delete('sessions/:tokenId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  revokeSession(@Req() req: AuthedRequest, @Param('tokenId') tokenId: string) {
+    return this.authService.revokeSessionById(req.user.id, tokenId)
   }
 }

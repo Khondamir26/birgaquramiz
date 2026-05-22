@@ -34,16 +34,6 @@ export type TelegramLoginResult =
   | { requiresPhone: false; user: User }
   | { requiresPhone: true; pendingToken: string }
 
-export type TelegramWidgetUser = {
-  id: number
-  first_name: string
-  last_name?: string
-  username?: string
-  photo_url?: string
-  auth_date: number
-  hash: string
-}
-
 export function telegramLogin(initData: string) {
   return apiFetch<TelegramLoginResult>('/auth/telegram', {
     method: 'POST',
@@ -54,10 +44,10 @@ export function telegramLogin(initData: string) {
   })
 }
 
-export function telegramWidgetLogin(data: TelegramWidgetUser) {
-  return apiFetch<TelegramLoginResult>('/auth/telegram/widget', {
+export function verifyTelegramOtp(otp: string) {
+  return apiFetch<TelegramLoginResult>('/auth/telegram/otp/verify', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ otp }),
   }).then((result) => {
     if (!result.requiresPhone) markSessionHint()
     return result

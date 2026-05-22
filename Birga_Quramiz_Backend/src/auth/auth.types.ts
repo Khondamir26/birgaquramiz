@@ -12,4 +12,5 @@ export type AuthUser = {
   phone: string | null
   role: Role
   createdAt: Date
+  tokenId?: string  // set by JwtStrategy; undefined in non-JWT contexts
 }

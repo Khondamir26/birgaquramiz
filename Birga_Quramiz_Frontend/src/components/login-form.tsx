@@ -4,16 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Phone, ArrowRight, Loader2, ChevronLeft, User as UserIcon } from 'lucide-react'
-import { sendOtp, verifyOtp, updateProfile, telegramWidgetLogin } from '@/lib/api/auth'
-import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton'
-import type { TelegramWidgetUser } from '@/lib/api/auth'
+import { sendOtp, verifyOtp, updateProfile, verifyTelegramOtp } from '@/lib/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { formatPhone } from '@/lib/formatPhone'
 import Link from 'next/link'
 import { PageLoader } from '@/components/ui/FullPageLoader'
 import type { User } from '@/types'
 
-type Step = 'phone' | 'otp' | 'name'
+type Step = 'phone' | 'otp' | 'telegram-otp' | 'name'
 
 const RESEND_DELAY = 60
 
@@ -37,6 +35,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const [otpMethod, setOtpMethod] = useState<'telegram' | 'sms' | 'bot_link' | null>(null)
   const [pendingUser, setPendingUser] = useState<User | null>(null)
   const [pendingTelegramToken, setPendingTelegramToken] = useState<string | undefined>(undefined)
+  const [tgOtpCode, setTgOtpCode] = useState('')
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -71,18 +70,25 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
     router.push(safeReturn)
   }
 
-  const handleTelegramWidgetAuth = async (tgUser: TelegramWidgetUser) => {
+  const handleTelegramLogin = () => {
+    setTgOtpCode('')
+    setError('')
+    setStep('telegram-otp')
+  }
+
+  const handleVerifyTelegramOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const result = await telegramWidgetLogin(tgUser)
+      const result = await verifyTelegramOtp(tgOtpCode)
       if (!result.requiresPhone) {
         setUser(result.user)
         setInitialized(true)
         redirectAfterLogin(result.user)
       } else {
-        // Not linked yet — store pending token, let user continue with OTP
         setPendingTelegramToken(result.pendingToken)
+        setStep('phone')
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('loginFailed'))
@@ -226,10 +232,14 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">or</span>
                     <div className="flex-1 h-px bg-slate-200" />
                   </div>
-                  <TelegramLoginButton
-                    botName={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
-                    onAuth={handleTelegramWidgetAuth}
-                  />
+                  <button
+                    type="button"
+                    onClick={handleTelegramLogin}
+                    className="flex items-center justify-center gap-2 w-full h-11 rounded-2xl bg-[#229ED9] text-white font-bold text-[14px] hover:bg-[#1a8bc2] active:scale-[0.98] transition-all"
+                  >
+                    <TelegramIcon />
+                    {t('loginViaTelegram')}
+                  </button>
                 </>
               )}
             </>
@@ -249,18 +259,11 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
                 </p>
               </div>
 
-              {otpMethod === 'bot_link' && process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
-                <a
-                  href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full h-11 mb-6 rounded-2xl bg-[#229ED9] text-white font-bold text-[14px] hover:bg-[#1a8bc2] transition-colors"
-                >
-                  <svg viewBox="0 0 24 24" className="size-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.53l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.958.029z"/>
-                  </svg>
-                  {t('otpOpenBot')}
-                </a>
+              {otpMethod === 'bot_link' && (
+                <div className="mb-5 flex items-start gap-2.5 rounded-2xl bg-blue-50 border border-blue-100 px-4 py-3">
+                  <TelegramIcon className="size-4 shrink-0 mt-0.5 fill-[#229ED9]" />
+                  <p className="text-[12px] font-semibold text-blue-700">{t('otpBotLinkHint')}</p>
+                </div>
               )}
 
               {error && <ErrorBanner message={error} />}
@@ -309,6 +312,67 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
                   {resendCountdown > 0
                     ? `${t('otpResend')} (${resendCountdown}s)`
                     : t('otpResend')}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Step: telegram-otp */}
+          {step === 'telegram-otp' && (
+            <>
+              <div className="text-center mb-8">
+                <h1 className="text-[26px] font-black text-slate-900 mb-2">{t('otpEnter')}</h1>
+                <p className="text-[13px] text-slate-500">{t('telegramOtpHint')}</p>
+              </div>
+
+              {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+                <a
+                  href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=code`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full h-11 mb-6 rounded-2xl bg-[#229ED9] text-white font-bold text-[14px] hover:bg-[#1a8bc2] transition-colors"
+                >
+                  <TelegramIcon />
+                  {t('otpOpenBot')}
+                </a>
+              )}
+
+              {error && <ErrorBanner message={error} />}
+
+              <form onSubmit={handleVerifyTelegramOtp} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-[12px] font-bold text-slate-500 mb-1.5">{t('otpCode')}</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={tgOtpCode}
+                    onChange={(e) => setTgOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    required
+                    autoFocus
+                    className="w-full h-14 px-4 rounded-2xl border border-slate-200 bg-[#f8f9fc] text-[22px] font-black text-center text-slate-800 tracking-[0.4em] placeholder:text-slate-300 placeholder:tracking-normal focus:outline-none focus:border-[#0b3190] focus:ring-2 focus:ring-[#0b3190]/10 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || tgOtpCode.length < 6}
+                  className="mt-1 h-13 w-full rounded-full bg-navbar-gradient text-white font-black text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-[#0b3190]/25 hover:shadow-xl hover:shadow-[#0b3190]/30 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading
+                    ? <Loader2 className="size-5 animate-spin" />
+                    : <>{t('otpVerify')}<ArrowRight className="size-4" /></>}
+                </button>
+              </form>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setStep('phone'); setTgOtpCode(''); setError('') }}
+                  className="text-[12px] text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors"
+                >
+                  <ChevronLeft className="size-3.5" />{t('backToPhone')}
                 </button>
               </div>
             </>
@@ -366,6 +430,14 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function TelegramIcon({ className = 'size-5 fill-white' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.53l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.958.029z"/>
+    </svg>
   )
 }
 

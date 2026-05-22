@@ -47,10 +47,11 @@ export class TelegramController {
     const chatId = message.chat.id
     const from = message.from
 
-    if (message.text === '/start') {
+    if (message.text?.startsWith('/start')) {
       const telegramId = String(from?.id ?? '')
       if (!telegramId) return
-      await this.telegram.handleStart(chatId, telegramId, from?.language_code)
+      const startParam = message.text.split(' ')[1] ?? ''
+      await this.telegram.handleStart(chatId, telegramId, from?.language_code, from?.first_name, startParam)
       return
     }
 

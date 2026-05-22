@@ -32,6 +32,7 @@ const AUTH_RATE_PATHS = new Set([
   '/auth/logout',
   '/auth/logout-all',
   '/auth/change-password',
+  '/auth/telegram/otp/verify',
 ]);
 
 // Single Redis-backed limiter instance (falls back to in-memory when Redis unavailable)

@@ -106,8 +106,14 @@ export class TelegramService implements OnApplicationBootstrap {
     }
   }
 
-  async handleStart(chatId: number, telegramId: string, languageCode?: string | null) {
+  async handleStart(chatId: number, telegramId: string, languageCode?: string | null, firstName?: string, startParam?: string) {
     const lang = getLang(languageCode)
+
+    if (startParam === 'code') {
+      await this.handleLoginCode(chatId, telegramId, lang, firstName ?? 'User', languageCode ?? null)
+      return
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { telegramId } })
     if (existing?.phone) {
       await this.sendLinkedSuccess(chatId, lang)
@@ -120,6 +126,30 @@ export class TelegramService implements OnApplicationBootstrap {
         keyboard: [[{ text: MSG.shareBtn[lang], request_contact: true }]],
         resize_keyboard: true,
       },
+    })
+  }
+
+  private async handleLoginCode(
+    chatId: number,
+    telegramId: string,
+    lang: Lang,
+    firstName: string,
+    languageCode: string | null,
+  ) {
+    const otp = String(Math.floor(100000 + Math.random() * 900000))
+    await this.redis.setex(
+      `tg:code:${otp}`,
+      300,
+      JSON.stringify({ telegramId, firstName, languageCode }),
+    )
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[TG LOGIN DEV] otp=${otp}`)
+    }
+
+    await this.sendRaw(chatId, {
+      text: OTP_DELIVERY[lang](otp),
+      parse_mode: 'Markdown',
     })
   }
 

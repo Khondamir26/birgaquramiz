@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common'
+import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
-import { randomUUID, createHmac, createHash } from 'crypto'
+import { randomUUID, createHmac } from 'crypto'
 import type { Prisma } from '@prisma/client'
 import type { AuthUser, JwtPayload } from './auth.types'
 import { SmsService } from '../tracking/services/sms.service'
@@ -11,6 +11,7 @@ import { normalizePhone } from './phone.util'
 import Redis from 'ioredis'
 
 const ACCESS_TOKEN_TTL = '15m'
+const ACCESS_TOKEN_TTL_SEC = 15 * 60
 const REFRESH_TOKEN_TTL = '7d'
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
 const MIN_BCRYPT_SALT_ROUNDS = 10
@@ -135,29 +136,49 @@ export class AuthService {
     })
   }
 
+  private async activateSession(tokenId: string) {
+    await this.redis.setex(`sess:active:${tokenId}`, ACCESS_TOKEN_TTL_SEC, '1')
+  }
+
   private async revokeSession(userId: string, tokenId: string) {
     return this.prisma.authSession.updateMany({
-      where: {
-        userId,
-        tokenId,
-        revokedAt: null,
-      },
-      data: {
-        revokedAt: new Date(),
-      },
+      where: { userId, tokenId, revokedAt: null },
+      data: { revokedAt: new Date() },
     })
   }
 
   async revokeAllSessions(userId: string) {
-    await this.prisma.authSession.updateMany({
-      where: {
-        userId,
-        revokedAt: null,
-      },
-      data: {
-        revokedAt: new Date(),
-      },
+    const sessions = await this.prisma.authSession.findMany({
+      where: { userId, revokedAt: null },
+      select: { tokenId: true },
     })
+
+    await this.prisma.authSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+
+    if (sessions.length > 0) {
+      await Promise.all(sessions.map(s => this.redis.del(`sess:active:${s.tokenId}`)))
+    }
+  }
+
+  async getSessions(userId: string, currentTokenId: string) {
+    const sessions = await this.prisma.authSession.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, tokenId: true, userAgent: true, ipAddress: true, createdAt: true, expiresAt: true },
+    })
+    return sessions.map(s => ({ ...s, isCurrent: s.tokenId === currentTokenId }))
+  }
+
+  async revokeSessionById(userId: string, targetTokenId: string) {
+    const result = await this.prisma.authSession.updateMany({
+      where: { userId, tokenId: targetTokenId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+    if (result.count === 0) throw new NotFoundException('Session not found')
+    await this.redis.del(`sess:active:${targetTokenId}`)
   }
 
   private async verifyRefreshToken(refreshToken: string): Promise<JwtPayload> {
@@ -225,6 +246,7 @@ export class AuthService {
       const tokenId = randomUUID()
       const tokens = await this.generateTokens(safeUser, tokenId)
       await this.createRefreshSession(existing.id, tokenId, tokens.refreshToken, metadata)
+      await this.activateSession(tokenId)
       return { requiresPhone: false as const, user: safeUser, tokens }
     }
 
@@ -259,32 +281,24 @@ export class AuthService {
     )
   }
 
-  async telegramWidgetLogin(
-    data: { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string; auth_date: number; hash: string },
-    metadata: SessionMetadata = {},
-  ) {
-    if (!telegramBotToken) throw new BadRequestException('Telegram integration is not configured')
+  async verifyTelegramOtp(otp: string, metadata: SessionMetadata = {}) {
+    const normalized = otp.trim()
+    const raw = await this.redis.get(`tg:code:${normalized}`)
+    if (!raw) throw new BadRequestException('OTP expired or not found')
 
-    const { hash, ...fields } = data
-    const checkString = (Object.entries(fields) as [string, string | number][])
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join('\n')
-
-    const secretKey = createHash('sha256').update(telegramBotToken).digest()
-    const calculatedHash = createHmac('sha256', secretKey).update(checkString).digest('hex')
-    if (calculatedHash !== hash) throw new UnauthorizedException('Invalid Telegram widget signature')
-
-    if (Math.floor(Date.now() / 1000) - data.auth_date > 86400) {
-      throw new UnauthorizedException('Telegram widget data is expired')
+    let stored: { telegramId: string; firstName: string; languageCode: string | null }
+    try { stored = JSON.parse(raw) } catch {
+      throw new BadRequestException('Invalid OTP state')
     }
 
+    await this.redis.del(`tg:code:${normalized}`)
+
     return this.loginTelegramUser(
-      String(data.id),
-      data.first_name + (data.last_name ? ` ${data.last_name}` : ''),
-      data.username ?? null,
-      data.photo_url ?? null,
+      stored.telegramId,
+      stored.firstName,
       null,
+      null,
+      stored.languageCode,
       metadata,
     )
   }
@@ -335,22 +349,19 @@ export class AuthService {
       }
       const sent = await this.telegram.sendMessage(userRecord.telegramId, text)
       if (sent) return { message: 'OTP sent', method: 'telegram' as const }
-
-      // Bot failed for linked user — fall through to SMS
-      const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
-      if (!smsSent) {
-        await this.redis.del(`otp:auth:${phone}`)
-        throw new HttpException(
-          'SMS delivery failed. Please try again later.',
-          HttpStatus.SERVICE_UNAVAILABLE,
-        )
-      }
-      return { message: 'OTP sent', method: 'sms' as const }
+      // Telegram failed — fall through to SMS
     }
 
-    // No telegramId — user must open the bot to share phone and receive OTP there
-    // OTP is already stored in Redis; bot will find it by phone after linking
-    return { message: 'OTP pending bot delivery', method: 'bot_link' as const }
+    // No telegramId (new user) or Telegram delivery failed — send via SMS
+    const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
+    if (!smsSent) {
+      await this.redis.del(`otp:auth:${phone}`)
+      throw new HttpException(
+        'SMS delivery failed. Please try again later.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      )
+    }
+    return { message: 'OTP sent', method: 'sms' as const }
   }
 
   async verifyOtp(rawPhone: string, code: string, name: string | undefined, pendingTelegramToken: string | undefined, metadata: SessionMetadata = {}) {
@@ -417,6 +428,7 @@ export class AuthService {
     const tokenId = randomUUID()
     const tokens = await this.generateTokens(safeUser, tokenId)
     await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
+    await this.activateSession(tokenId)
 
     return { user: safeUser, tokens, isNewUser }
   }
@@ -533,6 +545,7 @@ export class AuthService {
     const tokens = await this.generateTokens(safeUser, tokenId)
 
     await this.createRefreshSession(user.id, tokenId, tokens.refreshToken, metadata)
+    await this.activateSession(tokenId)
 
     return { user: safeUser, tokens }
   }
@@ -559,9 +572,15 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token revoked')
     }
 
-    if (existingSession.revokedAt || existingSession.expiresAt <= new Date()) {
+    if (existingSession.revokedAt) {
+      // Token reuse detected — possible theft, revoke everything
       await this.revokeAllSessions(payload.userId)
       throw new UnauthorizedException('Refresh token revoked')
+    }
+
+    if (existingSession.expiresAt <= new Date()) {
+      // Normal expiry — reject only this session, leave others intact
+      throw new UnauthorizedException('Refresh token expired')
     }
 
     const isValid = await bcrypt.compare(refreshToken, existingSession.refreshTokenHash)
@@ -607,6 +626,12 @@ export class AuthService {
       )
     })
 
+    // Deactivate old session, activate new one
+    await Promise.all([
+      this.redis.del(`sess:active:${existingSession.tokenId}`),
+      this.activateSession(nextTokenId),
+    ])
+
     return { user: safeUser, tokens }
   }
 
@@ -617,6 +642,7 @@ export class AuthService {
       const payload = await this.verifyRefreshToken(refreshToken)
       if (!payload.tokenId) return
       await this.revokeSession(payload.userId, payload.tokenId)
+      await this.redis.del(`sess:active:${payload.tokenId}`)
     } catch {
       // Logout should be idempotent; ignore invalid/expired token
     }
