@@ -23,7 +23,7 @@ services:
     image: redis:7-alpine
     container_name: birga-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --appendfsync everysec
+    command: redis-server --appendonly yes --appendfsync everysec --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     networks:
@@ -72,6 +72,7 @@ services:
       BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-https://api.birga-quramiz.uz}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

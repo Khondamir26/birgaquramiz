@@ -2,6 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ProductsService } from './products.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { UploadService } from '../upload/upload.service'
 
 describe('ProductsService', () => {
   let service: ProductsService
@@ -9,7 +10,7 @@ describe('ProductsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      seller: { findUnique: jest.fn() },
+      seller: { upsert: jest.fn() },
       product: {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
@@ -23,16 +24,22 @@ describe('ProductsService', () => {
       providers: [
         ProductsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: UploadService, useValue: { deleteProductImage: jest.fn() } },
       ],
     }).compile()
 
     service = module.get<ProductsService>(ProductsService)
   })
 
-  it('rejects delete when product has order history', async () => {
-    prisma.seller.findUnique.mockResolvedValue({ id: 's1' })
-    prisma.product.findFirst.mockResolvedValue({ id: 'p1', sellerId: 's1' })
-    prisma.orderItem.count.mockResolvedValue(2)
+  it('rejects direct delete for approved products', async () => {
+    prisma.seller.upsert.mockResolvedValue({ id: 's1' })
+    prisma.product.findFirst.mockResolvedValue({
+      id: 'p1',
+      sellerId: 's1',
+      status: 'APPROVED',
+      images: [],
+      imageUrl: null,
+    })
 
     await expect(service.deleteMyProduct('p1', { id: 'u1', role: 'SELLER', name: 'Test', phone: null, createdAt: new Date() })).rejects.toThrow(BadRequestException)
   })

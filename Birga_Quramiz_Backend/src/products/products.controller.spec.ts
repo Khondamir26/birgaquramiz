@@ -37,17 +37,17 @@ describe('ProductsController', () => {
 
   it('passes uploaded image path to service', async () => {
     service.create.mockResolvedValue({ id: 'p1' })
-    uploadService.uploadProductImage.mockReturnValue('/uploads/products/x.png')
+    uploadService.uploadProductImage.mockResolvedValue('/uploads/products/x.png')
 
     const req = { user: { id: 'u1' } }
     await controller.create(
       { name: 'Cement' } as any,
       req as any,
-      { filename: 'x.png' } as any,
+      [{ filename: 'x.png' }] as any,
     )
 
     expect(service.create).toHaveBeenCalledWith(
-      expect.objectContaining({ imageUrl: '/uploads/products/x.png' }),
+      expect.objectContaining({ imageUrls: ['/uploads/products/x.png'] }),
       { id: 'u1' },
     )
   })

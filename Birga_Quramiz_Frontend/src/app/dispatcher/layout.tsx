@@ -2,13 +2,13 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { TrackingProviders } from "./providers";
 import { PageLoader } from "@/components/ui/FullPageLoader";
 
 export default function DispatcherLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { isInitialized, isAuthenticated, user } = useAuthStore();
+  const { isInitialized, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     if (!isInitialized) return;

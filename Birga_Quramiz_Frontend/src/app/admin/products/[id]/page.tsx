@@ -76,8 +76,8 @@ export default function AdminProductDetailPage() {
     if (!id) {
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-[1488px]">
-                    <div className="mx-auto flex flex-col gap-4 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+                <div className="mx-auto w-full max-w-[1440px]">
+                    <div className="flex flex-col gap-4 px-4 pt-4 md:px-7 md:pt-7">
                         <button
                             onClick={() => router.push("/admin/products")}
                             className="flex items-center gap-2 text-sm font-bold text-[#1B4D91] hover:underline w-fit"
@@ -125,8 +125,8 @@ export default function AdminProductDetailPage() {
     if (loading) {
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-[1488px]">
-                    <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+                <div className="mx-auto w-full max-w-[1440px]">
+                    <div className="flex flex-col gap-6 px-4 pt-4 md:px-7 md:pt-7">
                         <div className="h-10 w-40 animate-pulse rounded-2xl bg-white" />
                         <div className="grid gap-6 md:grid-cols-2">
                             <div className="h-80 animate-pulse rounded-3xl bg-white" />
@@ -148,8 +148,8 @@ export default function AdminProductDetailPage() {
     if (error) {
         return (
             <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-                <div className="mx-auto w-full md:max-w-[1488px]">
-                    <div className="mx-auto flex flex-col gap-4 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+                <div className="mx-auto w-full max-w-[1440px]">
+                    <div className="flex flex-col gap-4 px-4 pt-4 md:px-7 md:pt-7">
                         <button
                             onClick={() => router.push("/admin/products")}
                             className="flex items-center gap-2 text-sm font-bold text-[#1B4D91] hover:underline w-fit"
@@ -175,8 +175,8 @@ export default function AdminProductDetailPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-            <div className="mx-auto w-full md:max-w-[1488px]">
-                <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+            <div className="mx-auto w-full max-w-[1440px]">
+                <div className="flex flex-col gap-5 px-4 pt-4 md:px-7 md:pt-7">
 
                     {/* ── Back + Actions top bar ── */}
                     <div className="flex items-center justify-between flex-wrap gap-3">

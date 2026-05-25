@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Pencil, Trash2, Plus, X } from "lucide-react"
+import { Pencil, Trash2, Plus, X, Tag } from "lucide-react"
 import { getBrands, createBrand, updateBrand, deleteBrand, type BrandInput } from "@/lib/api/brands"
 import type { Brand } from "@/types"
 import BrandLogo from "@/components/brand/BrandLogo"
@@ -120,23 +120,32 @@ export default function AdminBrandsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 pb-12">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-4 md:px-7 md:pt-7 flex flex-col gap-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-[#1B4D91]">
-            {t("title")}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {t("description")}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91]/10 text-[#1B4D91]">
+            <Tag className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-[#1B4D91]">{t("title")}</h1>
+            <p className="text-[12px] text-slate-400 font-medium mt-0.5">{t("description")}</p>
+          </div>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-[#1B4D91] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#123668] transition-colors active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          {t("addBrand")}
-        </button>
+        <div className="flex items-center gap-3">
+          {!loading && brands.length > 0 && (
+            <span className="text-[13px] font-bold text-slate-400">
+              {t("total")}: <span className="text-slate-600">{brands.length}</span>
+            </span>
+          )}
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 bg-[#1B4D91] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#123668] transition-colors active:scale-95 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            {t("addBrand")}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -150,19 +159,19 @@ export default function AdminBrandsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
                   {t("colLogo")}
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
                   {t("colName")}
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
                   {t("colSlug")}
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider font-medium">
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
                   {t("colFeatured")}
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                <th className="px-5 py-4 text-[13px] font-bold text-slate-500 uppercase tracking-wider text-right">
                   {t("colActions")}
                 </th>
               </tr>
@@ -170,20 +179,20 @@ export default function AdminBrandsPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={5} className="px-5 py-12 text-center text-slate-400">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4D91]"></div>
                   </td>
                 </tr>
               ) : brands.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500 font-medium">
                     {t("empty")}
                   </td>
                 </tr>
               ) : (
                 brands.map((brand) => (
                   <tr key={brand.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         {brand.logoUrl ? (
                           <div className="w-12 h-12 relative bg-white border border-slate-100 shrink-0 p-1 rounded-lg flex items-center justify-center">
                             <BrandLogo 
@@ -199,18 +208,18 @@ export default function AdminBrandsPage() {
                           </div>
                        )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="font-bold text-slate-800">{brand.name}</div>
                       {brand.website && (
                          <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{brand.website}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
                       <code className="bg-slate-100 text-[#1B4D91] px-2 py-1 rounded text-xs font-mono">
                         {brand.slug}
                       </code>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
                         {brand.featured ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             {t("featuredBadge")}
@@ -221,7 +230,7 @@ export default function AdminBrandsPage() {
                           </span>
                         )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-5 py-3.5 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleOpenModal(brand)}
@@ -380,6 +389,7 @@ export default function AdminBrandsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
-import { Pencil, Trash2, Plus, X, ChevronRight, FolderOpen, Folder } from "lucide-react"
+import { Fragment, useEffect, useState, useMemo } from "react"
+import { Pencil, Trash2, Plus, X, ChevronRight, FolderOpen, Folder, Layers } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { getCategories, createCategory, updateCategory, deleteCategory, type CategoryInput } from "@/lib/api/categories"
 import type { Category } from "@/types"
@@ -139,20 +139,24 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 pb-12">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-4 md:px-7 md:pt-7 flex flex-col gap-5">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-[#1B4D91]">{t("title")}</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {t("description")}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1B4D91]/10 text-[#1B4D91]">
+            <Layers className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-[#1B4D91]">{t("title")}</h1>
+            <p className="text-[12px] text-slate-400 font-medium mt-0.5">{t("description")}</p>
+          </div>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="flex items-center gap-2 bg-[#1B4D91] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#123668] transition-colors active:scale-95 shrink-0"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           {t("addCategory")}
         </button>
       </div>
@@ -208,9 +212,9 @@ export default function AdminCategoriesPage() {
                   const children = childrenMap[parent.id] ?? []
                   const isOpen = expanded.has(parent.id)
                   return (
-                    <>
+                    <Fragment key={parent.id}>
                       {/* Parent row */}
-                      <tr key={parent.id} className="hover:bg-slate-50/50 transition-colors group bg-white">
+                      <tr className="hover:bg-slate-50/50 transition-colors group bg-white">
                         <td className="px-5 py-3.5 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <button
@@ -317,13 +321,15 @@ export default function AdminCategoriesPage() {
                           </td>
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   )
                 })
               )}
             </tbody>
           </table>
         </div>
+      </div>
+
       </div>
 
       {/* Modal */}

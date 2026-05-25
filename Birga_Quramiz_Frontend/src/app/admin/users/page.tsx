@@ -1,13 +1,157 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { getAdminUsers, updateAdminUserRole } from "@/lib/api/admin";
+import Link from "next/link";
+import { getAdminUsers, updateAdminUserRole, createAdminUser } from "@/lib/api/admin";
 import type { PaginatedResponse, Role, User } from "@/types";
 import { useTranslations } from "next-intl";
-import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store, BadgeCheck, Clock, Truck, Radio } from "lucide-react";
+import { Search, Users, ChevronLeft, ChevronRight, CheckCircle, Shield, User as UserIcon, Store, BadgeCheck, Clock, Truck, Radio, ExternalLink, UserPlus, X, Headset } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
+
+const ROLE_OPTIONS: { value: Role; label: string; desc: string; icon: React.ElementType; color: string }[] = [
+  { value: "USER",       label: "User",       desc: "Regular customer",          icon: UserIcon, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  { value: "DRIVER",     label: "Driver",     desc: "Delivery driver",           icon: Truck,    color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  { value: "DISPATCHER", label: "Dispatcher", desc: "Manages driver assignments", icon: Headset,  color: "text-purple-600 bg-purple-50 border-purple-200" },
+  { value: "SELLER",     label: "Seller",     desc: "Marketplace seller",        icon: Store,    color: "text-orange-600 bg-orange-50 border-orange-200" },
+  { value: "ADMIN",      label: "Admin",      desc: "Full platform access",      icon: Shield,   color: "text-red-600 bg-red-50 border-red-200" },
+];
+
+function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [name, setName]   = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole]   = useState<Role>("USER");
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError("Name is required."); return; }
+    if (!phone.trim()) { setError("Phone is required."); return; }
+    setSaving(true);
+    setError("");
+    try {
+      await createAdminUser({ name: name.trim(), phone: phone.trim(), role });
+      onCreated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selected = ROLE_OPTIONS.find((r) => r.value === role)!;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-[440px] rounded-2xl bg-white shadow-2xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4">
+          <div>
+            <h2 className="text-[16px] font-black text-slate-800">Add User</h2>
+            <p className="text-[12px] text-slate-400 mt-0.5">User will log in via OTP to their phone</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="px-6 pb-6 flex flex-col gap-5">
+
+          {/* Name + Phone */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Full Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Khondamir Tuychiboev"
+                autoFocus
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium text-slate-700 outline-none focus:border-[#1B4D91] focus:bg-white focus:ring-2 focus:ring-[#1B4D91]/10 transition-all placeholder:text-slate-300"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Phone Number</label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+998 90 123 45 67"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-mono text-slate-700 outline-none focus:border-[#1B4D91] focus:bg-white focus:ring-2 focus:ring-[#1B4D91]/10 transition-all placeholder:text-slate-300"
+              />
+            </div>
+          </div>
+
+          {/* Role picker */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">Role</label>
+            <div className="grid grid-cols-5 gap-1.5">
+              {ROLE_OPTIONS.map(({ value, label, icon: Icon, color }) => {
+                const active = role === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRole(value)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border py-2.5 px-1 text-center transition-all",
+                      active
+                        ? cn("border shadow-sm", color)
+                        : "border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-white"
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    <span className="text-[10px] font-black leading-none">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              <span className="font-bold text-slate-600">{selected.label}:</span> {selected.desc}
+            </p>
+          </div>
+
+          {/* OTP notice */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-blue-50 border border-blue-100 px-3.5 py-3">
+            <UserPlus className="size-3.5 text-blue-400 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-blue-600 leading-relaxed">
+              No password needed. The user will receive a one-time code to their phone when they first log in.
+            </p>
+          </div>
+
+          {error && (
+            <p className="text-[12px] font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">
+              {error}
+            </p>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-11 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 h-11 rounded-xl bg-[#1B4D91] text-[13px] font-bold text-white hover:bg-[#163d7a] disabled:opacity-50 transition-colors"
+            >
+              {saving ? "Creating…" : "Create User"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminUsersPage() {
   const t = useTranslations("AdminUsers");
@@ -18,6 +162,7 @@ export default function AdminUsersPage() {
   const [roleError, setRoleError] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
+  const [addOpen, setAddOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const [role, setRole] = useState<"ALL" | Role>("ALL");
@@ -94,9 +239,15 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-      <div className="mx-auto w-full md:max-w-[1488px]">
-        <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+    <>
+      {addOpen && (
+        <AddUserModal
+          onClose={() => setAddOpen(false)}
+          onCreated={() => { setAddOpen(false); setReloadTick((v) => v + 1); }}
+        />
+      )}
+    <div className="flex flex-col flex-1 pb-12">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-4 md:px-7 md:pt-7 flex flex-col gap-5">
 
           {/* ── Header ── */}
           <div className="flex items-center justify-between">
@@ -107,10 +258,20 @@ export default function AdminUsersPage() {
               <h1 className="text-xl md:text-2xl font-black text-[#1B4D91]">{t("title") || "Users"}</h1>
             </div>
 
-            <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1.5 text-blue-700">
-              <span className="text-[11px] md:text-xs font-bold whitespace-nowrap">
-                {t("totalUsers", { count: meta?.total ?? users.length }) || `${meta?.total ?? users.length} total`}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1.5 text-blue-700">
+                <span className="text-[11px] md:text-xs font-bold whitespace-nowrap">
+                  {t("totalUsers", { count: meta?.total ?? users.length }) || `${meta?.total ?? users.length} total`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#1B4D91] text-white text-[12px] font-bold hover:bg-[#163d7a] transition-colors"
+              >
+                <UserPlus className="size-3.5" />
+                Add User
+              </button>
             </div>
           </div>
 
@@ -210,6 +371,14 @@ export default function AdminUsersPage() {
                       {new Date(u.createdAt).toLocaleDateString()}
                     </p>
 
+                    {/* View link */}
+                    <Link
+                      href={`/admin/users/${u.id}`}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold text-[#1B4D91] hover:bg-[#1B4D91]/5 transition-colors shrink-0"
+                    >
+                      <ExternalLink className="size-3" />
+                    </Link>
+
                     {/* Role select */}
                     <select
                       value={u.role}
@@ -254,8 +423,8 @@ export default function AdminUsersPage() {
             </div>
           )}
 
-        </div>
       </div>
     </div>
+    </>
   );
 }

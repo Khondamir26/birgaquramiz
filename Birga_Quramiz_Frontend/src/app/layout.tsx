@@ -2,9 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import Navbar from '@/components/layout/Navbar';
 import { acrom, onest, manrope } from './fonts';
-import ClientLayout from "@/components/layout/ClientLayout";
 import Script from 'next/script';
 import { Toaster } from 'sonner';
 
@@ -120,13 +118,8 @@ export default async function RootLayout({
       </head>
       <body className={`${acrom.className} ${onest.variable} ${manrope.variable} antialiased tap-highlight-none text-foreground bg-background`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <ClientLayout>
-              <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
-            </ClientLayout>
-            <Toaster position="bottom-center" richColors />
-          </div>
+          {children}
+          <Toaster position="bottom-center" richColors />
         </NextIntlClientProvider>
       </body>
     </html>

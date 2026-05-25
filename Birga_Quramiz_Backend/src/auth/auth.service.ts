@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus, NotFoundException, OnModuleDestroy } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
@@ -63,7 +63,7 @@ type SessionMetadata = {
 }
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   private readonly redis: Redis
 
   constructor(
@@ -77,6 +77,10 @@ export class AuthService {
       port: Number(process.env.REDIS_PORT ?? 6379),
       password: process.env.REDIS_PASSWORD,
     })
+  }
+
+  onModuleDestroy() {
+    this.redis.disconnect()
   }
 
   private async toAuthUser(userId: string): Promise<AuthUser> {
@@ -355,6 +359,10 @@ export class AuthService {
     // No telegramId (new user) or Telegram delivery failed — send via SMS
     const smsSent = await this.sms.send(phone, `Birga Quramiz: tasdiqlash kodi ${code}. Kod 3 daqiqa amal qiladi.`)
     if (!smsSent) {
+      if (process.env.NODE_ENV !== 'production') {
+        // Dev: keep OTP in Redis so it can be verified from logs
+        return { message: 'OTP sent (dev — check server logs)', method: 'sms' as const }
+      }
       await this.redis.del(`otp:auth:${phone}`)
       throw new HttpException(
         'SMS delivery failed. Please try again later.',

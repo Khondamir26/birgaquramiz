@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import {
@@ -83,8 +84,8 @@ export default function AdminSellersPage() {
   if (!isInitialized || !isAuthenticated || user?.role !== "ADMIN") return null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-      <div className="mx-auto w-full md:max-w-[1488px] px-4 md:px-6 pt-5 md:pt-7 flex flex-col gap-5">
+    <div className="flex flex-col flex-1 pb-12">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-4 md:px-7 md:pt-7 flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -155,8 +156,11 @@ export default function AdminSellersPage() {
                       : "border-slate-100 hover:shadow-md"
                   )}
                 >
-                  {/* Card header */}
-                  <div className="px-5 pt-5 pb-4 flex items-start gap-3">
+                  {/* Card header — clicking navigates to seller detail */}
+                  <Link
+                    href={`/admin/sellers/${seller.id}`}
+                    className="px-5 pt-5 pb-4 flex items-start gap-3 hover:bg-slate-50/60 transition-colors rounded-t-2xl"
+                  >
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#0b3190]/8 text-[#0b3190] font-black text-[15px]">
                       {seller.company.charAt(0).toUpperCase()}
                     </div>
@@ -169,7 +173,7 @@ export default function AdminSellersPage() {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Info rows */}
                   <div className="px-5 pb-5 flex flex-col gap-2 flex-1">

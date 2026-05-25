@@ -54,8 +54,8 @@ export default function AdminProductsPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-        <div className="mx-auto w-full md:max-w-[1488px]">
-          <div className="mx-auto flex flex-col gap-6 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+        <div className="mx-auto w-full max-w-[1440px]">
+          <div className="flex flex-col gap-6 px-4 pt-4 md:px-7 md:pt-7">
             <div className="h-24 animate-pulse rounded-3xl bg-white" />
             <div className="h-16 animate-pulse rounded-2xl bg-white" />
             <div className="space-y-4">
@@ -72,8 +72,8 @@ export default function AdminProductsPage() {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-        <div className="mx-auto w-full md:max-w-[1488px]">
-          <div className="mx-auto px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+        <div className="mx-auto w-full max-w-[1440px]">
+          <div className="px-4 pt-4 md:px-7 md:pt-7">
             <div className="rounded-3xl border border-[#E31E24]/20 bg-[#E31E24]/5 p-6 text-[13px] font-semibold text-[#E31E24]">
               {error}
             </div>
@@ -85,8 +85,8 @@ export default function AdminProductsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f6fa] pb-28 md:pb-12">
-      <div className="mx-auto w-full md:max-w-[1488px]">
-        <div className="mx-auto flex flex-col gap-5 px-4 md:px-6 max-w-md md:max-w-none pt-4 md:pt-6">
+      <div className="mx-auto w-full max-w-[1440px]">
+        <div className="flex flex-col gap-5 px-4 pt-4 md:px-7 md:pt-7">
 
           {/* -- Header -- */}
           <div className="flex items-center justify-between">

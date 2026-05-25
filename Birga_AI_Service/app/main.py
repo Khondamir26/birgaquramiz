@@ -71,7 +71,7 @@ def _extract_user_id(request: Request) -> str | None:
 
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-        return str(payload.get("sub") or payload.get("id") or "")
+        return str(payload.get("userId") or payload.get("sub") or payload.get("id") or "")
     except Exception:
         return None
 

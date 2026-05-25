@@ -97,7 +97,7 @@
     "topProducts": "Top Products",
     "mightNeed": "You might need it",
     "allProducts": "All Products",
-    "bannerTitle": "Welcome to\u00a0Birga\u00a0Quramiz!",
+    "bannerTitle": "Welcome to Birga Quramiz!",
     "bannerSubtitle": "Quality materials. Fair prices. Fast delivery."
   },
   "Catalog": {
@@ -581,6 +581,8 @@
     "actionOrdersSub": "Oversight",
     "actionDeletionRequests": "Deletion Requests",
     "actionDeletionRequestsSub": "Review",
+    "actionDrivers": "Drivers",
+    "actionDispatchers": "Dispatchers",
     "actionSellers": "Sellers",
     "actionSellersSub": "{count} pending",
     "usersTotal": "Total Users",
@@ -604,7 +606,21 @@
     "moderation": "Moderation",
     "deletions": "Deletions",
     "sellers": "Sellers",
-    "pending": "pending"
+    "pending": "pending",
+    "navDashboard": "Dashboard",
+    "navMenu": "Menu",
+    "fraudAlerts": "Fraud Alerts",
+    "deliveryProblems": "Delivery Issues",
+    "driverOps": "Driver Status",
+    "driversOnline": "Online",
+    "driversOnDelivery": "Delivering",
+    "driversOffline": "Offline",
+    "driversStuck": "Stuck",
+    "activityFeed": "Live Activity",
+    "orderDistribution": "Order Pipeline",
+    "secMetrics": "Platform Totals",
+    "noActivity": "No recent activity",
+    "noDriverData": "No driver data"
   },
   "AdminCategories": {
     "title": "Category Management",
@@ -670,7 +686,8 @@
     "btnCancel": "Cancel",
     "btnSave": "Save",
     "btnAdd": "Add",
-    "namePlaceholder": "E.g.: Milwaukee"
+    "namePlaceholder": "E.g.: Milwaukee",
+    "total": "Total"
   },
   "AdminProducts": {
     "title": "Product Moderation",

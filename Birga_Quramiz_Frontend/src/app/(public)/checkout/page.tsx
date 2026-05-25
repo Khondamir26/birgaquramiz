@@ -68,7 +68,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!isInitialized) return;
-    if (!isAuthenticated) { router.replace("/login?returnUrl=/checkout"); return; }
     if (user?.role === "ADMIN") { router.push("/admin"); return; }
     if (user?.role === "SELLER") { router.push("/seller/dashboard"); return; }
     if (user?.role === "USER") {

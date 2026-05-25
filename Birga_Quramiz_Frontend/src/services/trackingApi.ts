@@ -1,6 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
 import type { DriverListItem, DriverRecommendation, DriverStatus } from "@/types/tracking";
-import type { Order } from "@/types";
 
 export interface DriverDetail {
   id:          string;
@@ -114,6 +113,30 @@ export interface RoutePoint {
   createdAt: string;
 }
 
+export interface TrackingOrderDetail {
+  id: string;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress: string | null;
+  deliveryType?: string;
+  paymentMethod?: string;
+  total: number;
+  comment?: string | null;
+  createdAt: string;
+  items?: { id: string; productId: string; quantity: number; price: number; product?: { id: string; name: string; imageUrl?: string } | null }[];
+  assignment?: {
+    id: string;
+    status: string;
+    driverId: string;
+    otpVerified: boolean;
+    podPhotoUrl: string | null;
+    podPhotoAt: string | null;
+    createdAt: string;
+    driver?: { id: string; name: string; phone: string } | null;
+  } | null;
+}
+
 export const trackingApi = {
   getDrivers(): Promise<DriverListItem[]> {
     return apiFetch<DriverListItem[]>("/tracking/drivers");
@@ -169,8 +192,8 @@ export const trackingApi = {
     return apiFetch<RoutePoint[]>(`/tracking/drivers/${driverId}/history?${params}`);
   },
 
-  getOrderDetail(orderId: string): Promise<Order> {
-    return apiFetch<Order>(`/tracking/orders/${orderId}/detail`);
+  getOrderDetail(orderId: string): Promise<TrackingOrderDetail> {
+    return apiFetch<TrackingOrderDetail>(`/tracking/orders/${orderId}/detail`);
   },
 
   dismissFraudFlag(id: string): Promise<void> {

@@ -2,6 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { OrdersService } from './orders.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { TelegramService } from '../telegram/telegram.service'
+import { SmsService } from '../tracking/services/sms.service'
 
 describe('OrdersService', () => {
   let service: OrdersService
@@ -10,9 +12,9 @@ describe('OrdersService', () => {
   beforeEach(async () => {
     prisma = {
       seller: { findUnique: jest.fn() },
-      product: { findUnique: jest.fn(), updateMany: jest.fn() },
+      product: { findMany: jest.fn(), updateMany: jest.fn() },
       order: { create: jest.fn() },
-      orderItem: { create: jest.fn() },
+      orderItem: { createMany: jest.fn() },
       $transaction: jest.fn(),
     }
 
@@ -20,6 +22,8 @@ describe('OrdersService', () => {
       providers: [
         OrdersService,
         { provide: PrismaService, useValue: prisma },
+        { provide: TelegramService, useValue: { sendMessage: jest.fn() } },
+        { provide: SmsService, useValue: { send: jest.fn() } },
       ],
     }).compile()
 
@@ -60,11 +64,11 @@ describe('OrdersService', () => {
       cb({
         seller: { findUnique: jest.fn().mockResolvedValue(null) },
         product: {
-          findUnique: jest.fn().mockResolvedValue(product),
+          findMany: jest.fn().mockResolvedValue([product]),
           updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         },
         order: { create: jest.fn().mockResolvedValue(createdOrder) },
-        orderItem: { create: jest.fn().mockResolvedValue({ id: 'oi1' }) },
+        orderItem: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
       }),
     )
 

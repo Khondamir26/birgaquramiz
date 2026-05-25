@@ -653,6 +653,11 @@ onModuleInit() {
       where: { id: orderId },
       include: {
         items: { include: { product: { select: { name: true } } } },
+        assignment: {
+          include: {
+            driver: { select: { id: true, name: true, phone: true } },
+          },
+        },
       },
     })
     if (!order) throw new NotFoundException('Order not found')

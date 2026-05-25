@@ -4,16 +4,18 @@ import { jwtVerify } from 'jose'
 
 const PRIMARY_DOMAIN = 'birga-quramiz.uz'
 const ACCESS_COOKIE = 'access_token'
-const ADMIN_PATH = '/admin'
+
+const ADMIN_PATH       = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
+const SELLER_PATH      = '/seller'
+const DISPATCHER_PATH  = '/dispatcher'
 
 function normalizeHost(host: string | null) {
-  if (!host) return ''
-  return host.split(':')[0].toLowerCase()
+  return host ? host.split(':')[0].toLowerCase() : ''
 }
 
-function isAdminPath(pathname: string) {
-  return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`)
+function isUnder(pathname: string, base: string) {
+  return pathname === base || pathname.startsWith(`${base}/`)
 }
 
 async function getRole(request: NextRequest): Promise<string | null> {
@@ -39,24 +41,43 @@ export async function proxy(request: NextRequest) {
 
   const role = await getRole(request)
 
-  // Redirect authenticated users away from /login
+  // Redirect authenticated users away from /login to their dashboard
   if (pathname === '/login' && role) {
-    const dest = role === 'ADMIN' ? '/admin' : role === 'SELLER' ? '/seller/dashboard' : '/'
+    const dest =
+      role === 'ADMIN'      ? '/admin' :
+      role === 'SELLER'     ? '/seller/dashboard' :
+      role === 'DISPATCHER' ? '/dispatcher' :
+      '/'
     return NextResponse.redirect(new URL(dest, request.url))
   }
 
-  // Admin route protection
-  if (isAdminPath(pathname)) {
-    const isAdmin = role === 'ADMIN'
-
-    if (pathname === ADMIN_LOGIN_PATH && isAdmin) {
+  // Admin protection
+  if (isUnder(pathname, ADMIN_PATH)) {
+    if (pathname === ADMIN_LOGIN_PATH && role === 'ADMIN') {
       return NextResponse.redirect(new URL(ADMIN_PATH, request.url))
     }
+    if (pathname !== ADMIN_LOGIN_PATH && role !== 'ADMIN') {
+      const url = new URL(ADMIN_LOGIN_PATH, request.url)
+      url.searchParams.set('next', `${pathname}${search}`)
+      return NextResponse.redirect(url)
+    }
+  }
 
-    if (pathname !== ADMIN_LOGIN_PATH && !isAdmin) {
-      const loginUrl = new URL(ADMIN_LOGIN_PATH, request.url)
-      loginUrl.searchParams.set('next', `${pathname}${search}`)
-      return NextResponse.redirect(loginUrl)
+  // Seller protection
+  if (isUnder(pathname, SELLER_PATH)) {
+    if (role !== 'SELLER' && role !== 'ADMIN') {
+      const url = new URL('/login', request.url)
+      url.searchParams.set('from', `${pathname}${search}`)
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Dispatcher protection
+  if (isUnder(pathname, DISPATCHER_PATH)) {
+    if (role !== 'DISPATCHER' && role !== 'ADMIN') {
+      const url = new URL('/login', request.url)
+      url.searchParams.set('from', `${pathname}${search}`)
+      return NextResponse.redirect(url)
     }
   }
 
