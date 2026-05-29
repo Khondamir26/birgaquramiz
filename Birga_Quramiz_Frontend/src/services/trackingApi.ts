@@ -208,6 +208,10 @@ export const trackingApi = {
     return apiFetch<DriverRatingSummary>(`/tracking/drivers/${driverId}/rating-summary`);
   },
 
+  forceDriverOffline(driverId: string): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>(`/tracking/drivers/${driverId}/force-offline`, { method: "PATCH" });
+  },
+
   submitRating(
     orderId: string,
     body: { rating: number; comment?: string; tags: string[] },

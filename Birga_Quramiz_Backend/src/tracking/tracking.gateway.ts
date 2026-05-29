@@ -56,6 +56,9 @@ export const EVENTS = {
   SYNC_STATE:                'sync.state',
   SERVER_ERROR:              'server.error',
 
+  // Server → Dispatcher
+  FRAUD_ALERT:               'fraud.alert',
+
   // Server → User (personal notifications)
   NOTIFICATION_NEW:          'notification.new',
 } as const
@@ -321,6 +324,11 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       this.logger.warn(`[fraud] driver=${user.id} reason=${fraudResult.reason}`)
       if (fraudResult.severity === 'HIGH') {
         await this.fraudService.flagDriver(user.id, fraudResult.reason!)
+        this.server.to('dispatchers').emit(EVENTS.FRAUD_ALERT, {
+          driverId: user.id,
+          reason:   fraudResult.reason,
+          at:       Date.now(),
+        })
       }
       // Still return ok so the driver app doesn't retry — just silently discard
       return { status: 'ok', timestamp: Date.now() }
@@ -614,5 +622,23 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   /** Called by NotificationsService to push a notification to a specific user */
   pushNotification(userId: string, notification: unknown) {
     this.server.to(`user:${userId}`).emit(EVENTS.NOTIFICATION_NEW, notification)
+  }
+
+  /** Broadcast driver status change to all dispatchers (called from REST endpoints) */
+  broadcastDriverStatus(driverId: string, status: DriverStatus) {
+    this.server.to('dispatchers').emit(EVENTS.MAP_DRIVER_STATUS, { driverId, status })
+  }
+
+  /** Force a driver offline via admin action: update DB, broadcast, notify their socket */
+  async forceDriverOffline(driverId: string) {
+    await this.trackingService.setDriverStatus(driverId, DriverStatus.OFFLINE)
+    this.server.to('dispatchers').emit(EVENTS.MAP_DRIVER_STATUS, {
+      driverId,
+      status: DriverStatus.OFFLINE,
+    })
+    this.server.to(`driver:${driverId}`).emit(EVENTS.SERVER_ERROR, {
+      code: 'FORCED_OFFLINE',
+      message: 'You have been set offline by an admin',
+    })
   }
 }

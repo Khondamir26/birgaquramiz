@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LogOut, Truck, Wifi, WifiOff, RefreshCcw, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { LogOut, Truck, Wifi, WifiOff, RefreshCcw, AlertTriangle, Bell, CheckCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { logout as apiLogout } from "@/lib/api/auth";
@@ -10,6 +10,116 @@ import { useTrackingStore } from "@/store/trackingStore";
 import { DriverStatus } from "@/types/tracking";
 import { useT } from "@/store/dispatcherLocaleStore";
 import DispatcherLocaleSwitcher from "./DispatcherLocaleSwitcher";
+import { useNotifications } from "@/hooks/useNotifications";
+import type { Notification } from "@/lib/api/notifications";
+
+const NOTIF_ICON: Record<string, string> = {
+  ORDER_NEW:          "🛍️",
+  ORDER_CANCELLED:    "❌",
+  ORDER_SHIPPED:      "🚚",
+  ORDER_DELIVERED:    "✅",
+  PRODUCT_APPROVED:   "✅",
+  PRODUCT_REJECTED:   "⛔",
+  SELLER_APPROVED:    "🎉",
+  SELLER_REJECTED:    "⛔",
+  FRAUD_ALERT:        "🚨",
+  SELLER_APPLICATION: "📋",
+};
+
+function NotificationBell() {
+  const { unreadCount, notifications, loading, loadNotifications, markRead, markAllRead } =
+    useNotifications(true);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const handleOpen = () => {
+    setOpen((v) => !v);
+    if (!open) loadNotifications();
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={handleOpen}
+        aria-label={`Notifications${unreadCount > 0 ? ` — ${unreadCount} unread` : ""}`}
+        className="relative flex size-8 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white"
+      >
+        <Bell className="size-4" />
+        {unreadCount > 0 && (
+          <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white leading-none">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+            <span className="text-[13px] font-bold text-slate-800">Notifications</span>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="flex items-center gap-1 text-[11px] font-semibold text-[#1B4D91] transition hover:opacity-70"
+              >
+                <CheckCheck className="size-3" />
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-80 overflow-y-auto">
+            {loading && (
+              <div className="space-y-2 p-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 animate-pulse rounded-lg bg-slate-100" />
+                ))}
+              </div>
+            )}
+            {!loading && notifications.length === 0 && (
+              <p className="py-8 text-center text-[12px] text-slate-400">No notifications</p>
+            )}
+            {!loading && notifications.map((n: Notification) => (
+              <button
+                key={n.id}
+                onClick={() => markRead(n.id)}
+                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
+                  !n.readAt ? "bg-blue-50/40" : ""
+                }`}
+              >
+                <span className="mt-0.5 text-base leading-none" aria-hidden>
+                  {NOTIF_ICON[n.type] ?? "🔔"}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-semibold text-slate-800">{n.title}</p>
+                  {n.body && (
+                    <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">{n.body}</p>
+                  )}
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    {new Date(n.createdAt).toLocaleString("ru-RU", {
+                      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+                {!n.readAt && (
+                  <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#1B4D91]" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TopBarProps {
   user:               { name: string; role: string } | null;
@@ -133,6 +243,8 @@ export default function TopBar({ user, onOpenAlertCenter }: TopBarProps) {
         )}
 
         <DispatcherLocaleSwitcher />
+
+        <NotificationBell />
 
         <button
           onClick={handleLogout}

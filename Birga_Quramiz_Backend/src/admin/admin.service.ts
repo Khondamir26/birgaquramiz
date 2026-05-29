@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma/prisma.service'
 import { TelegramService } from '../telegram/telegram.service'
 import { SmsService } from '../tracking/services/sms.service'
 import { normalizePhone } from '../auth/phone.util'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { ProductModerationEvent, SellerStatusChangedEvent } from '../notifications/events/product.events'
 
 export type AdminCategoryInput = {
   name?: string
@@ -23,6 +25,7 @@ export class AdminService {
     private prisma: PrismaService,
     private telegram: TelegramService,
     private sms: SmsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async notifyUser(
@@ -379,6 +382,11 @@ export class AdminService {
       `Birga Quramiz: Ваш akkaunt prodavtsa "${seller.company}" tasdiqlandi! Endi tovar qo'sha olasiz.`,
     )
 
+    this.eventEmitter.emit(
+      'seller.status_changed',
+      new SellerStatusChangedEvent(seller.userId, seller.company, 'APPROVED'),
+    )
+
     return { message: 'Seller verified' }
   }
 
@@ -405,6 +413,11 @@ export class AdminService {
       seller.userId,
       `❌ *Birga Quramiz*\n\n${seller.user.name}, к сожалению заявка магазина *"${seller.company}"* отклонена. Свяжитесь с поддержкой для уточнения.`,
       `Birga Quramiz: "${seller.company}" do'kon arizangiz rad etildi. Qo'shimcha ma'lumot uchun qo'llab-quvvatlash bilan bog'laning.`,
+    )
+
+    this.eventEmitter.emit(
+      'seller.status_changed',
+      new SellerStatusChangedEvent(seller.userId, seller.company, 'REJECTED'),
     )
 
     return { message: 'Seller rejected and role reverted to USER' }
@@ -794,6 +807,11 @@ export class AdminService {
       `Birga Quramiz: "${product.name}" mahsulotingiz tasdiqlandi va xaridorlarga ko'rinadi.`,
     )
 
+    this.eventEmitter.emit(
+      'product.moderated',
+      new ProductModerationEvent(productId, product.name, product.seller.user.id, 'APPROVED'),
+    )
+
     return { message: 'Product approved' }
   }
 
@@ -830,6 +848,11 @@ export class AdminService {
       product.seller.user.id,
       `❌ *Birga Quramiz*\n\nТовар *"${product.name}"* отклонён по причине: ${reason.trim()}. Исправьте и отправьте на повторную проверку.`,
       `Birga Quramiz: "${product.name}" mahsulotingiz rad etildi. Sabab: ${reason.trim()}.`,
+    )
+
+    this.eventEmitter.emit(
+      'product.moderated',
+      new ProductModerationEvent(productId, product.name, product.seller.user.id, 'REJECTED', reason.trim()),
     )
 
     return { message: 'Product rejected' }

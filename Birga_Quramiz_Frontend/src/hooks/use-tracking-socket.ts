@@ -18,6 +18,7 @@ import {
   SYNC_STATE,
   CLIENT_SYNC_REQUEST,
   DRIVER_ISSUE_REPORTED,
+  FRAUD_ALERT,
 } from "@/types/tracking";
 
 class Backoff {
@@ -144,6 +145,10 @@ export function useTrackingSocket() {
       window.dispatchEvent(new CustomEvent("birga:driver_issue", { detail: payload }));
     });
 
+    socket.on(FRAUD_ALERT, (payload: { driverId: string; reason: string; at: number }) => {
+      window.dispatchEvent(new CustomEvent("birga:fraud_alert", { detail: payload }));
+    });
+
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (rafHandle.current) cancelAnimationFrame(rafHandle.current);
@@ -160,6 +165,7 @@ export function useTrackingSocket() {
       socket.off(ETA_UPDATED);
       socket.off(ASSIGNMENT_STATUS_CHANGED);
       socket.off(DRIVER_ISSUE_REPORTED);
+      socket.off(FRAUD_ALERT);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

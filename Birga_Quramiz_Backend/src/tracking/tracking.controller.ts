@@ -15,7 +15,9 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common'
+import { DriverStatus } from '@prisma/client'
 import { AuthGuard } from '@nestjs/passport'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
@@ -168,6 +170,33 @@ export class TrackingController {
   }
 
   // ─── Driver endpoints ───────────────────────────────────────────────────────
+
+  /** PATCH /tracking/drivers/me/status — driver explicitly sets online/offline via REST */
+  @Patch('drivers/me/status')
+  @Roles('DRIVER')
+  async setMyPresenceStatus(
+    @Body() body: { status: 'ONLINE' | 'OFFLINE' },
+    @Req() req: AuthedRequest,
+  ) {
+    if (body.status !== 'ONLINE' && body.status !== 'OFFLINE') {
+      throw new BadRequestException('status must be ONLINE or OFFLINE')
+    }
+    const status = body.status as DriverStatus
+    await this.trackingService.setDriverStatus(req.user.id, status)
+    this.trackingGateway.broadcastDriverStatus(req.user.id, status)
+    return { status }
+  }
+
+  /** PATCH /tracking/drivers/:driverId/force-offline — admin/dispatcher forces driver offline */
+  @Patch('drivers/:driverId/force-offline')
+  @Roles('ADMIN', 'DISPATCHER')
+  @HttpCode(HttpStatus.OK)
+  async forceDriverOffline(@Param('driverId') driverId: string) {
+    const driver = await this.trackingService.getDriverDetail(driverId).catch(() => null)
+    if (!driver) throw new NotFoundException('Driver not found')
+    await this.trackingGateway.forceDriverOffline(driverId)
+    return { message: 'Driver set offline' }
+  }
 
   /** GET /tracking/my-assignments */
   @Get('my-assignments')

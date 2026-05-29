@@ -301,6 +301,7 @@ export default function DispatcherDashboard() {
   const [selectedOrderId,  setSelectedOrderId]  = useState<string | null>(null);
 
   const toastTimers = useRef<globalThis.Map<string, ReturnType<typeof setTimeout>>>(new globalThis.Map());
+  const qc = useQueryClient();
 
   useTrackingSocket();
 
@@ -370,13 +371,26 @@ export default function DispatcherDashboard() {
       });
     };
 
+    const handleFraudAlert = (e: Event) => {
+      const { driverId, reason } = (e as CustomEvent<{ driverId: string; reason: string; at: number }>).detail;
+      const driver = Object.values(useTrackingStore.getState().drivers).find((d) => d.id === driverId);
+      qc.invalidateQueries({ queryKey: ["tracking", "fraud-flags"] });
+      addToast({
+        kind:  "error",
+        title: "🚨 Fraud Alert",
+        body:  driver ? `${driver.name}: ${reason}` : reason,
+      });
+    };
+
     window.addEventListener("birga:order_delayed",     handleDelayed);
     window.addEventListener("birga:assignment_status", handleStatus);
     window.addEventListener("birga:driver_issue",      handleDriverIssue);
+    window.addEventListener("birga:fraud_alert",       handleFraudAlert);
     return () => {
       window.removeEventListener("birga:order_delayed",     handleDelayed);
       window.removeEventListener("birga:assignment_status", handleStatus);
       window.removeEventListener("birga:driver_issue",      handleDriverIssue);
+      window.removeEventListener("birga:fraud_alert",       handleFraudAlert);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drivers]);

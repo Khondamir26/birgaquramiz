@@ -83,3 +83,6 @@ export const ASSIGNMENT_STATUS_CHANGED  = "assignment.status.changed";
 
 /** Server → Dispatcher: driver reported a delivery problem */
 export const DRIVER_ISSUE_REPORTED      = "driver.issue.reported";
+
+/** Server → Dispatcher: high-severity fraud event flagged */
+export const FRAUD_ALERT                = "fraud.alert";

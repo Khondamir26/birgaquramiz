@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useFetch } from "@/hooks/useFetch";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Phone, Calendar, Star,
   Package, AlertTriangle, CheckCircle2, Clock,
-  Hash, TrendingUp, ExternalLink, MapPin,
+  Hash, TrendingUp, ExternalLink, MapPin, WifiOff,
 } from "lucide-react";
 
 function timeAgo(iso: string | null | undefined): string {
@@ -57,6 +57,7 @@ export default function AdminDriverDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const liveDriver = useTrackingStore((s) => s.drivers[id]);
+  const [forcingOffline, setForcingOffline] = useState(false);
 
   const detailFetcher  = useCallback(() => trackingApi.getDriverDetail(id),     [id]);
   const statsFetcher   = useCallback(() => trackingApi.getDriverStats(id),      [id]);
@@ -71,6 +72,17 @@ export default function AdminDriverDetailPage() {
   const status = liveDriver?.status ?? (detail?.status as DriverStatus | undefined) ?? DriverStatus.OFFLINE;
   const cfg    = STATUS_CONFIG[status];
   const alerts = liveDriver?.alerts ?? [];
+
+  async function handleForceOffline() {
+    if (!confirm(`Force ${detail?.name ?? "this driver"} offline?`)) return;
+    setForcingOffline(true);
+    try {
+      await trackingApi.forceDriverOffline(id);
+      useTrackingStore.getState().updateDriverStatus(id, DriverStatus.OFFLINE);
+    } finally {
+      setForcingOffline(false);
+    }
+  }
 
   if (loadingDetail) {
     return (
@@ -131,6 +143,19 @@ export default function AdminDriverDetailPage() {
                   {cfg.label}
                   {liveDriver && <span className="opacity-50">· live</span>}
                 </div>
+
+                {/* Force offline action */}
+                {status !== DriverStatus.OFFLINE && (
+                  <button
+                    type="button"
+                    onClick={handleForceOffline}
+                    disabled={forcingOffline}
+                    className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-[11px] font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors"
+                  >
+                    <WifiOff className="size-3 shrink-0" />
+                    {forcingOffline ? "Setting offline…" : "Force offline"}
+                  </button>
+                )}
 
                 {/* Active alerts */}
                 {alerts.length > 0 && (

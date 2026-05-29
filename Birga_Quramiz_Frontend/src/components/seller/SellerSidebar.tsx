@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Package, ClipboardList,
-  LogOut, Store, Menu, X, ChevronRight, User, Bell, CheckCheck,
+  LogOut, Store, Menu, X, ChevronRight, User, Bell, CheckCheck, BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -18,10 +18,11 @@ import type { Notification } from "@/lib/api/notifications";
 type NavItem = { label: string; href: string; icon: React.ElementType };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",  href: "/seller/dashboard", icon: LayoutDashboard },
-  { label: "Products",   href: "/seller/products",  icon: Package },
-  { label: "Orders",     href: "/seller/orders",    icon: ClipboardList },
-  { label: "My Store",   href: "/seller/profile",   icon: Store },
+  { label: "Dashboard",      href: "/seller/dashboard",      icon: LayoutDashboard },
+  { label: "Products",       href: "/seller/products",       icon: Package },
+  { label: "Orders",         href: "/seller/orders",         icon: ClipboardList },
+  { label: "Notifications",  href: "/seller/notifications",  icon: BellRing },
+  { label: "My Store",       href: "/seller/profile",        icon: Store },
 ];
 
 function SidebarLink({ label, href, icon: Icon, active, onClick }: {
@@ -224,14 +225,20 @@ function SidebarContent({ onLinkClick, notif }: { onLinkClick?: () => void; noti
           />
         </div>
         {NAV_ITEMS.map((item) => (
-          <SidebarLink
-            key={item.href}
-            label={item.label}
-            href={item.href}
-            icon={item.icon}
-            active={isActive(item.href)}
-            onClick={onLinkClick}
-          />
+          <div key={item.href} className="relative">
+            <SidebarLink
+              label={item.label}
+              href={item.href}
+              icon={item.icon}
+              active={isActive(item.href)}
+              onClick={onLinkClick}
+            />
+            {item.href === "/seller/notifications" && unreadCount > 0 && (
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white leading-none">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
         ))}
       </nav>
 
