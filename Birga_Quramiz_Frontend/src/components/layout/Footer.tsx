@@ -157,15 +157,13 @@ export default function Footer() {
             </a>
 
             <a
-              href="https://t.me/bq_help"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:info@birga-quramiz.uz"
               className="flex items-center gap-3 group hover:opacity-80 transition-opacity"
             >
               <div className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white/70 shrink-0">
                 <Mail className="size-4" />
               </div>
-              <span className="text-[14px] font-medium text-white/75 group-hover:text-white transition-colors">info@birgaquramiz.uz</span>
+              <span className="text-[14px] font-medium text-white/75 group-hover:text-white transition-colors">info@birga-quramiz.uz</span>
             </a>
           </div>
         </div>

@@ -142,7 +142,7 @@ const SECTIONS = [
       "По вопросам, связанным с настоящими Условиями, обращайтесь:",
     ],
     bullets: [
-      "Email: info@birgaquramiz.uz",
+      "Email: info@birga-quramiz.uz",
       "Сайт: birga-quramiz.uz",
     ],
   },

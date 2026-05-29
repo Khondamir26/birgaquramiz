@@ -60,12 +60,39 @@ export async function proxy(request: NextRequest) {
 
   // Redirect authenticated users away from /login to their dashboard
   if (effectivePath === '/login' && role) {
+    if (subdomainBase) {
+      // Strict access: check if the user's role belongs to this subdomain
+      const hasAccess =
+        (subdomainBase === '/admin'      && role === 'ADMIN') ||
+        (subdomainBase === '/seller'     && (role === 'SELLER' || role === 'ADMIN')) ||
+        (subdomainBase === '/dispatcher' && (role === 'DISPATCHER' || role === 'ADMIN'))
+
+      if (!hasAccess) {
+        // Wrong subdomain for this role — send to main domain
+        return NextResponse.redirect(`https://${PRIMARY_DOMAIN}`)
+      }
+
+      const dest = subdomainBase === '/seller' ? '/seller/dashboard' : subdomainBase
+      return NextResponse.redirect(new URL(dest, request.url))
+    }
+
+    // Main domain — redirect to the proper subdomain, not a path on the main domain
     const dest =
-      role === 'ADMIN'      ? '/admin' :
-      role === 'SELLER'     ? '/seller/dashboard' :
-      role === 'DISPATCHER' ? '/dispatcher' :
+      role === 'ADMIN'      ? `https://admin.${PRIMARY_DOMAIN}` :
+      role === 'SELLER'     ? `https://seller.${PRIMARY_DOMAIN}` :
+      role === 'DISPATCHER' ? `https://dispatcher.${PRIMARY_DOMAIN}` :
       '/'
-    return NextResponse.redirect(new URL(dest, request.url))
+    return NextResponse.redirect(dest)
+  }
+
+  // On main domain, /admin /seller /dispatcher paths redirect to their subdomains
+  if (!subdomainBase) {
+    if (isUnder(pathname, ADMIN_PATH))
+      return NextResponse.redirect(`https://admin.${PRIMARY_DOMAIN}`, 301)
+    if (isUnder(pathname, SELLER_PATH))
+      return NextResponse.redirect(`https://seller.${PRIMARY_DOMAIN}`, 301)
+    if (isUnder(pathname, DISPATCHER_PATH))
+      return NextResponse.redirect(`https://dispatcher.${PRIMARY_DOMAIN}`, 301)
   }
 
   // Admin protection

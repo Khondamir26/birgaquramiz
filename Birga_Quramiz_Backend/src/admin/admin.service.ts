@@ -4,6 +4,7 @@ import type { OrderStatus, Prisma, Role } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 import { TelegramService } from '../telegram/telegram.service'
 import { SmsService } from '../tracking/services/sms.service'
+import { normalizePhone } from '../auth/phone.util'
 
 export type AdminCategoryInput = {
   name?: string
@@ -47,10 +48,9 @@ export class AdminService {
   }
 
   async createUser(input: { name: string; phone: string; role?: Role }) {
-    const phone = input.phone.trim()
+    const phone = normalizePhone(input.phone)
     const name  = input.name.trim()
     if (!name)  throw new BadRequestException('Name is required')
-    if (!phone) throw new BadRequestException('Phone is required')
 
     const existing = await this.prisma.user.findUnique({ where: { phone } })
     if (existing) throw new ConflictException('Phone number already in use')

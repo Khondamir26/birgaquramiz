@@ -81,7 +81,7 @@ const SECTIONS = [
       "Запросить удаление своих данных (с учётом законодательных ограничений)",
       "Отозвать согласие на обработку данных в любое время",
     ],
-    footer: "Для реализации своих прав обратитесь к нам: info@birgaquramiz.uz",
+    footer: "Для реализации своих прав обратитесь к нам: info@birga-quramiz.uz",
   },
   {
     id: "cookies",
@@ -109,7 +109,7 @@ const SECTIONS = [
       "По всем вопросам, связанным с обработкой персональных данных, обращайтесь:",
     ],
     bullets: [
-      "Email: info@birgaquramiz.uz",
+      "Email: info@birga-quramiz.uz",
       "Сайт: birga-quramiz.uz",
     ],
   },

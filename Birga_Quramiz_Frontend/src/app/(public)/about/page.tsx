@@ -177,7 +177,7 @@ export default function AboutPage() {
               { label: t("details.nameLabel"),    value: t("details.nameValue")    },
               { label: t("details.innLabel"),      value: "—"                       },
               { label: t("details.addressLabel"),  value: t("details.addressValue") },
-              { label: t("details.emailLabel"),    value: "info@birgaquramiz.uz",   isEmail: true },
+              { label: t("details.emailLabel"),    value: "info@birga-quramiz.uz",   isEmail: true },
             ].map(({ label, value, isEmail }) => (
               <div key={label} className="flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
