@@ -32,6 +32,38 @@ birga-quramiz.uz {
   }
 }
 
+# Internal panels — all served by the same Next.js frontend
+# proxy.ts handles subdomain → path routing internally
+admin.birga-quramiz.uz {
+  import site_security
+
+  reverse_proxy frontend:3000 {
+    health_uri /
+    health_interval 10s
+    health_timeout 5s
+  }
+}
+
+seller.birga-quramiz.uz {
+  import site_security
+
+  reverse_proxy frontend:3000 {
+    health_uri /
+    health_interval 10s
+    health_timeout 5s
+  }
+}
+
+dispatcher.birga-quramiz.uz {
+  import site_security
+
+  reverse_proxy frontend:3000 {
+    health_uri /
+    health_interval 10s
+    health_timeout 5s
+  }
+}
+
 # AI Service
 ai.birga-quramiz.uz {
   import site_security
