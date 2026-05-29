@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
@@ -22,9 +23,15 @@ import { BrandsModule } from './brands/brands.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { MapsModule } from './maps/maps.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 20,
+    }),
     SentryModule.forRoot(),
     LoggerModule.forRoot(pinoConfig),
     ThrottlerModule.forRootAsync({
@@ -60,6 +67,7 @@ import { TelegramModule } from './telegram/telegram.module';
     BrandsModule,
     TrackingModule,
     TelegramModule,
+    NotificationsModule,
   ],
   controllers: [AppController, AnalyticsController],
   providers: [AppService],

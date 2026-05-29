@@ -55,6 +55,9 @@ export const EVENTS = {
   ORDER_DELIVERED:           'order.delivered',
   SYNC_STATE:                'sync.state',
   SERVER_ERROR:              'server.error',
+
+  // Server → User (personal notifications)
+  NOTIFICATION_NEW:          'notification.new',
 } as const
 
 interface AuthSocket extends Socket {
@@ -231,9 +234,20 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       client.data.user = user
       this.lastPing.set(client.id, Date.now())
 
+      // Every authenticated user gets a personal room for notifications
+      client.join(`user:${user.id}`)
+
       // Auto-join role-based rooms
       if (user.role === Role.DISPATCHER || user.role === Role.ADMIN) {
         client.join('dispatchers')
+      }
+
+      if (user.role === Role.SELLER) {
+        const seller = await this.prisma.seller.findUnique({
+          where: { userId: user.id },
+          select: { id: true },
+        })
+        if (seller) client.join(`seller:${seller.id}`)
       }
 
       if (user.role === Role.DRIVER) {
@@ -595,5 +609,10 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     const payload = { orderId, driverId, etaMinutes, arrivalTime: arrivalTime.toISOString() }
     this.server.to('dispatchers').emit(EVENTS.ETA_UPDATED, payload)
     this.server.to(`order:${orderId}`).emit(EVENTS.ETA_UPDATED, payload)
+  }
+
+  /** Called by NotificationsService to push a notification to a specific user */
+  pushNotification(userId: string, notification: unknown) {
+    this.server.to(`user:${userId}`).emit(EVENTS.NOTIFICATION_NEW, notification)
   }
 }

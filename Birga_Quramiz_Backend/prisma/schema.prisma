@@ -70,6 +70,7 @@ model User {
   locationHistory  LocationHistory[]
   fraudEvents      FraudEvent[]
   ratingsReceived  DeliveryRating[]     @relation("DriverRatings")
+  notifications    Notification[]
 }
 
 model AuthSession {
@@ -379,6 +380,47 @@ model DeliveryRating {
 
   @@index([driverId])
   @@index([driverId, createdAt])
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+enum NotificationType {
+  // Seller
+  ORDER_NEW
+  ORDER_PAID
+  ORDER_CANCELLED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PRODUCT_APPROVED
+  PRODUCT_REJECTED
+  SELLER_APPROVED
+  SELLER_REJECTED
+  // Dispatcher / Admin
+  ASSIGNMENT_CREATED
+  DRIVER_OFFLINE
+  ORDER_DELAYED
+  FRAUD_ALERT
+  SELLER_APPLICATION
+  // Driver
+  ASSIGNMENT_NEW
+  ASSIGNMENT_CANCELLED_DRV
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([createdAt])
 }
 
 /// Fraud / suspicious behaviour log

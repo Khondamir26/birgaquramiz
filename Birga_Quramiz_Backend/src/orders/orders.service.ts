@@ -1,10 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { PrismaService } from '../prisma/prisma.service'
 import type { CreateOrderDto } from './dto/create-order.dto'
 import type { AuthUser } from '../auth/auth.types'
 import type { OrderStatus, Prisma, ProductStatus } from '@prisma/client'
 import { TelegramService } from '../telegram/telegram.service'
 import { SmsService } from '../tracking/services/sms.service'
+import { OrderCreatedEvent } from '../notifications/events/order.events'
 
 interface OrderItemInput {
   productId: string
@@ -17,6 +19,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private telegramService: TelegramService,
     private smsService: SmsService,
+    private eventEmitter: EventEmitter2,
   ) { }
 
   private getOrderLang(code?: string | null): 'uz' | 'ru' | 'en' {
@@ -111,6 +114,8 @@ export class OrdersService {
       throw new BadRequestException('Delivery address is required for delivery orders')
     }
 
+    let orderSellerIds: string[] = []
+
     const createdOrder = await this.prisma.$transaction(async (tx) => {
       let total = 0
       const productsMap = new Map<string, { id: string; sellerId: string; price: number; stock: number; status: ProductStatus }>()
@@ -171,6 +176,9 @@ export class OrdersService {
         }
       })
 
+      // Collect unique seller IDs for post-commit notifications
+      orderSellerIds = [...new Set(items.map((item) => productsMap.get(item.productId)!.sellerId))]
+
       // Batch insert all order items in one query
       await tx.orderItem.createMany({
         data: items.map((item) => {
@@ -200,6 +208,20 @@ export class OrdersService {
       const lang = this.getOrderLang(createdOrder.user.languageCode)
       const msg = this.orderMsg('NEW', createdOrder.id.slice(0, 8), lang)
       this.telegramService.sendMessage(createdOrder.user.telegramId, msg.tg).catch(e => console.error(e))
+    }
+
+    // Notify sellers via event system (non-blocking)
+    if (orderSellerIds.length > 0) {
+      this.eventEmitter.emit(
+        'order.created',
+        new OrderCreatedEvent(
+          createdOrder.id,
+          createdOrder.id.slice(0, 8),
+          orderSellerIds,
+          createdOrder.customerName,
+          createdOrder.total,
+        ),
+      )
     }
 
     return createdOrder
