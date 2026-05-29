@@ -51,6 +51,11 @@ const MSG = {
     ru: '❌ Неверный формат номера телефона. Попробуйте ещё раз.',
     en: '❌ Invalid phone number format. Please try again.',
   },
+  loginFirst: {
+    uz: "⚠️ Bu raqam boshqa akkauntga bog'liq.\n\nTelegram akkauntingizni ulash uchun avval saytga shu raqam bilan kiring va OTP kodni so'rang — bot avtomatik yuboradi.",
+    ru: '⚠️ Этот номер принадлежит другому аккаунту.\n\nЧтобы привязать Telegram, сначала войдите на сайт с этим номером и запросите OTP — бот отправит его автоматически.',
+    en: "⚠️ This number belongs to another account.\n\nTo link Telegram, first log in on the website with this number and request an OTP — the bot will deliver it automatically.",
+  },
 }
 
 @Injectable()
@@ -182,8 +187,20 @@ export class TelegramService implements OnApplicationBootstrap {
       return
     }
 
+    // Always check for a pending login OTP before doing any linking
+    const pendingOtp = await this.redis.get(`otp:auth:${phone}`)
+
     if (userByTelegram && !userByTelegram.phone && userByPhone) {
-      // Case 3: two separate accounts — phone-based account wins
+      // Case 3: two separate accounts — only merge if there is an active login attempt
+      // (guards against a wrong Telegram account accidentally hijacking the phone-based user)
+      if (!pendingOtp) {
+        await this.sendRaw(chatId, {
+          text: MSG.loginFirst[lang],
+          parse_mode: 'Markdown',
+          reply_markup: { remove_keyboard: true },
+        })
+        return
+      }
       await this.prisma.user.update({
         where: { id: userByTelegram.id },
         data: { telegramId: null },
@@ -193,13 +210,22 @@ export class TelegramService implements OnApplicationBootstrap {
         data: { telegramId },
       })
     } else if (userByTelegram && !userByTelegram.phone) {
-      // Case 2: telegramId exists but no phone (legacy account) — add phone
+      // Case 2: this Telegram account exists but has no phone — add the shared phone
       await this.prisma.user.update({
         where: { id: userByTelegram.id },
         data: { phone },
       })
     } else if (!userByTelegram && userByPhone) {
-      // Case 1: phone-based account exists, no telegramId — link telegramId
+      // Case 1: phone-based account exists but no Telegram linked yet.
+      // Only link if the user is actively logging in (pending OTP) — prevents hijacking.
+      if (!pendingOtp) {
+        await this.sendRaw(chatId, {
+          text: MSG.loginFirst[lang],
+          parse_mode: 'Markdown',
+          reply_markup: { remove_keyboard: true },
+        })
+        return
+      }
       await this.prisma.user.update({
         where: { id: userByPhone.id },
         data: { telegramId },
@@ -211,8 +237,7 @@ export class TelegramService implements OnApplicationBootstrap {
       })
     }
 
-    // If user had a pending OTP from website login — deliver it here
-    const pendingOtp = await this.redis.get(`otp:auth:${phone}`)
+    // Deliver pending OTP via Telegram now that accounts are linked
     if (pendingOtp) {
       await this.redis.del(`otp:auth:${phone}`)
       await this.sendRaw(chatId, {

@@ -239,6 +239,13 @@ export class AuthController {
     return this.authService.updateProfile(req.user.id, body.name)
   }
 
+  @Delete('telegram')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  unlinkTelegram(@Req() req: AuthedRequest) {
+    return this.authService.unlinkTelegram(req.user.id)
+  }
+
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
   getSessions(@Req() req: AuthedRequest) {

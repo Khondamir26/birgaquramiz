@@ -713,4 +713,12 @@ export class AuthService implements OnModuleDestroy {
       select: { id: true, name: true, phone: true, role: true, createdAt: true },
     })
   }
+
+  async unlinkTelegram(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { telegramId: null, telegramUsername: null, telegramPhoto: null },
+    })
+    return { message: 'Telegram unlinked' }
+  }
 }
