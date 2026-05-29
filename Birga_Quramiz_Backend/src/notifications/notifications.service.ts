@@ -2,7 +2,7 @@ import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import { PrismaService } from '../prisma/prisma.service'
 import { TrackingGateway } from '../tracking/tracking.gateway'
-import { NotificationType } from '@prisma/client'
+import { NotificationType, Prisma } from '@prisma/client'
 import { OrderCreatedEvent, OrderStatusChangedEvent } from './events/order.events'
 import { ProductModerationEvent, SellerStatusChangedEvent } from './events/product.events'
 
@@ -24,7 +24,7 @@ export class NotificationsService {
     data?: Record<string, unknown>,
   ) {
     const notification = await this.prisma.notification.create({
-      data: { userId, type, title, body, data: data ?? undefined },
+      data: { userId, type, title, body, data: data !== undefined ? (data as Prisma.InputJsonValue) : Prisma.JsonNull },
     })
     this.gateway.pushNotification(userId, notification)
     return notification

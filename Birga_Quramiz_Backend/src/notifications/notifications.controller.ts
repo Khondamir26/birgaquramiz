@@ -1,7 +1,10 @@
 import { Controller, Get, Patch, Param, Query, Req, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { NotificationsService } from './notifications.service'
-import type { AuthedRequest } from '../auth/auth.types'
+import type { AuthUser } from '../auth/auth.types'
+import type { Request } from 'express'
+
+type AuthedRequest = Request & { user: AuthUser }
 
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
