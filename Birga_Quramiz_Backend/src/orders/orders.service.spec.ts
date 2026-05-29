@@ -1,5 +1,6 @@
 ﻿import { BadRequestException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { OrdersService } from './orders.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { TelegramService } from '../telegram/telegram.service'
@@ -24,6 +25,7 @@ describe('OrdersService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: TelegramService, useValue: { sendMessage: jest.fn() } },
         { provide: SmsService, useValue: { send: jest.fn() } },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile()
 
