@@ -76,6 +76,34 @@ export class SellerService {
     }
   }
 
+  async getMyProfile(user: AuthUser) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        articleNumber: true,
+        company: true,
+        status: true,
+        createdAt: true,
+        user: { select: { name: true, phone: true, createdAt: true } },
+      },
+    })
+    if (!seller) throw new NotFoundException('Seller profile not found')
+    return seller
+  }
+
+  async updateMyProfile(user: AuthUser, company: string) {
+    const trimmed = company?.trim()
+    if (!trimmed) throw new BadRequestException('Company name is required')
+    const seller = await this.prisma.seller.findUnique({ where: { userId: user.id } })
+    if (!seller) throw new NotFoundException('Seller profile not found')
+    return this.prisma.seller.update({
+      where: { userId: user.id },
+      data: { company: trimmed },
+      select: { id: true, articleNumber: true, company: true, status: true },
+    })
+  }
+
   async getPublicProfile(articleNumber: number) {
     const seller = await this.prisma.seller.findUnique({
       where: { articleNumber },

@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import type { Order, OrderStatus } from "@/types";
 import {
   CheckCircle, Clock, Truck, XCircle, AlertCircle, Package,
-  User2, Phone, MapPin, CreditCard, MessageSquare, ArrowRight,
+  User2, Phone, MapPin, CreditCard, MessageSquare,
   RefreshCw, ShoppingBag
 } from "lucide-react";
 
@@ -50,7 +50,7 @@ export default function SellerOrdersPage() {
 
   const { data, loading, error, refetch } = useFetch(() => getSellerOrders());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"ALL" | "NEED_ACTION" | "ACTIVE" | "DELIVERED" | "CANCELLED">("ALL");
+  const [activeTab, setActiveTab] = useState<"ALL" | "AWAITING" | "NEED_ACTION" | "ACTIVE" | "DELIVERED" | "CANCELLED">("ALL");
 
   const doAction = async (fn: () => Promise<unknown>, key: string) => {
     setActionLoading(key);
@@ -89,13 +89,15 @@ export default function SellerOrdersPage() {
 
   const allOrders: Order[] = data?.data ?? [];
 
-  const needActionCount = allOrders.filter((o) => o.status === "NEW" || o.status === "PAID").length;
+  const awaitingPaymentCount = allOrders.filter((o) => o.status === "NEW").length;
+  const needActionCount = allOrders.filter((o) => o.status === "PAID").length;
   const activeCount = allOrders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED").length;
   const deliveredCount = allOrders.filter((o) => o.status === "DELIVERED").length;
   const cancelledCount = allOrders.filter((o) => o.status === "CANCELLED").length;
 
   const orders: Order[] = activeTab === "ALL" ? allOrders
-    : activeTab === "NEED_ACTION" ? allOrders.filter((o) => o.status === "NEW" || o.status === "PAID")
+    : activeTab === "NEED_ACTION" ? allOrders.filter((o) => o.status === "PAID")
+    : activeTab === "AWAITING" ? allOrders.filter((o) => o.status === "NEW")
     : activeTab === "ACTIVE" ? allOrders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED")
     : activeTab === "DELIVERED" ? allOrders.filter((o) => o.status === "DELIVERED")
     : allOrders.filter((o) => o.status === "CANCELLED");
@@ -125,11 +127,12 @@ export default function SellerOrdersPage() {
           {allOrders.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-0.5 hide-scrollbar">
               {([
-                { key: "ALL", label: t("filterAll"), count: allOrders.length },
-                { key: "NEED_ACTION", label: t("filterNeedAction"), count: needActionCount, accent: needActionCount > 0 },
-                { key: "ACTIVE", label: t("filterActive"), count: activeCount },
-                { key: "DELIVERED", label: t("filterDelivered"), count: deliveredCount },
-                { key: "CANCELLED", label: t("filterCancelled"), count: cancelledCount },
+                { key: "ALL",         label: t("filterAll"),        count: allOrders.length },
+                { key: "NEED_ACTION", label: t("filterNeedAction"), count: needActionCount,       accent: needActionCount > 0 },
+                { key: "AWAITING",    label: "Awaiting Payment",    count: awaitingPaymentCount },
+                { key: "ACTIVE",      label: t("filterActive"),     count: activeCount },
+                { key: "DELIVERED",   label: t("filterDelivered"),  count: deliveredCount },
+                { key: "CANCELLED",   label: t("filterCancelled"),  count: cancelledCount },
               ] as const).map((tab) => (
                 <button
                   key={tab.key}
@@ -290,8 +293,24 @@ export default function SellerOrdersPage() {
                     </div>
 
                     {/* ── Actions ── */}
-                    {(order.status === "PAID" || order.status === "CONFIRMED") && (
+                    {(order.status === "NEW" || order.status === "PAID" || order.status === "CONFIRMED") && (
                       <div className="border-t border-[#f4f6fa] px-5 py-3 flex flex-wrap gap-2">
+                        {order.status === "NEW" && (
+                          <>
+                            <span className="flex items-center gap-1.5 rounded-2xl bg-amber-50 border border-amber-100 px-4 py-2 text-[12px] font-semibold text-amber-700">
+                              <Clock className="size-3.5" />
+                              Waiting for customer payment
+                            </span>
+                            <button
+                              disabled={actionLoading === cancelKey}
+                              onClick={() => doAction(() => cancelOrder(order.id), cancelKey)}
+                              className="flex items-center gap-1.5 rounded-2xl border border-[#E31E24]/20 bg-[#E31E24]/5 px-4 py-2 text-[12px] font-black text-[#E31E24] hover:bg-[#E31E24]/10 disabled:opacity-50 transition-colors"
+                            >
+                              <XCircle className="size-3.5" />
+                              {actionLoading === cancelKey ? "..." : "Cancel Order"}
+                            </button>
+                          </>
+                        )}
                         {order.status === "PAID" && (
                           <>
                             <button
@@ -300,7 +319,7 @@ export default function SellerOrdersPage() {
                               className="flex items-center gap-1.5 rounded-2xl bg-[#1B4D91] px-4 py-2 text-[12px] font-black text-white hover:bg-[#163d73] disabled:opacity-50 transition-colors"
                             >
                               <CheckCircle className="size-3.5" />
-                              {actionLoading === confirmKey ? "..." : t("confirm") || "Подтвердить"}
+                              {actionLoading === confirmKey ? "..." : t("confirm")}
                             </button>
                             <button
                               disabled={actionLoading === cancelKey}
@@ -308,7 +327,7 @@ export default function SellerOrdersPage() {
                               className="flex items-center gap-1.5 rounded-2xl border border-[#E31E24]/20 bg-[#E31E24]/5 px-4 py-2 text-[12px] font-black text-[#E31E24] hover:bg-[#E31E24]/10 disabled:opacity-50 transition-colors"
                             >
                               <XCircle className="size-3.5" />
-                              {actionLoading === cancelKey ? "..." : t("cancel") || "Отменить"}
+                              {actionLoading === cancelKey ? "..." : t("cancel")}
                             </button>
                           </>
                         )}
@@ -319,20 +338,15 @@ export default function SellerOrdersPage() {
                             className="flex items-center gap-1.5 rounded-2xl bg-[#6366f1] px-4 py-2 text-[12px] font-black text-white hover:bg-[#4f46e5] disabled:opacity-50 transition-colors"
                           >
                             <Truck className="size-3.5" />
-                            {actionLoading === shipKey ? "..." : t("ship") || "Отправить"}
+                            {actionLoading === shipKey ? "..." : t("ship")}
                           </button>
                         )}
                         {order.status === "CONFIRMED" && order.deliveryType === "DELIVERY" && (
                           <span className="flex items-center gap-1.5 rounded-2xl bg-slate-100 px-4 py-2 text-[12px] font-semibold text-slate-400">
                             <Truck className="size-3.5" />
-                            Передано диспетчеру
+                            Handed to dispatcher
                           </span>
                         )}
-                        <div className="flex-1" />
-                        <span className="text-[11px] text-slate-400 self-center">
-                          <ArrowRight className="size-3 inline mr-1" />
-                          {t("actionPrompt") || "Выберите действие"}
-                        </span>
                       </div>
                     )}
                   </article>

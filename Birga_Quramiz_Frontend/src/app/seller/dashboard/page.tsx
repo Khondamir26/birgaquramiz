@@ -39,7 +39,7 @@ export default function SellerDashboardPage() {
   useEffect(() => {
     if (!isInitialized) return;
     if (!isAuthenticated) { router.push("/login"); return; }
-    if (user && user.role !== "SELLER") { router.push("/"); return; }
+    if (user && user.role !== "SELLER" && user.role !== "ADMIN") { router.push("/"); return; }
   }, [user, isAuthenticated, isInitialized, router]);
 
   const fetchData = useCallback(async () => {
@@ -61,7 +61,7 @@ export default function SellerDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (isInitialized && isAuthenticated && user?.role === "SELLER") {
+    if (isInitialized && isAuthenticated && (user?.role === "SELLER" || user?.role === "ADMIN")) {
       async function run() { await fetchData(); }
       void run();
     }
@@ -102,7 +102,7 @@ export default function SellerDashboardPage() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "SELLER") return null;
+  if (!isAuthenticated || (user?.role !== "SELLER" && user?.role !== "ADMIN")) return null;
 
   // ── Computed data ──
   const totalOrders = analytics?.totalOrders ?? 0;

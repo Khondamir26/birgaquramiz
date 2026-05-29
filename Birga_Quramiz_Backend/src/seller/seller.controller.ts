@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   UseGuards,
   Req,
@@ -26,6 +27,18 @@ export class SellerController {
     @Req() req: AuthedRequest,
   ) {
     return this.sellerService.becomeSeller(company, req.user)
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMyProfile(@Req() req: AuthedRequest) {
+    return this.sellerService.getMyProfile(req.user)
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  updateMyProfile(@Req() req: AuthedRequest, @Body('company') company: string) {
+    return this.sellerService.updateMyProfile(req.user, company)
   }
 
   @UseGuards(JwtAuthGuard)

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { PageLoader } from '@/components/ui/FullPageLoader'
+import { SellerSidebar } from '@/components/seller/SellerSidebar'
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isInitialized } = useAuth()
@@ -24,5 +25,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     return <PageLoader />
   }
 
-  return <>{children}</>
+  return (
+    <div className="flex min-h-screen bg-[#f5f7fb]">
+      <SellerSidebar />
+      <div className="flex-1 min-w-0 flex flex-col">
+        {children}
+      </div>
+    </div>
+  )
 }
