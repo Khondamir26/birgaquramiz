@@ -592,6 +592,11 @@ export class TrackingGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     this.server.to(`driver:${driverId}`).emit(EVENTS.ASSIGNMENT_CREATED, assignment)
   }
 
+  /** Called by TrackingController when dispatcher cancels an assignment */
+  pushCancelledAssignment(driverId: string, assignmentId: string, orderId: string) {
+    this.server.to(`driver:${driverId}`).emit(EVENTS.ASSIGNMENT_CANCELLED, { assignmentId, orderId })
+  }
+
   /** Called by AlertService when a driver is stuck */
   alertDriverStuck(driverId: string, orderId: string, minutesIdle: number) {
     this.server.to('dispatchers').emit(EVENTS.DRIVER_STUCK, { driverId, orderId, minutesIdle })

@@ -17,7 +17,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common'
-import { DriverStatus } from '@prisma/client'
+import { DriverStatus, AssignmentStatus } from '@prisma/client'
 import { AuthGuard } from '@nestjs/passport'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
@@ -156,6 +156,23 @@ export class TrackingController {
     )
 
     return assignment
+  }
+
+  /** DELETE /tracking/assignments/:id — dispatcher/admin cancels an active assignment */
+  @Delete('assignments/:id')
+  @Roles('DISPATCHER', 'ADMIN')
+  @HttpCode(HttpStatus.OK)
+  async cancelAssignment(
+    @Param('id') assignmentId: string,
+    @Req() req: AuthedRequest,
+  ) {
+    const result = await this.trackingService.updateAssignmentStatus(
+      assignmentId,
+      AssignmentStatus.CANCELLED,
+      req.user,
+    )
+    this.trackingGateway.pushCancelledAssignment(result.driverId, assignmentId, result.orderId)
+    return result
   }
 
   /** PATCH /tracking/push-token — driver registers their Expo push token */
